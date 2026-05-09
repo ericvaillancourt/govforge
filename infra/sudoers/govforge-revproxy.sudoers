@@ -1,0 +1,58 @@
+# /etc/sudoers.d/govforge-claude
+# Host: 192.168.2.4 (rev-proxy)
+# Purpose: Allow `eric` to manage nginx for GovForge without password prompt.
+# Scope: Strictly limited to nginx ops + reading network state.
+#        Does NOT grant root shell or write access outside /etc/nginx/sites-available/govforge.
+#
+# Install:
+#   scp govforge-revproxy.sudoers eric@192.168.2.4:/tmp/
+#   ssh eric@192.168.2.4
+#   sudo visudo -cf /tmp/govforge-revproxy.sudoers   # validates syntax — MUST say "parsed OK"
+#   sudo install -m 0440 -o root -g root /tmp/govforge-revproxy.sudoers /etc/sudoers.d/govforge-claude
+#   sudo rm /tmp/govforge-revproxy.sudoers
+#
+# Verify:
+#   sudo -l -U eric    # should list the GOVFORGE_* aliases
+#   sudo -n nginx -t   # should run without prompting
+
+Cmnd_Alias GOVFORGE_NGINX_TEST = \
+    /usr/sbin/nginx -t, \
+    /usr/sbin/nginx -T
+
+Cmnd_Alias GOVFORGE_NGINX_RELOAD = \
+    /usr/bin/systemctl reload nginx, \
+    /usr/bin/systemctl reload nginx.service, \
+    /usr/bin/systemctl restart nginx, \
+    /usr/bin/systemctl restart nginx.service, \
+    /usr/bin/systemctl status nginx, \
+    /usr/bin/systemctl status nginx.service, \
+    /usr/bin/systemctl is-active nginx, \
+    /usr/bin/systemctl is-enabled nginx
+
+Cmnd_Alias GOVFORGE_NGINX_FILES = \
+    /usr/bin/tee /etc/nginx/sites-available/govforge, \
+    /usr/bin/tee /etc/nginx/sites-available/govforge.new, \
+    /usr/bin/cp /etc/nginx/sites-available/govforge /tmp/govforge.bak.*, \
+    /usr/bin/mv /etc/nginx/sites-available/govforge.new /etc/nginx/sites-available/govforge, \
+    /usr/bin/ln -sf /etc/nginx/sites-available/govforge /etc/nginx/sites-enabled/govforge, \
+    /usr/bin/rm /etc/nginx/sites-enabled/govforge, \
+    /usr/bin/rm -f /etc/nginx/sites-enabled/govforge
+
+Cmnd_Alias GOVFORGE_READ = \
+    /usr/bin/cat /etc/nginx/sites-available/*, \
+    /usr/bin/cat /etc/nginx/sites-enabled/*, \
+    /usr/bin/cat /etc/nginx/nginx.conf, \
+    /usr/bin/ls /etc/nginx/, \
+    /usr/bin/ls /etc/nginx/sites-available/, \
+    /usr/bin/ls /etc/nginx/sites-enabled/
+
+Cmnd_Alias GOVFORGE_NETSTAT = \
+    /usr/bin/ss -tlnp, \
+    /usr/bin/ss -tnlp, \
+    /usr/sbin/iptables -L, \
+    /usr/sbin/iptables -nvL, \
+    /usr/sbin/iptables -L INPUT -n, \
+    /usr/sbin/iptables -L FORWARD -n, \
+    /usr/sbin/iptables -S
+
+eric ALL=(root) NOPASSWD: GOVFORGE_NGINX_TEST, GOVFORGE_NGINX_RELOAD, GOVFORGE_NGINX_FILES, GOVFORGE_READ, GOVFORGE_NETSTAT

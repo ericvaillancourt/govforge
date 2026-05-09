@@ -1,0 +1,49 @@
+# /etc/sudoers.d/govforge-claude
+# Host: 192.168.2.5 (hypervisor 2)
+# Purpose: Allow `eric` to inspect firewall state + enable systemd linger
+#          for rootless Podman, without password prompt.
+# Scope: Read-only on firewall; one-shot loginctl enable-linger.
+#        Does NOT grant root shell or modify firewall rules.
+#        Most container ops are rootless (no sudo needed at all).
+#
+# Install:
+#   scp govforge-hypervisor.sudoers eric@192.168.2.5:/tmp/
+#   ssh eric@192.168.2.5
+#   sudo visudo -cf /tmp/govforge-hypervisor.sudoers   # MUST say "parsed OK"
+#   sudo install -m 0440 -o root -g root /tmp/govforge-hypervisor.sudoers /etc/sudoers.d/govforge-claude
+#   sudo rm /tmp/govforge-hypervisor.sudoers
+#
+# Verify:
+#   sudo -l -U eric                  # should list GOVFORGE_* aliases
+#   sudo -n iptables -nvL | head     # should run without prompting
+
+Cmnd_Alias GOVFORGE_FW_READ = \
+    /usr/sbin/iptables -L, \
+    /usr/sbin/iptables -nvL, \
+    /usr/sbin/iptables -L INPUT -n, \
+    /usr/sbin/iptables -L FORWARD -n, \
+    /usr/sbin/iptables -L OUTPUT -n, \
+    /usr/sbin/iptables -S, \
+    /usr/sbin/ip6tables -L, \
+    /usr/sbin/ip6tables -nvL, \
+    /usr/sbin/nft list ruleset, \
+    /usr/sbin/nft list tables, \
+    /usr/sbin/nft list table inet filter, \
+    /usr/sbin/nft list table ip filter
+
+Cmnd_Alias GOVFORGE_NETSTAT = \
+    /usr/bin/ss -tlnp, \
+    /usr/bin/ss -tnlp, \
+    /usr/bin/ss -tunlp
+
+Cmnd_Alias GOVFORGE_LINGER = \
+    /usr/bin/loginctl enable-linger eric, \
+    /usr/bin/loginctl show-user eric
+
+Cmnd_Alias GOVFORGE_SYSTEMCTL_READ = \
+    /usr/bin/systemctl status, \
+    /usr/bin/systemctl status *, \
+    /usr/bin/systemctl is-active *, \
+    /usr/bin/systemctl is-enabled *
+
+eric ALL=(root) NOPASSWD: GOVFORGE_FW_READ, GOVFORGE_NETSTAT, GOVFORGE_LINGER, GOVFORGE_SYSTEMCTL_READ

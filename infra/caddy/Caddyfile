@@ -1,0 +1,83 @@
+#
+# GovForge — Caddy reverse proxy
+# Listens on :8080 inside container, published to 192.168.2.5:8080 on host.
+# Cloudflare terminates TLS at edge, so plain HTTP internally.
+#
+# Routes by Host header:
+#   - Known GovForge hostnames: placeholder "coming soon" page (Phase 2 pre-deploy)
+#   - Phase 2 will swap to: govforge-site, govforge-docs containers
+#   - Phase 3 will add: govforge-ui, govforge-api, govforge-mcp containers
+#   - Unknown hosts: 404
+#
+
+{
+    # Cloudflare terminates TLS — no need for Caddy auto-HTTPS
+    auto_https off
+    # Disable admin endpoint (we don't expose it anyway)
+    admin off
+    # Trust X-Forwarded-* headers from .4 (cloudflared) and Podman bridge
+    servers {
+        trusted_proxies static 192.168.2.4/32 private_ranges
+    }
+    # Compact JSON logs to stdout (captured by journald)
+    log {
+        output stdout
+        format json
+        level INFO
+    }
+}
+
+:8080 {
+    # ----- Health endpoint (any host, must come first) -----
+
+    @health path /healthz
+    handle @health {
+        respond "ok" 200
+    }
+
+    # ----- Phase 2 hostnames (pre-deploy placeholders) -----
+
+    @apex host govforge.dev
+    handle @apex {
+        # TODO Phase 2: reverse_proxy govforge-site:3000
+        respond "GovForge — coming soon (apex)" 200
+    }
+
+    @www host www.govforge.dev
+    handle @www {
+        # Permanent redirect to canonical apex
+        redir https://govforge.dev{uri} 301
+    }
+
+    @docs host docs.govforge.dev
+    handle @docs {
+        # TODO Phase 2: reverse_proxy govforge-docs:3001
+        respond "GovForge docs — coming soon" 200
+    }
+
+    # ----- Phase 3 hostnames (réservés ASAP, placeholders) -----
+
+    @app host app.govforge.dev
+    handle @app {
+        # TODO Phase 3: reverse_proxy govforge-ui:8788
+        respond "GovForge app — Phase 3" 200
+    }
+
+    @api host api.govforge.dev
+    handle @api {
+        # TODO Phase 3: reverse_proxy govforge-api:8787
+        respond "GovForge API — Phase 3" 200
+    }
+
+    @mcp host mcp.govforge.dev
+    handle @mcp {
+        # TODO Phase 3: reverse_proxy govforge-mcp:8789
+        respond "GovForge MCP — Phase 3" 200
+    }
+
+    # ----- Default: hostname unknown -----
+
+    handle {
+        respond "Not Found" 404
+    }
+}

@@ -1,0 +1,56 @@
+# GovForge Caddy reverse proxy (quadlet)
+# Install path on hypervisor: ~/.config/containers/systemd/govforge-caddy.container
+# Generated systemd unit will be: govforge-caddy.service
+#
+# Runs rootless under user `eric`. Linger must be enabled:
+#   sudo loginctl enable-linger eric
+#
+# After installing this file, run:
+#   systemctl --user daemon-reload
+#   systemctl --user start govforge-caddy.service
+#
+# Caddy logs to stdout, captured by journald:
+#   journalctl --user -u govforge-caddy.service -f
+
+[Unit]
+Description=GovForge Caddy reverse proxy
+Wants=network-online.target
+After=network-online.target
+
+[Container]
+ContainerName=govforge-caddy
+Image=docker.io/library/caddy:2-alpine
+
+# Network: rejoint la govforge-net (créée par govforge.network quadlet)
+Network=govforge.network
+
+# Bind LAN-only sur 192.168.2.5:8080 — pas exposé à Internet, pas localhost
+PublishPort=192.168.2.5:8080:8080
+
+# Mount Caddyfile read-only + persistent data/config volumes
+# %h = home dir of the user (i.e. /home/eric)
+Volume=%h/govforge/caddy/Caddyfile:/etc/caddy/Caddyfile:ro,Z
+Volume=govforge-caddy-data:/data:Z
+Volume=govforge-caddy-config:/config:Z
+
+# Auto-pull image updates (registry tag stays at 2-alpine)
+AutoUpdate=registry
+
+# Note: Memory/CPUWeight quadlet keys requirent Podman 5.x.
+# Sur Podman 4.9, utiliser PodmanArgs si besoin de limites :
+# PodmanArgs=--memory=128m --cpu-shares=100
+
+# Healthcheck via /healthz endpoint (Podman 4.5+)
+HealthCmd=/usr/bin/wget -qO- http://127.0.0.1:8080/healthz || exit 1
+HealthInterval=30s
+HealthRetries=3
+HealthStartPeriod=10s
+HealthTimeout=5s
+
+[Service]
+Restart=always
+RestartSec=5s
+TimeoutStartSec=300
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,11 @@
+# GovForge Podman network (quadlet)
+# Install path on hypervisor: ~/.config/containers/systemd/govforge.network
+# Subnet auto (Podman default range 10.89.x.x).
+# DNS resolution between containers by name (govforge-caddy, govforge-site, ...).
+
+[Unit]
+Description=GovForge Podman network
+
+[Network]
+NetworkName=govforge-net
+DisableDNS=false
