@@ -1,6 +1,13 @@
 # ===== Claude Code session files =====
 .claude/
 
+# ===== Internal planning / strategy docs (kept local-only) =====
+# Contain LAN IPs, tunnel UUIDs, business strategy — not for public repo.
+/TODO.md
+/roadmap.md
+/devis.md
+/architecture.md
+
 # ===== Editor / IDE =====
 .vscode/
 .idea/
