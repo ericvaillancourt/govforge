@@ -51,7 +51,7 @@ export function Nav() {
         </div>
         <div className="flex items-center gap-2">
           <a
-            href="https://github.com/govforge/govforge"
+            href="https://github.com/ericvaillancourt/govforge"
             target="_blank"
             rel="noopener noreferrer"
             className="hidden sm:inline-flex items-center gap-1.5 rounded-md border border-border/60 px-2.5 py-1 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
@@ -62,7 +62,7 @@ export function Nav() {
           </a>
           <ThemeToggle />
           <ButtonLink
-            href="https://github.com/govforge/govforge"
+            href="https://github.com/ericvaillancourt/govforge"
             size="sm"
             className="hidden sm:inline-flex"
           >

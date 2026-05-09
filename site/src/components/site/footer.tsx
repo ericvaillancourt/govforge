@@ -9,7 +9,7 @@ const COLUMNS = [
       { href: "/pricing", label: "Pricing" },
       { href: "/#workflow", label: "Workflow" },
       {
-        href: "https://github.com/govforge/govforge#roadmap",
+        href: "https://github.com/ericvaillancourt/govforge#roadmap",
         label: "Roadmap",
         external: true,
       },
@@ -30,7 +30,7 @@ const COLUMNS = [
       { href: "/about", label: "About" },
       { href: "mailto:eric.vaillancourt@talsom.com", label: "Contact" },
       {
-        href: "https://github.com/govforge",
+        href: "https://github.com/ericvaillancourt/govforge",
         label: "GitHub",
         external: true,
       },

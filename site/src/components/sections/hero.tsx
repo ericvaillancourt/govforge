@@ -32,7 +32,7 @@ export function Hero() {
             <ArrowRight className="h-4 w-4" />
           </ButtonLink>
           <ButtonLink
-            href="https://github.com/govforge/govforge"
+            href="https://github.com/ericvaillancourt/govforge"
             variant="outline"
             size="lg"
           >
