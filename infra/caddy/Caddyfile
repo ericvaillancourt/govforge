@@ -39,8 +39,9 @@
 
     @apex host govforge.dev
     handle @apex {
-        # TODO Phase 2: reverse_proxy govforge-site:3000
-        respond "GovForge — coming soon (apex)" 200
+        root * /srv/govforge-site
+        try_files {path} {path}/index.html
+        file_server
     }
 
     @www host www.govforge.dev
