@@ -86,7 +86,25 @@ Everything below is on `main` but unreleased.
 
 ### Added — Marketing site
 
-- Public site live at `https://govforge.dev`. Bilingual EN/FR.
+- Public site live at `https://govforge.dev`. Bilingual EN/FR via Next.js
+  App Router `[lang]/` segment + server-only JSON dictionaries
+  (`src/dictionaries/{en,fr}.json`). Root `/` is a static
+  redirect that sniffs `navigator.language`. Language toggle in the nav
+  preserves the current path across locales. Hreflang `en`/`fr`/`x-default`
+  + `OpenGraph.locale` `en_US ↔ fr_CA`.
+- Public docs site rendered from `docs/*.md` at build time
+  (`marked` + `@tailwindcss/typography`). 13 markdown files × 2 locales
+  = 26 static pages under `[lang]/docs/[slug]`. Sidebar groups docs by
+  section; "View on GitHub" / "Edit this page" links per page; FR pages
+  show a banner that French translation is pending.
+- Markdown link rewriter normalises sibling `foo.md` → `../foo/` and
+  cross-package `../site/x` / `../backend/x` → GitHub blob URLs at build
+  time, so doc cross-references keep working on the live site.
+- `docs.govforge.dev` is wired in Caddy as a 301 alias of
+  `govforge.dev/en/docs/*` (no separate docs container — the marketing
+  site IS the docs site).
+- Footer "API" link points to the live FastAPI Swagger UI at
+  `api.govforge.dev/docs` (auto-generated from the OpenAPI spec).
 - Stack: Next.js 16 + Tailwind v4 + shadcn/ui Base UI.
 - Static export; deployed via Caddy + Podman quadlet on a self-hosted
   hypervisor, fronted by an existing Cloudflare tunnel (no Vercel

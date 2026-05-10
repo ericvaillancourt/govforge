@@ -1,7 +1,7 @@
 import "server-only";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { marked } from "marked";
+import { marked, type Tokens } from "marked";
 
 const DOCS_DIR = path.join(process.cwd(), "..", "docs");
 
@@ -50,9 +50,39 @@ function extractTitle(md: string): string {
   return match ? match[1].replace(/`/g, "").trim() : "";
 }
 
+const REPO_BLOB_BASE = "https://github.com/ericvaillancourt/govforge/blob/main";
+
 marked.setOptions({
   gfm: true,
   breaks: false,
+});
+
+// Rewrite intra-doc and cross-package links so they resolve on the live site.
+//   foo.md            → ../foo/         (sibling doc page on /<lang>/docs/)
+//   foo.md#anchor     → ../foo/#anchor
+//   ../site/path      → GitHub blob URL (cross-package, repo-only references)
+//   ../backend/x.py   → GitHub blob URL
+//   http(s):// / mailto: / # / / → unchanged
+marked.use({
+  renderer: {
+    link(token: Tokens.Link): string {
+      let href = token.href;
+      let openInNewTab = false;
+      const sibling = /^([^/:#?]+)\.md(#.*)?$/.exec(href);
+      if (sibling) {
+        href = `../${sibling[1]}/${sibling[2] ?? ""}`;
+      } else if (href.startsWith("../")) {
+        href = `${REPO_BLOB_BASE}/${href.slice(3)}`;
+        openInNewTab = true;
+      } else if (/^https?:/.test(href) && !href.includes("govforge.dev")) {
+        openInNewTab = true;
+      }
+      const inner = this.parser.parseInline(token.tokens);
+      const titleAttr = token.title ? ` title="${token.title}"` : "";
+      const targetAttr = openInNewTab ? ` target="_blank" rel="noopener noreferrer"` : "";
+      return `<a href="${href}"${titleAttr}${targetAttr}>${inner}</a>`;
+    },
+  },
 });
 
 export async function getDoc(slug: string): Promise<ParsedDoc> {

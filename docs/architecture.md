@@ -224,4 +224,3 @@ The `gf` CLI and the cockpit UI use display IDs (`TASK-001`, `DEC-001`,
 - MCP integration: [`mcp-integration.md`](mcp-integration.md)
 - Threat model: [`threat-model.md`](threat-model.md)
 - Workflow walkthrough: [`workflow-example.md`](workflow-example.md)
-- Deployment topology (production site): [`../architecture.md`](../architecture.md)

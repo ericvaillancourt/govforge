@@ -12,7 +12,7 @@
 [![Go](https://img.shields.io/badge/go-1.22+-00add8)](cli/go.mod)
 [![MCP-native](https://img.shields.io/badge/MCP-native-7c3aed)](docs/mcp-integration.md)
 
-[Website](https://govforge.dev) · [Docs](docs/) · [MCP integration](docs/mcp-integration.md) · [Workflow example](docs/workflow-example.md) · [Threat model](docs/threat-model.md)
+[Website](https://govforge.dev) · [Docs](https://docs.govforge.dev) · [MCP integration](https://docs.govforge.dev/mcp-integration) · [Workflow example](https://docs.govforge.dev/workflow-example) · [Threat model](https://docs.govforge.dev/threat-model) · [API](https://api.govforge.dev/docs)
 
 </div>
 
