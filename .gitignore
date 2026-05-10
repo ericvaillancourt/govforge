@@ -68,6 +68,7 @@ vendor/
 node_modules/
 .next/
 out/
+tsconfig.tsbuildinfo
 .nuxt/
 .vercel/
 .turbo/
