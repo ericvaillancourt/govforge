@@ -1,13 +1,20 @@
 # Phase 3.0 Stage B — handoff checklist
 
-> Stage A (this iteration) shipped Bearer + scoped tokens. Stage B adds
-> OAuth GitHub + Google + magic link + cookie session + frontend `/login`
-> + `/account` UI. Stage B needs external credentials that only Eric can
-> provision; this file is the runbook for collecting them.
+> **Status: GitHub-only flow is LIVE since 2026-05-10.** See
+> `infra/RUNBOOK.md` §8.5 for the operational runbook. This file
+> now tracks the **remaining** handoffs needed for Google OAuth and
+> the Resend-backed magic link, which still 503-stub on prod.
 
-## What Eric needs to do BEFORE Stage B coding starts
+## ✅ Done — GitHub OAuth (live)
 
-### 1. Register the GitHub OAuth app
+1. GitHub OAuth app registered, callback `https://api.govforge.dev/auth/github/callback`
+2. `GITHUB_OAUTH_CLIENT_ID` + `GITHUB_OAUTH_CLIENT_SECRET` + `GOVFORGE_COOKIE_SECRET` + `GOVFORGE_COOKIE_DOMAIN=.govforge.dev` deployed to `~/govforge/backend/backend.env` on `.5`
+3. `accounts` + `sessions` tables created via `create_all`
+4. Smoke-tested: `/auth/github/start` returns `302` with `redirect_uri=https://…`
+
+## What Eric still needs to do for the follow-ups
+
+### 1. (DONE — kept for reference) Register the GitHub OAuth app
 
 1. https://github.com/settings/developers → **New OAuth App**
 2. Fields:

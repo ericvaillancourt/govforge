@@ -72,8 +72,13 @@ api: ok — backend 0.1.0
 > backend, the bootstrap is automatic: `gf init` provisions a default
 > user + admin token in `.govforge/auth.toml`, and every `gf` command
 > reads from there. For the **hosted** backend at `api.govforge.dev`,
-> see [`infra/RUNBOOK.md` §8](https://github.com/ericvaillancourt/govforge/blob/main/infra/RUNBOOK.md)
-> for the bootstrap + per-agent token recipe.
+> sign in at <https://govforge.dev/en/login/> (GitHub OAuth — Stage B
+> live since 2026-05-10), create a token from
+> <https://govforge.dev/en/account/>, then run
+> `gf auth login --token gfp_…` on your workstation. The CLI also
+> respects `GOVFORGE_API_TOKEN` if you'd rather pass it via env var.
+> See [`infra/RUNBOOK.md` §8](https://github.com/ericvaillancourt/govforge/blob/main/infra/RUNBOOK.md)
+> for the operator-side runbook.
 
 ## 4. Register the project
 

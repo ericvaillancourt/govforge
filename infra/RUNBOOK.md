@@ -326,11 +326,67 @@ additive on tokens. To rotate:
 4. Verify: requests with the old token return 401, with the new one
    return 200.
 
-### 8.5 Stage B (planned)
+### 8.5 Stage B (GitHub-only — live since 2026-05-10)
 
-When OAuth GitHub + Google + magic link land (cf.
-`docs/auth-stage-b-handoff.md`), site users sign in via the
-`/[lang]/login` page and manage tokens at `/[lang]/account`. The CLI
-adds `gf auth login` (device-code flow). The Bearer model from Stage
-A keeps working unchanged — Stage B adds a parallel cookie-session
-path.
+Site users sign in at `/[lang]/login/` (GitHub button) and manage
+tokens at `/[lang]/account/`. CLI `gf auth login --token gfp_…` saves
+to `.govforge/auth.toml` (per-project) or
+`~/.config/govforge/auth.toml` (global), with `GOVFORGE_API_TOKEN` env
+var taking precedence. The Bearer model from Stage A keeps working
+unchanged — Stage B adds a parallel cookie-session path on the same
+FastAPI app.
+
+#### Stage B env vars (in `~/govforge/backend/backend.env` on .5)
+
+```
+GITHUB_OAUTH_CLIENT_ID=<client id from github.com/settings/developers>
+GITHUB_OAUTH_CLIENT_SECRET=<client secret>
+GOVFORGE_COOKIE_SECRET=<random ≥32 bytes, base64url>
+GOVFORGE_COOKIE_DOMAIN=.govforge.dev
+```
+
+Generate the cookie secret with:
+
+```bash
+python3 -c "import secrets; print(secrets.token_urlsafe(48))"
+```
+
+#### One-time schema migration (creates `accounts` + `sessions`)
+
+```bash
+podman exec govforge-backend bash -c \
+  'GOVFORGE_DATABASE_URL="$GOVFORGE_DB" python -c "from govforge.db.session import make_engine, create_all; create_all(make_engine())"'
+```
+
+#### Critical: proxy_headers
+
+`backend/src/govforge/api/server.py` passes
+`proxy_headers=True, forwarded_allow_ips="*"` to `uvicorn.run(...)`.
+Without this, `request.base_url` falls back to `http://` inside the
+container and the OAuth callback URL emitted to GitHub is rejected
+(mismatches the registered `https://` URL). If you fork the deploy,
+keep this in.
+
+#### Smoke test
+
+```bash
+curl -s -o /dev/null -w "HTTP %{http_code}\nLocation: %{redirect_url}\n" \
+  https://api.govforge.dev/auth/github/start
+```
+
+Expected: `HTTP 302` with `Location:
+https://github.com/login/oauth/authorize?…&redirect_uri=https://api.govforge.dev/auth/github/callback&…`
+(note the **https** in `redirect_uri`).
+
+#### Rollback
+
+Comment out / delete the four `GITHUB_*` + `GOVFORGE_COOKIE_*` lines
+in `backend.env`, restart the service. Routes fall back to clean
+`503 Service Unavailable`. Stage A Bearer auth continues to work.
+
+### 8.6 Stage B follow-ups (planned)
+
+Google OAuth and Resend magic link routes are wired up but return
+`503 Service Unavailable` until their credentials are added. CLI
+`gf auth login --device` (device-code flow) is deferred — users
+currently paste the `gfp_…` token from the `/account` page.

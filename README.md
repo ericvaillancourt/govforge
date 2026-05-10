@@ -166,7 +166,7 @@ Adding a policy is one Python class — see
 - [MCP integration](https://docs.govforge.dev/mcp-integration) — Claude Code / Codex / Cursor / Cline wiring
 - [Threat model](https://docs.govforge.dev/threat-model) — security guarantees pinned by tests
 - [Workflow example](https://docs.govforge.dev/workflow-example) — full Claude → Codex → human-approval walkthrough
-- [Auth Stage B handoff](docs/auth-stage-b-handoff.md) — what to register before OAuth + magic-link landing
+- [Auth Stage B handoff](docs/auth-stage-b-handoff.md) — what's left to register for Google OAuth + magic-link follow-ups (GitHub-only is live)
 - [Brand guide](https://docs.govforge.dev/brand) — assets, palette, tagline, tone of voice
 - [CHANGELOG](CHANGELOG.md)
 

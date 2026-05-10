@@ -10,6 +10,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 The first release will be `0.1.0` and will mark Phase 1 feature-complete.
 Everything below is on `main` but unreleased.
 
+### Added — Authentication (Phase 3.0 Stage B GitHub-only — live 2026-05-10)
+
+> Stage B (OAuth + cookie sessions + browser login) shipped same-day as
+> Stage A. Scope of this initial cut: GitHub-only. Google + magic link
+> stubbed as `503 Service Unavailable` until their credentials land.
+
+- New domain models: `Account` (one row per linked OAuth provider) and
+  `Session` (HMAC-SHA256-signed cookie, 30-day TTL by default). The
+  Bearer/`ApiToken` model from Stage A is unchanged — Stage B adds a
+  parallel cookie-session path on the same FastAPI app.
+- `RequireUser` dependency: resolves `govforge_session` cookie, verifies
+  signature, looks up the active `Session` row, returns a
+  `UserContext`. Available alongside `RequireToken(scope=...)`.
+- `/auth/github/{start,callback}` — full OAuth 2.0 authorization-code
+  flow via `httpx` (no Authlib dep). Short-lived `govforge_oauth_state`
+  cookie for CSRF protection on the state parameter.
+- `/auth/{session,logout}` — return the current user (or `{detail: "No
+  active session"}`) and revoke the session row.
+- `/auth/google/start` + `/auth/magic/request` — wired up but return
+  `503 Service Unavailable` until their credentials are provisioned.
+- `bin/govforge.api.server`: `uvicorn.run(...)` now passes
+  `proxy_headers=True, forwarded_allow_ips="*"` so Starlette honours
+  `X-Forwarded-Proto` from Caddy. Without this the GitHub `redirect_uri`
+  was emitted as `http://` and rejected by GitHub for not matching the
+  registered `https://` callback.
+- Frontend `/[lang]/login/`: bilingual EN/FR static page with a
+  GitHub button (other providers shown as "coming soon").
+- Frontend `/[lang]/account/`: client component fetches `/auth/session`
+  + `/tokens` with `credentials: 'include'`, renders profile + tokens
+  table + create-token form with scope checkboxes.
+- CLI: `gf auth {login,logout,whoami}` and `gf token {create,list,revoke}`.
+  Tokens persist to `.govforge/auth.toml` (per-project) or
+  `~/.config/govforge/auth.toml` (global). `GOVFORGE_API_TOKEN` env var
+  wins over both.
+- 13 new auth/oauth tests (`tests/unit/test_api.py::TestOAuth` +
+  `TestAuth`): cookie signing roundtrip, anonymous session probe,
+  `/auth/github/start` 307 with state cookie, callback rejects bad
+  state, account+session upsert. Total backend test count is now 110,
+  coverage 75%.
+
 ### Added — Authentication (Phase 3.0 Stage A — pulled forward 2026-05-10)
 
 > Pivot trigger: `api.govforge.dev` was discovered exposed publicly with no
