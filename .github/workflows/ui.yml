@@ -25,12 +25,17 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "npm"
-          cache-dependency-path: ui/package-lock.json
+        # No npm cache during scaffolding (package-lock.json not committed yet).
+        # Re-add `cache: "npm"` + `cache-dependency-path: ui/package-lock.json`
+        # in workstream I once Next.js is initialized via npx create-next-app.
 
       - name: Install
-        run: npm ci || npm install
-        # `|| npm install` while package-lock.json is not committed yet
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
 
       - name: Type check
         run: npm run type-check || echo "(no type-check script yet)"

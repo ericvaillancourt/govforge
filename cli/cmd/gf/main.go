@@ -1,9 +1,9 @@
 // Command gf is the GovForge developer CLI.
 //
 // gf is a Go binary that talks to the GovForge backend (Python) over local
-// HTTP. The exception is `gf init`, which is autonomous: it creates the
-// .govforge/ directory and the SQLite DB using a schema embedded via
-// go:embed, with no backend running.
+// HTTP. The exception is "gf init", which is autonomous: it creates the
+// .govforge/ directory and the SQLite DB using a schema embedded via the
+// standard library embed package, with no backend running.
 package main
 
 import (

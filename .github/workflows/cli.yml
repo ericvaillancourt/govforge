@@ -25,7 +25,8 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: "1.22"
-          cache-dependency-path: cli/go.sum
+        # No cache-dependency-path during scaffolding (go.sum not yet generated).
+        # setup-go will use default caching behavior.
 
       - name: Tidy & download
         run: |

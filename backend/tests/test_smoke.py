@@ -9,7 +9,12 @@ def test_version_is_set() -> None:
 
 
 def test_subpackages_importable() -> None:
-    import govforge.api  # noqa: F401
-    import govforge.core  # noqa: F401
-    import govforge.db  # noqa: F401
-    import govforge.mcp  # noqa: F401
+    import govforge.api
+    import govforge.core
+    import govforge.db
+    import govforge.mcp
+
+    assert govforge.api is not None
+    assert govforge.core is not None
+    assert govforge.db is not None
+    assert govforge.mcp is not None
