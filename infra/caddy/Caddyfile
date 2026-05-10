@@ -41,6 +41,19 @@
     handle @apex {
         root * /srv/govforge-site
 
+        # Legacy URLs from before the bilingual move (i18n routes everything
+        # under /<lang>/...). Anyone with a bookmark or external backlink to
+        # an unlocalized path gets a permanent redirect to /en/. Patterns
+        # cover both the bare path and any sub-paths (e.g. /docs/quickstart).
+        @legacy_pricing path /pricing /pricing/*
+        redir @legacy_pricing /en{uri} 301
+
+        @legacy_docs path /docs /docs/*
+        redir @legacy_docs /en{uri} 301
+
+        @legacy_press path /press /press/*
+        redir @legacy_press /en{uri} 301
+
         # Next 16 emits favicon/OG images at extensionless routes (/icon,
         # /apple-icon, /opengraph-image). file_server can't sniff the MIME
         # type without an extension, so we set it explicitly — OG validators
