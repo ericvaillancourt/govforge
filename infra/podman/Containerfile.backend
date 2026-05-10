@@ -25,9 +25,17 @@ COPY backend/src ./src
 
 # Build a wheel + install it in an isolated prefix we'll copy into the
 # final stage. This keeps the runtime image free of build tooling.
+#
+# `packaging` is listed explicitly because pip vendors it internally —
+# so when we resolve our wheel's deps, pip considers `packaging` already
+# satisfied and skips installing it into /install. The runtime stage
+# has no pip (and therefore no vendored packaging), so fastmcp's
+# `from packaging.version import Version` breaks at import time.
+# Forcing it as a top-level requirement bypasses the resolver's
+# vendor-bundle short-circuit. See: pypa/pip #5645.
 RUN pip install --upgrade pip build && \
     python -m build --wheel -o /dist && \
-    pip install --prefix=/install /dist/*.whl
+    pip install --prefix=/install /dist/*.whl packaging
 
 # ----- runtime ----------------------------------------------------------
 FROM python:3.12-slim
