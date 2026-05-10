@@ -5,20 +5,31 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
+from govforge.api.auth import RequireToken
 from govforge.api.deps import get_session
 from govforge.api.schemas import ProjectIn, ProjectOut
+from govforge.core.enums import TokenScope
 from govforge.core.services import ProjectService
 
 router = APIRouter(prefix="/projects", tags=["projects"])
 
 
-@router.get("", response_model=list[ProjectOut])
+@router.get(
+    "",
+    response_model=list[ProjectOut],
+    dependencies=[Depends(RequireToken(scope=TokenScope.PROJECTS_READ))],
+)
 def list_projects(session: Session = Depends(get_session)) -> list[ProjectOut]:
     rows = ProjectService(session).list()
     return [ProjectOut.model_validate(r) for r in rows]
 
 
-@router.post("", response_model=ProjectOut, status_code=201)
+@router.post(
+    "",
+    response_model=ProjectOut,
+    status_code=201,
+    dependencies=[Depends(RequireToken(scope=TokenScope.PROJECTS_WRITE))],
+)
 def create_project(
     payload: ProjectIn,
     session: Session = Depends(get_session),

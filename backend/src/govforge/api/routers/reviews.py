@@ -7,6 +7,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
+from govforge.api.auth import RequireToken
 from govforge.api.deps import get_session
 from govforge.api.schemas import (
     DecisionOut,
@@ -14,6 +15,7 @@ from govforge.api.schemas import (
     ReviewRequestIn,
     ReviewSubmitIn,
 )
+from govforge.core.enums import TokenScope
 from govforge.core.services import FindingInput, ReviewService
 from govforge.mcp.context import (
     get_or_create_agent,
@@ -25,7 +27,12 @@ from govforge.mcp.context import (
 router = APIRouter(tags=["reviews"])
 
 
-@router.post("/reviews/request", response_model=DecisionOut, status_code=200)
+@router.post(
+    "/reviews/request",
+    response_model=DecisionOut,
+    status_code=200,
+    dependencies=[Depends(RequireToken(scope=TokenScope.REVIEWS_WRITE))],
+)
 def request_review(
     payload: ReviewRequestIn,
     session: Session = Depends(get_session),
@@ -42,7 +49,12 @@ def request_review(
     return DecisionOut.model_validate(updated)
 
 
-@router.post("/reviews", response_model=ReviewOut, status_code=201)
+@router.post(
+    "/reviews",
+    response_model=ReviewOut,
+    status_code=201,
+    dependencies=[Depends(RequireToken(scope=TokenScope.REVIEWS_WRITE))],
+)
 def submit_review(
     payload: ReviewSubmitIn,
     session: Session = Depends(get_session),
@@ -71,7 +83,11 @@ def submit_review(
     return ReviewOut.model_validate(review)
 
 
-@router.get("/reviews", response_model=list[ReviewOut])
+@router.get(
+    "/reviews",
+    response_model=list[ReviewOut],
+    dependencies=[Depends(RequireToken(scope=TokenScope.REVIEWS_READ))],
+)
 def list_reviews(
     project_path: str = Query(...),
     open_only: bool = Query(False),
@@ -87,7 +103,11 @@ def list_reviews(
     return [ReviewOut.model_validate(r) for r in rows]
 
 
-@router.get("/reviews/{review_id}", response_model=ReviewOut)
+@router.get(
+    "/reviews/{review_id}",
+    response_model=ReviewOut,
+    dependencies=[Depends(RequireToken(scope=TokenScope.REVIEWS_READ))],
+)
 def get_review(
     review_id: str,
     session: Session = Depends(get_session),

@@ -76,3 +76,27 @@ class AgentType(StrEnum):
     CLINE = "cline"
     AIDER = "aider"
     OTHER = "other"
+
+
+class TokenScope(StrEnum):
+    """API-token capability scopes. `<resource>:<action>` convention.
+
+    `admin` is special: a token holding `admin` is treated as if it held every
+    other scope. Tokens are issued with an explicit list; the auth dependency
+    checks the requested scope is in the list (or `admin` is).
+    """
+
+    PROJECTS_READ = "projects:read"
+    PROJECTS_WRITE = "projects:write"
+    TASKS_READ = "tasks:read"
+    TASKS_WRITE = "tasks:write"
+    DECISIONS_READ = "decisions:read"
+    DECISIONS_WRITE = "decisions:write"
+    REVIEWS_READ = "reviews:read"
+    REVIEWS_WRITE = "reviews:write"
+    POLICIES_READ = "policies:read"
+    POLICIES_WRITE = "policies:write"
+    EVENTS_READ = "events:read"
+    TOKENS_READ = "tokens:read"
+    TOKENS_WRITE = "tokens:write"
+    ADMIN = "admin"

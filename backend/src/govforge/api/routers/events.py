@@ -7,8 +7,10 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
+from govforge.api.auth import RequireToken
 from govforge.api.deps import get_session
 from govforge.api.schemas import EventOut
+from govforge.core.enums import TokenScope
 from govforge.core.services import EventService
 from govforge.mcp.context import (
     resolve_decision,
@@ -20,7 +22,11 @@ from govforge.mcp.context import (
 router = APIRouter(prefix="/events", tags=["events"])
 
 
-@router.get("", response_model=list[EventOut])
+@router.get(
+    "",
+    response_model=list[EventOut],
+    dependencies=[Depends(RequireToken(scope=TokenScope.EVENTS_READ))],
+)
 def list_events(
     project_path: str | None = Query(None),
     entity_type: str | None = Query(None),

@@ -7,16 +7,21 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
+from govforge.api.auth import RequireToken
 from govforge.api.deps import get_session
 from govforge.api.schemas import TaskIn, TaskOut
-from govforge.core.enums import TaskStatus
+from govforge.core.enums import TaskStatus, TokenScope
 from govforge.core.services import TaskService
 from govforge.mcp.context import get_or_create_agent, resolve_project, resolve_task
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
 
 
-@router.get("", response_model=list[TaskOut])
+@router.get(
+    "",
+    response_model=list[TaskOut],
+    dependencies=[Depends(RequireToken(scope=TokenScope.TASKS_READ))],
+)
 def list_tasks(
     project_path: str = Query(..., description="Filter by project root_path"),
     status: TaskStatus | None = Query(None),
@@ -27,7 +32,12 @@ def list_tasks(
     return [TaskOut.model_validate(r) for r in rows]
 
 
-@router.post("", response_model=TaskOut, status_code=201)
+@router.post(
+    "",
+    response_model=TaskOut,
+    status_code=201,
+    dependencies=[Depends(RequireToken(scope=TokenScope.TASKS_WRITE))],
+)
 def create_task(
     payload: TaskIn,
     session: Session = Depends(get_session),
@@ -44,7 +54,11 @@ def create_task(
     return TaskOut.model_validate(task)
 
 
-@router.get("/{task_id}", response_model=TaskOut)
+@router.get(
+    "/{task_id}",
+    response_model=TaskOut,
+    dependencies=[Depends(RequireToken(scope=TokenScope.TASKS_READ))],
+)
 def get_task(
     task_id: str,
     session: Session = Depends(get_session),

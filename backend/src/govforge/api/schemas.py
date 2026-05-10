@@ -23,6 +23,7 @@ from govforge.core.enums import (
     ReviewStatus,
     RiskLevel,
     TaskStatus,
+    TokenScope,
 )
 
 
@@ -264,6 +265,9 @@ class EventOut(_ORM):
 __all__ = [
     "AgentOut",
     "ApprovalIn",
+    "ApiTokenCreateIn",
+    "ApiTokenCreateOut",
+    "ApiTokenOut",
     "ApprovalOut",
     "AttachGitIn",
     "DecisionIn",
@@ -284,3 +288,45 @@ __all__ = [
     "TaskIn",
     "TaskOut",
 ]
+
+
+# ---------------------------------------------------------------------------
+# API tokens (Phase 3.0 Stage A)
+# ---------------------------------------------------------------------------
+
+
+class ApiTokenCreateIn(_Strict):
+    """Request body for POST /tokens."""
+
+    label: str = Field(min_length=1, max_length=255)
+    agent_type: AgentType
+    scopes: list[TokenScope] = Field(min_length=1)
+    expires_in_days: int | None = Field(default=None, ge=1, le=3650)
+
+
+class ApiTokenOut(_ORM):
+    """Token metadata WITHOUT the secret. Used by GET /tokens and after creation."""
+
+    id: UUID
+    label: str
+    agent_type: AgentType
+    prefix: str
+    scopes_csv: str
+    created_at: datetime
+    last_used_at: datetime | None
+    expires_at: datetime | None
+    revoked_at: datetime | None
+
+
+class ApiTokenCreateOut(BaseModel):
+    """POST /tokens response: includes the plaintext secret ONCE."""
+
+    model_config = ConfigDict(from_attributes=False)
+
+    token: ApiTokenOut
+    secret: str = Field(
+        description=(
+            "Full plaintext token. Only returned at creation time — store it "
+            "securely; it cannot be recovered."
+        )
+    )

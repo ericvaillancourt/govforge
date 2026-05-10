@@ -7,6 +7,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
+from govforge.api.auth import RequireToken
 from govforge.api.deps import get_session
 from govforge.api.schemas import (
     ApprovalIn,
@@ -17,7 +18,7 @@ from govforge.api.schemas import (
     EventOut,
     GitChangeOut,
 )
-from govforge.core.enums import DecisionStatus
+from govforge.core.enums import DecisionStatus, TokenScope
 from govforge.core.services import (
     ApprovalService,
     DecisionService,
@@ -49,7 +50,11 @@ def _resolve(session: Session, decision_id: str):  # type: ignore[no-untyped-def
     return row
 
 
-@router.get("", response_model=list[DecisionOut])
+@router.get(
+    "",
+    response_model=list[DecisionOut],
+    dependencies=[Depends(RequireToken(scope=TokenScope.DECISIONS_READ))],
+)
 def list_decisions(
     project_path: str = Query(...),
     status: DecisionStatus | None = Query(None),
@@ -60,7 +65,12 @@ def list_decisions(
     return [DecisionOut.model_validate(r) for r in rows]
 
 
-@router.post("", response_model=DecisionOut, status_code=201)
+@router.post(
+    "",
+    response_model=DecisionOut,
+    status_code=201,
+    dependencies=[Depends(RequireToken(scope=TokenScope.DECISIONS_WRITE))],
+)
 def create_decision(
     payload: DecisionIn,
     session: Session = Depends(get_session),
@@ -80,7 +90,11 @@ def create_decision(
     return DecisionOut.model_validate(decision)
 
 
-@router.get("/{decision_id}", response_model=DecisionOut)
+@router.get(
+    "/{decision_id}",
+    response_model=DecisionOut,
+    dependencies=[Depends(RequireToken(scope=TokenScope.DECISIONS_READ))],
+)
 def get_decision(
     decision_id: str,
     session: Session = Depends(get_session),
@@ -88,7 +102,11 @@ def get_decision(
     return DecisionOut.model_validate(_resolve(session, decision_id))
 
 
-@router.get("/{decision_id}/timeline", response_model=list[EventOut])
+@router.get(
+    "/{decision_id}/timeline",
+    response_model=list[EventOut],
+    dependencies=[Depends(RequireToken(scope=TokenScope.DECISIONS_READ))],
+)
 def get_timeline(
     decision_id: str,
     session: Session = Depends(get_session),
@@ -98,7 +116,12 @@ def get_timeline(
     return [EventOut.model_validate(e) for e in events]
 
 
-@router.post("/{decision_id}/attach-git", response_model=GitChangeOut, status_code=201)
+@router.post(
+    "/{decision_id}/attach-git",
+    response_model=GitChangeOut,
+    status_code=201,
+    dependencies=[Depends(RequireToken(scope=TokenScope.DECISIONS_WRITE))],
+)
 def attach_git(
     decision_id: str,
     payload: AttachGitIn,
@@ -115,7 +138,12 @@ def attach_git(
     return GitChangeOut.model_validate(gc)
 
 
-@router.post("/{decision_id}/approve", response_model=ApprovalOut, status_code=201)
+@router.post(
+    "/{decision_id}/approve",
+    response_model=ApprovalOut,
+    status_code=201,
+    dependencies=[Depends(RequireToken(scope=TokenScope.DECISIONS_WRITE))],
+)
 def approve_decision(
     decision_id: str,
     payload: ApprovalIn,
@@ -131,7 +159,12 @@ def approve_decision(
     return ApprovalOut.model_validate(approval)
 
 
-@router.post("/{decision_id}/reject", response_model=ApprovalOut, status_code=201)
+@router.post(
+    "/{decision_id}/reject",
+    response_model=ApprovalOut,
+    status_code=201,
+    dependencies=[Depends(RequireToken(scope=TokenScope.DECISIONS_WRITE))],
+)
 def reject_decision(
     decision_id: str,
     payload: ApprovalIn,

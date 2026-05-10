@@ -5,8 +5,10 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
+from govforge.api.auth import RequireToken
 from govforge.api.deps import get_session
 from govforge.api.schemas import PolicyCheckIn, PolicyOut, PolicyResultOut
+from govforge.core.enums import TokenScope
 from govforge.core.models import Policy
 from govforge.core.services import PolicyService
 from govforge.mcp.context import get_or_create_agent, resolve_decision
@@ -14,13 +16,22 @@ from govforge.mcp.context import get_or_create_agent, resolve_decision
 router = APIRouter(prefix="/policies", tags=["policies"])
 
 
-@router.get("", response_model=list[PolicyOut])
+@router.get(
+    "",
+    response_model=list[PolicyOut],
+    dependencies=[Depends(RequireToken(scope=TokenScope.POLICIES_READ))],
+)
 def list_policies(session: Session = Depends(get_session)) -> list[PolicyOut]:
     rows = session.query(Policy).order_by(Policy.name.asc()).all()
     return [PolicyOut.model_validate(r) for r in rows]
 
 
-@router.post("/check", response_model=list[PolicyResultOut], status_code=201)
+@router.post(
+    "/check",
+    response_model=list[PolicyResultOut],
+    status_code=201,
+    dependencies=[Depends(RequireToken(scope=TokenScope.POLICIES_READ))],
+)
 def check_policies(
     payload: PolicyCheckIn,
     session: Session = Depends(get_session),

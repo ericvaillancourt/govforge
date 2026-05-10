@@ -14,7 +14,13 @@ import pytest
 from fastapi.testclient import TestClient
 
 from govforge.api.app import create_app
-from govforge.core.models import Base
+from govforge.api.auth import (
+    extract_prefix,
+    generate_token_secret,
+    hash_token_secret,
+)
+from govforge.core.enums import AgentType, TokenScope
+from govforge.core.models import ApiToken, Base, User
 from govforge.db.session import make_engine, make_session_factory
 
 # ---------------------------------------------------------------------------
@@ -24,12 +30,36 @@ from govforge.db.session import make_engine, make_session_factory
 
 @pytest.fixture()
 def client(tmp_path: Path) -> Generator[TestClient]:
+    """API client pre-authenticated with an admin token.
+
+    Phase 3.0 Stage A locks every route behind Bearer + scope. Tests use a
+    bootstrap admin user with the `admin` scope so existing assertions keep
+    passing; tests that exercise the auth gate itself instantiate their own
+    TestClient(app) without the header.
+    """
     db = tmp_path / "api.db"
     engine = make_engine(f"sqlite:///{db}")
     Base.metadata.create_all(engine)
     factory = make_session_factory(engine)
+
+    secret = generate_token_secret()
+    with factory() as s:
+        u = User(email="test-admin@local", display_name="Test Admin")
+        s.add(u)
+        s.flush()
+        t = ApiToken(
+            user_id=u.id,
+            label="pytest-admin",
+            agent_type=AgentType.HUMAN,
+            prefix=extract_prefix(secret),
+            hashed_secret=hash_token_secret(secret),
+        )
+        t.scopes = [TokenScope.ADMIN]
+        s.add(t)
+        s.commit()
+
     app = create_app(factory)
-    with TestClient(app) as c:
+    with TestClient(app, headers={"Authorization": f"Bearer {secret}"}) as c:
         yield c
     engine.dispose()
 
@@ -316,3 +346,120 @@ class TestErrors:
     def test_list_decisions_unknown_project(self, client: TestClient) -> None:
         r = client.get("/decisions", params={"project_path": "/nope"})
         assert r.status_code == 404
+
+
+# ---------------------------------------------------------------------------
+# Auth (Phase 3.0 Stage A)
+# ---------------------------------------------------------------------------
+
+
+class TestAuth:
+    """Verify Bearer + scope enforcement on the API."""
+
+    @pytest.fixture()
+    def unauth_client(self, tmp_path: Path) -> Generator[TestClient]:
+        """A second client WITHOUT the admin header — to assert 401s."""
+        db = tmp_path / "noauth.db"
+        engine = make_engine(f"sqlite:///{db}")
+        Base.metadata.create_all(engine)
+        factory = make_session_factory(engine)
+        app = create_app(factory)
+        with TestClient(app) as c:
+            yield c
+        engine.dispose()
+
+    def test_health_remains_open(self, unauth_client: TestClient) -> None:
+        assert unauth_client.get("/health").status_code == 200
+
+    def test_no_auth_returns_401(self, unauth_client: TestClient) -> None:
+        for path, method in [
+            ("/projects", "GET"),
+            ("/projects", "POST"),
+            ("/tokens", "GET"),
+            ("/events", "GET"),
+        ]:
+            kwargs = {"json": {"name": "x", "root_path": "/tmp/y"}} if method == "POST" else {}
+            r = unauth_client.request(method, path, **kwargs)
+            assert r.status_code == 401, f"{method} {path} should require auth"
+
+    def test_invalid_bearer_returns_401(self, unauth_client: TestClient) -> None:
+        r = unauth_client.get(
+            "/projects", headers={"Authorization": "Bearer gfp_definitely_not_real"}
+        )
+        assert r.status_code == 401
+
+    def test_admin_can_create_scoped_token(self, client: TestClient) -> None:
+        r = client.post(
+            "/tokens",
+            json={
+                "label": "claude-laptop",
+                "agent_type": "claude",
+                "scopes": ["decisions:write", "reviews:read"],
+            },
+        )
+        assert r.status_code == 201
+        body = r.json()
+        assert body["secret"].startswith("gfp_")
+        assert body["token"]["label"] == "claude-laptop"
+        assert "decisions:write" in body["token"]["scopes_csv"]
+
+    def test_scoped_token_is_blocked_outside_its_scope(
+        self, client: TestClient, tmp_path: Path
+    ) -> None:
+        # Create a token with ONLY reviews:read.
+        r = client.post(
+            "/tokens",
+            json={
+                "label": "narrow",
+                "agent_type": "codex",
+                "scopes": ["reviews:read"],
+            },
+        )
+        narrow_secret = r.json()["secret"]
+        narrow = {"Authorization": f"Bearer {narrow_secret}"}
+
+        # Same app/DB, but using the narrow token via direct request().
+        from urllib.parse import urlsplit  # noqa: PLC0415
+
+        base = urlsplit(str(client.base_url))
+        # We can reuse `client` — it's just an HTTP client.
+        assert (
+            client.get("/projects", headers=narrow).status_code == 403
+        )  # missing projects:read
+        assert (
+            client.get(
+                f"{base.scheme}://{base.netloc}/reviews",
+                params={"project_path": "/nope"},
+                headers=narrow,
+            ).status_code
+            == 404
+        )  # reviews:read present, project not found
+
+    def test_revoked_token_returns_401(self, client: TestClient) -> None:
+        # Create a token, then revoke it, then try to use it.
+        created = client.post(
+            "/tokens",
+            json={
+                "label": "to-revoke",
+                "agent_type": "human",
+                "scopes": ["projects:read"],
+            },
+        ).json()
+        secret = created["secret"]
+        token_id = created["token"]["id"]
+
+        # Use it once successfully.
+        assert (
+            client.get("/projects", headers={"Authorization": f"Bearer {secret}"}).status_code
+            == 200
+        )
+
+        # Revoke it (admin scope on the fixture token).
+        revoke = client.delete(f"/tokens/{token_id}")
+        assert revoke.status_code == 204
+
+        # Now it should be 401.
+        assert (
+            client.get("/projects", headers={"Authorization": f"Bearer {secret}"}).status_code
+            == 401
+        )

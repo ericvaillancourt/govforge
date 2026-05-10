@@ -48,6 +48,7 @@ from govforge.core.enums import (
     ReviewStatus,
     RiskLevel,
     TaskStatus,
+    TokenScope,
 )
 
 
@@ -409,8 +410,107 @@ class Event(Base):
     project: Mapped[Project] = relationship(back_populates="events")
 
 
+# ---------------------------------------------------------------------------
+# Auth — User + ApiToken (Phase 3.0 Stage A — pulled forward 2026-05-10)
+# ---------------------------------------------------------------------------
+
+
+class User(TimestampMixin, Base):
+    """End-user of GovForge. Phase 3.0 Stage A: created via bootstrap script
+    only (no signup UI). Stage B will add OAuth-based creation."""
+
+    __tablename__ = "users"
+
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
+    email: Mapped[str] = mapped_column(String(320), nullable=False, unique=True)
+    display_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    is_active: Mapped[bool] = mapped_column(default=True, nullable=False)
+
+    tokens: Mapped[list[ApiToken]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+
+
+class ApiToken(Base):
+    """Bearer token issued to a `User` for CLI / MCP / programmatic API access.
+
+    Storage model: only the *hash* of the secret is stored. The plaintext
+    value is shown to the user once at creation time and is unrecoverable
+    after that. Lookup happens by the `prefix` (first 8 chars of the
+    secret, indexed) plus a constant-time hash comparison.
+
+    `scopes_csv` is a comma-separated list of `TokenScope` values. The
+    `RequireToken(scope=...)` dependency parses it on each request and
+    accepts the call iff the requested scope is in the list, OR the list
+    includes `admin`.
+
+    `agent_type` is informational: it goes into the audit log so we know
+    which agent class drove a given decision. It does NOT gate access —
+    the scope list does that.
+    """
+
+    __tablename__ = "api_tokens"
+    __table_args__ = (
+        Index("ix_api_tokens_prefix", "prefix"),
+        Index("ix_api_tokens_user_id", "user_id"),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
+    user_id: Mapped[UUID] = mapped_column(Uuid, ForeignKey("users.id"), nullable=False)
+    label: Mapped[str] = mapped_column(String(255), nullable=False)
+    agent_type: Mapped[AgentType] = mapped_column(
+        Enum(AgentType, native_enum=False, length=32), nullable=False
+    )
+    # 8-char public prefix used to narrow the lookup before the constant-time hash check.
+    prefix: Mapped[str] = mapped_column(String(8), nullable=False)
+    # SHA-256 hex digest of the full secret (length 64).
+    hashed_secret: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    # CSV of TokenScope values, e.g. "decisions:write,reviews:read".
+    scopes_csv: Mapped[str] = mapped_column(Text, nullable=False)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False
+    )
+    last_used_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    revoked_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    user: Mapped[User] = relationship(back_populates="tokens")
+
+    @property
+    def scopes(self) -> list[TokenScope]:
+        return [TokenScope(s) for s in self.scopes_csv.split(",") if s]
+
+    @scopes.setter
+    def scopes(self, value: list[TokenScope]) -> None:
+        self.scopes_csv = ",".join(s.value for s in value)
+
+    def has_scope(self, scope: TokenScope) -> bool:
+        scopes = self.scopes
+        return TokenScope.ADMIN in scopes or scope in scopes
+
+    @property
+    def is_revoked(self) -> bool:
+        return self.revoked_at is not None
+
+    @property
+    def is_expired(self) -> bool:
+        return self.expires_at is not None and self.expires_at <= _now()
+
+    @property
+    def is_active(self) -> bool:
+        return not self.is_revoked and not self.is_expired
+
+
 __all__ = [
     "Agent",
+    "ApiToken",
     "Approval",
     "Base",
     "Decision",
@@ -423,4 +523,5 @@ __all__ = [
     "Project",
     "Review",
     "Task",
+    "User",
 ]

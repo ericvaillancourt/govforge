@@ -24,6 +24,7 @@ from govforge.api.routers import (
     projects,
     reviews,
     tasks,
+    tokens,
 )
 
 
@@ -61,6 +62,7 @@ def create_app(session_factory: sessionmaker[Session]) -> FastAPI:
     app.include_router(reviews.router)
     app.include_router(policies.router)
     app.include_router(events.router)
+    app.include_router(tokens.router)
 
     return app
 
