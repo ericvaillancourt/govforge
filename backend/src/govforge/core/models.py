@@ -16,7 +16,7 @@ Conventions
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from sqlalchemy import (
@@ -52,7 +52,7 @@ from govforge.core.enums import (
 
 
 def _now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 class Base(DeclarativeBase):
@@ -428,17 +428,17 @@ class Event(Base):
 
 
 __all__ = [
-    "Base",
-    "Project",
     "Agent",
-    "Task",
+    "Approval",
+    "Base",
     "Decision",
-    "GitChange",
-    "Review",
+    "Disagreement",
+    "Event",
     "Finding",
+    "GitChange",
     "Policy",
     "PolicyResult",
-    "Disagreement",
-    "Approval",
-    "Event",
+    "Project",
+    "Review",
+    "Task",
 ]
