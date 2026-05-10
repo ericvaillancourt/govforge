@@ -9,6 +9,7 @@ from __future__ import annotations
 import os
 from collections.abc import Generator
 from pathlib import Path
+from typing import Any
 
 from sqlalchemy import Engine, create_engine, event
 from sqlalchemy.orm import Session, sessionmaker
@@ -36,7 +37,7 @@ def make_engine(database_url: str | None = None, *, echo: bool = False) -> Engin
     if is_sqlite:
         # Enable foreign key enforcement and reasonable durability.
         @event.listens_for(engine, "connect")
-        def _sqlite_pragmas(dbapi_conn, _conn_record) -> None:
+        def _sqlite_pragmas(dbapi_conn: Any, _conn_record: Any) -> None:
             cur = dbapi_conn.cursor()
             cur.execute("PRAGMA foreign_keys = ON")
             cur.execute("PRAGMA journal_mode = WAL")

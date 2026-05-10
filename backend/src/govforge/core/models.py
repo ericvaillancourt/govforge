@@ -86,9 +86,7 @@ class Project(TimestampMixin, Base):
     root_path: Mapped[str] = mapped_column(String(1024), nullable=False, unique=True)
     default_branch: Mapped[str] = mapped_column(String(255), default="main", nullable=False)
 
-    tasks: Mapped[list[Task]] = relationship(
-        back_populates="project", cascade="all, delete-orphan"
-    )
+    tasks: Mapped[list[Task]] = relationship(back_populates="project", cascade="all, delete-orphan")
     decisions: Mapped[list[Decision]] = relationship(
         back_populates="project", cascade="all, delete-orphan"
     )
@@ -107,10 +105,8 @@ class Agent(Base):
 
     id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
     name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
-    type: Mapped[AgentType] = mapped_column(
-        Enum(AgentType, name="agent_type"), nullable=False
-    )
-    metadata_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    type: Mapped[AgentType] = mapped_column(Enum(AgentType, name="agent_type"), nullable=False)
+    metadata_json: Mapped[dict[str, object] | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_now, nullable=False
     )
@@ -157,9 +153,7 @@ class Task(TimestampMixin, Base):
 class Decision(TimestampMixin, Base):
     __tablename__ = "decisions"
     __table_args__ = (
-        UniqueConstraint(
-            "project_id", "display_id", name="uq_decisions_project_display"
-        ),
+        UniqueConstraint("project_id", "display_id", name="uq_decisions_project_display"),
         Index("ix_decisions_project_status", "project_id", "status"),
     )
 
@@ -171,9 +165,7 @@ class Decision(TimestampMixin, Base):
     task_id: Mapped[UUID | None] = mapped_column(
         Uuid, ForeignKey("tasks.id", ondelete="SET NULL"), nullable=True
     )
-    author_agent_id: Mapped[UUID] = mapped_column(
-        Uuid, ForeignKey("agents.id"), nullable=False
-    )
+    author_agent_id: Mapped[UUID] = mapped_column(Uuid, ForeignKey("agents.id"), nullable=False)
     title: Mapped[str] = mapped_column(String(512), nullable=False)
     summary: Mapped[str | None] = mapped_column(Text, nullable=True)
     rationale: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -185,9 +177,7 @@ class Decision(TimestampMixin, Base):
     risk_level: Mapped[RiskLevel] = mapped_column(
         Enum(RiskLevel, name="risk_level"), default=RiskLevel.MEDIUM, nullable=False
     )
-    human_approval_required: Mapped[bool] = mapped_column(
-        default=False, nullable=False
-    )
+    human_approval_required: Mapped[bool] = mapped_column(default=False, nullable=False)
 
     project: Mapped[Project] = relationship(back_populates="decisions")
     task: Mapped[Task | None] = relationship(back_populates="decisions")
@@ -253,9 +243,7 @@ class Review(Base):
     decision_id: Mapped[UUID] = mapped_column(
         Uuid, ForeignKey("decisions.id", ondelete="CASCADE"), nullable=False
     )
-    reviewer_agent_id: Mapped[UUID] = mapped_column(
-        Uuid, ForeignKey("agents.id"), nullable=False
-    )
+    reviewer_agent_id: Mapped[UUID] = mapped_column(Uuid, ForeignKey("agents.id"), nullable=False)
     status: Mapped[ReviewStatus] = mapped_column(
         Enum(ReviewStatus, name="review_status"), nullable=False
     )
@@ -309,7 +297,7 @@ class Policy(Base):
         default=FindingSeverity.MEDIUM,
         nullable=False,
     )
-    config_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    config_json: Mapped[dict[str, object] | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_now, nullable=False
     )
@@ -323,14 +311,12 @@ class PolicyResult(Base):
     decision_id: Mapped[UUID] = mapped_column(
         Uuid, ForeignKey("decisions.id", ondelete="CASCADE"), nullable=False
     )
-    policy_id: Mapped[UUID] = mapped_column(
-        Uuid, ForeignKey("policies.id"), nullable=False
-    )
+    policy_id: Mapped[UUID] = mapped_column(Uuid, ForeignKey("policies.id"), nullable=False)
     status: Mapped[PolicyResultStatus] = mapped_column(
         Enum(PolicyResultStatus, name="policy_result_status"), nullable=False
     )
     message: Mapped[str | None] = mapped_column(Text, nullable=True)
-    evidence_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    evidence_json: Mapped[dict[str, object] | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_now, nullable=False
     )
@@ -360,9 +346,7 @@ class Disagreement(Base):
     resolved_by_agent_id: Mapped[UUID | None] = mapped_column(
         Uuid, ForeignKey("agents.id"), nullable=True
     )
-    resolved_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_now, nullable=False
     )
@@ -383,9 +367,7 @@ class Approval(Base):
     decision_id: Mapped[UUID] = mapped_column(
         Uuid, ForeignKey("decisions.id", ondelete="CASCADE"), nullable=False
     )
-    approver_agent_id: Mapped[UUID] = mapped_column(
-        Uuid, ForeignKey("agents.id"), nullable=False
-    )
+    approver_agent_id: Mapped[UUID] = mapped_column(Uuid, ForeignKey("agents.id"), nullable=False)
     status: Mapped[ApprovalStatus] = mapped_column(
         Enum(ApprovalStatus, name="approval_status"), nullable=False
     )
@@ -419,7 +401,7 @@ class Event(Base):
     actor_agent_id: Mapped[UUID | None] = mapped_column(
         Uuid, ForeignKey("agents.id"), nullable=True
     )
-    payload_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    payload_json: Mapped[dict[str, object] | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_now, nullable=False
     )

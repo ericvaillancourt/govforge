@@ -226,14 +226,10 @@ def test_unique_display_id_per_project(session: Session) -> None:
     session.add_all([p, eric])
     session.flush()
 
-    session.add(
-        Task(project=p, display_id="TASK-001", title="a", created_by_agent_id=eric.id)
-    )
+    session.add(Task(project=p, display_id="TASK-001", title="a", created_by_agent_id=eric.id))
     session.commit()
 
-    session.add(
-        Task(project=p, display_id="TASK-001", title="dup", created_by_agent_id=eric.id)
-    )
+    session.add(Task(project=p, display_id="TASK-001", title="dup", created_by_agent_id=eric.id))
     with pytest.raises(IntegrityError):
         session.commit()
     session.rollback()
