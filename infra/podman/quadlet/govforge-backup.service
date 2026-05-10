@@ -1,0 +1,23 @@
+[Unit]
+Description=GovForge weekly backup to Cloudflare R2 (restic)
+Documentation=file:%h/AgentMCP/infra/RUNBOOK.md
+# Don't run if the network is flaky — the timer will retry next week
+After=network-online.target
+Wants=network-online.target
+# Don't fight ongoing podman ops
+After=podman.socket
+
+[Service]
+Type=oneshot
+# The script reads ~/.config/govforge-ops/.env itself.
+ExecStart=%h/govforge/scripts/backup.sh
+# 30 min should be more than enough; alarm if we stall.
+TimeoutStartSec=1800
+# Don't fail the timer chain if a single run errors — restic logs to journald.
+SuccessExitStatus=0
+# Be nice to the rest of the system.
+Nice=10
+IOSchedulingClass=idle
+
+[Install]
+# Driven by govforge-backup.timer; no direct WantedBy.

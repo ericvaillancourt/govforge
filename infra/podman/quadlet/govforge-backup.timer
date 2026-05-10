@@ -1,0 +1,16 @@
+[Unit]
+Description=Weekly trigger for govforge-backup.service
+Documentation=file:%h/AgentMCP/infra/RUNBOOK.md
+
+[Timer]
+# Sunday 03:30 local — low traffic, post-weekend agent activity if any.
+OnCalendar=Sun *-*-* 03:30:00
+# If the host was off at 03:30 (laptop suspended, hypervisor rebooted),
+# run as soon as it comes back up.
+Persistent=true
+# Spread scheduled jobs to avoid thundering-herd on slow disks.
+RandomizedDelaySec=15min
+Unit=govforge-backup.service
+
+[Install]
+WantedBy=timers.target
