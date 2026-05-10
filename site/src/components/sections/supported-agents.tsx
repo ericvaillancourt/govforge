@@ -28,7 +28,7 @@ export function SupportedAgents({ dict }: SupportedAgentsProps) {
             href="https://modelcontextprotocol.io"
             target="_blank"
             rel="noopener noreferrer"
-            className="underline-offset-4 hover:underline text-foreground"
+            className="underline underline-offset-4 text-foreground"
           >
             {dict.footnoteLink}
           </a>

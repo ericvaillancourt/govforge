@@ -195,6 +195,128 @@
     ],
     "enterpriseCta": "Contact sales"
   },
+  "docs": {
+    "metaTitle": "Documentation",
+    "metaDescription": "Architecture, data model, MCP integration, threat model, workflow walkthrough — every doc lives in the GitHub repo.",
+    "heading": "Documentation",
+    "subheading": "Until the dedicated docs site lands (Phase 2), every document lives in the GitHub repository under docs/. Each card links straight to the canonical source.",
+    "cards": [
+      {
+        "title": "Architecture",
+        "desc": "Components, layers, sequence diagram, audit-log invariant.",
+        "href": "https://github.com/ericvaillancourt/govforge/blob/main/docs/architecture.md"
+      },
+      {
+        "title": "Data model",
+        "desc": "12 entities, ER diagram, decision-status state machine, enum reference.",
+        "href": "https://github.com/ericvaillancourt/govforge/blob/main/docs/data-model.md"
+      },
+      {
+        "title": "MCP integration",
+        "desc": "Wiring guides for Claude Code, Codex, Cursor, Cline. Tool reference.",
+        "href": "https://github.com/ericvaillancourt/govforge/blob/main/docs/mcp-integration.md"
+      },
+      {
+        "title": "Threat model",
+        "desc": "Security guarantees and the tests that pin each one in CI.",
+        "href": "https://github.com/ericvaillancourt/govforge/blob/main/docs/threat-model.md"
+      },
+      {
+        "title": "Workflow example",
+        "desc": "13-step Claude → Codex → human-approval walkthrough with real CLI output.",
+        "href": "https://github.com/ericvaillancourt/govforge/blob/main/docs/workflow-example.md"
+      },
+      {
+        "title": "Brand guide",
+        "desc": "Wordmark, palette, typography, tagline, tone of voice.",
+        "href": "https://github.com/ericvaillancourt/govforge/blob/main/docs/brand.md"
+      },
+      {
+        "title": "Changelog",
+        "desc": "Keep-a-Changelog format. [Unreleased] groups every Phase 1 workstream.",
+        "href": "https://github.com/ericvaillancourt/govforge/blob/main/CHANGELOG.md"
+      },
+      {
+        "title": "Contributing",
+        "desc": "Local setup per package, commit convention, scope-specific recipes.",
+        "href": "https://github.com/ericvaillancourt/govforge/blob/main/CONTRIBUTING.md"
+      }
+    ]
+  },
+  "install": {
+    "heading": "Install in 30 seconds.",
+    "subheading": "Pick a channel. Source works today; the others come with the first tagged release.",
+    "tabs": [
+      {
+        "id": "source",
+        "label": "Source",
+        "status": "available",
+        "statusLabel": "Available today",
+        "caption": "clone + build",
+        "command": "git clone https://github.com/ericvaillancourt/govforge && cd govforge\ncd cli && go build -o ~/bin/gf ./cmd/gf\ncd ../backend && pip install -e .",
+        "note": "Requires Go 1.22+ and Python 3.12+. Pure-Go SQLite driver — no cgo needed."
+      },
+      {
+        "id": "homebrew",
+        "label": "Homebrew",
+        "status": "soon",
+        "statusLabel": "Phase 2 — first tagged release",
+        "caption": "macOS / Linux",
+        "command": "brew install ericvaillancourt/tap/govforge",
+        "note": "Tap moves to govforge/homebrew-tap once the GitHub org transfer lands."
+      },
+      {
+        "id": "pipx",
+        "label": "pipx",
+        "status": "soon",
+        "statusLabel": "Phase 2 — PyPI release",
+        "caption": "any OS with Python 3.12+",
+        "command": "pipx install govforge",
+        "note": "Installs the backend (services, MCP server, HTTP API). The gf CLI is a separate Go binary."
+      },
+      {
+        "id": "binary",
+        "label": "Pre-built binary",
+        "status": "soon",
+        "statusLabel": "Phase 2 — GoReleaser",
+        "caption": "linux / darwin / windows × amd64 / arm64",
+        "command": "curl -fsSL https://govforge.dev/install.sh | sh",
+        "note": "Detects your OS + arch and downloads the matching gf binary from GitHub Releases."
+      }
+    ]
+  },
+  "compliance": {
+    "heading": "Built for code that actually has consequences.",
+    "subheading": "GovForge runs entirely on your machine. The threat model is pinned by tests in CI — every guarantee is grep-able.",
+    "guarantees": [
+      {
+        "title": "Local-first by default",
+        "desc": "All data lives in .govforge/govforge.db. Backend binds to 127.0.0.1; MCP transport is stdio. No outbound network calls in Phase 1."
+      },
+      {
+        "title": "Read-only Git",
+        "desc": "The extractor uses an allowlist of seven verbs (diff/show/log/rev_parse/ls_tree/rev_list/cat_file). A regression that adds push/reset/checkout/commit fails CI."
+      },
+      {
+        "title": "No shell, no eval",
+        "desc": "MCP tools never spawn a subprocess and never call eval/exec. The MCP package is grep-asserted on every PR."
+      },
+      {
+        "title": "Append-only audit log",
+        "desc": "Every mutating service writes an Event row. The timeline can be replayed from the events table alone."
+      },
+      {
+        "title": "Apache 2.0",
+        "desc": "Open source, enterprise-friendly. No CLA. Auditors can read every line; legal teams can ship without sign-off."
+      },
+      {
+        "title": "Compliance-ready foundations",
+        "desc": "Local audit log + signed approvals + per-decision risk classification map onto SOC 2, Loi 25 (Quebec), and the EU AI Act. Phase 3 adds the formal reporting layer."
+      }
+    ],
+    "ctaLabel": "Read the threat model →",
+    "ctaHref": "https://github.com/ericvaillancourt/govforge/blob/main/docs/threat-model.md"
+  },
   "trustStrip": {
     "heading": "Built for code that actually matters.",
     "items": [

@@ -5,6 +5,8 @@ import { ProblemStatement } from "@/components/sections/problem-statement";
 import { FeaturesGrid } from "@/components/sections/features-grid";
 import { WorkflowDemo } from "@/components/sections/workflow-demo";
 import { ArchitectureDiagram } from "@/components/sections/architecture-diagram";
+import { InstallSection } from "@/components/sections/install-section";
+import { ComplianceSection } from "@/components/sections/compliance-section";
 import { OssVsEnterprise } from "@/components/sections/oss-vs-enterprise";
 import { TrustStrip } from "@/components/sections/trust-strip";
 import { FinalCta } from "@/components/sections/final-cta";
@@ -29,6 +31,8 @@ export default async function HomePage({
       <FeaturesGrid dict={dict.features} />
       <WorkflowDemo dict={dict.workflow} lang={locale} />
       <ArchitectureDiagram dict={dict.architecture} />
+      <InstallSection dict={dict.install} />
+      <ComplianceSection dict={dict.compliance} />
       <OssVsEnterprise dict={dict.ossVsEnterprise} lang={locale} />
       <TrustStrip dict={dict.trustStrip} />
       <FinalCta dict={dict.finalCta} lang={locale} />
