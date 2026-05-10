@@ -23,6 +23,7 @@ from govforge.core.services.exceptions import (
     ServiceError,
 )
 from govforge.core.services.inputs import FindingInput
+from govforge.core.services.policy_service import PolicyService
 from govforge.core.services.project_service import ProjectService
 from govforge.core.services.review_service import ReviewService
 from govforge.core.services.task_service import TaskService
@@ -36,6 +37,7 @@ __all__ = [
     "FindingInput",
     "InvariantError",
     "NotFoundError",
+    "PolicyService",
     "ProjectService",
     "ReviewService",
     "ServiceError",
