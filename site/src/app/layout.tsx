@@ -4,6 +4,9 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { Nav } from "@/components/site/nav";
 import { Footer } from "@/components/site/footer";
+import { getGithubStars } from "@/lib/github";
+
+const GITHUB_REPO = "ericvaillancourt/govforge";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -62,11 +65,14 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Fetched at build time; baked into static HTML.
+  const stars = await getGithubStars(GITHUB_REPO);
+
   return (
     <html
       lang="en"
@@ -80,7 +86,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <Nav />
+          <Nav stars={stars} repo={GITHUB_REPO} />
           <main className="flex-1">{children}</main>
           <Footer />
         </ThemeProvider>

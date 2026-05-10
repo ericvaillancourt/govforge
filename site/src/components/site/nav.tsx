@@ -7,6 +7,7 @@ import { ButtonLink } from "@/components/site/button-link";
 import { Logo } from "@/components/site/logo";
 import { ThemeToggle } from "@/components/site/theme-toggle";
 import { GithubIcon } from "@/components/site/icons";
+import { formatStars } from "@/lib/github";
 
 const NAV_LINKS = [
   { href: "/#features", label: "Features" },
@@ -15,7 +16,13 @@ const NAV_LINKS = [
   { href: "/docs", label: "Docs" },
 ];
 
-export function Nav() {
+interface NavProps {
+  stars: number;
+  repo: string;
+}
+
+export function Nav({ stars, repo }: NavProps) {
+  const repoUrl = `https://github.com/${repo}`;
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -51,18 +58,18 @@ export function Nav() {
         </div>
         <div className="flex items-center gap-2">
           <a
-            href="https://github.com/ericvaillancourt/govforge"
+            href={repoUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="hidden sm:inline-flex items-center gap-1.5 rounded-md border border-border/60 px-2.5 py-1 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-            aria-label="GitHub stars"
+            aria-label={`${stars} GitHub stars`}
           >
             <Star className="h-3.5 w-3.5" />
-            <span>1.2k</span>
+            <span>{formatStars(stars)}</span>
           </a>
           <ThemeToggle />
           <ButtonLink
-            href="https://github.com/ericvaillancourt/govforge"
+            href={repoUrl}
             size="sm"
             className="hidden sm:inline-flex"
           >
