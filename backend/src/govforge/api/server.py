@@ -41,7 +41,14 @@ def main() -> int:
         create_all(engine)
     factory = make_session_factory(engine)
     app = create_app(factory)
-    uvicorn.run(app, host=host, port=port, log_level="info")
+    uvicorn.run(
+        app,
+        host=host,
+        port=port,
+        log_level="info",
+        proxy_headers=True,
+        forwarded_allow_ips="*",
+    )
     return 0
 
 
