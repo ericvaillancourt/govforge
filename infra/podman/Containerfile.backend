@@ -1,0 +1,68 @@
+# GovForge backend container — FastMCP server + FastAPI HTTP API.
+# Multi-stage Python 3.12 slim build. No cgo, no native deps beyond
+# what stdlib + GitPython need.
+#
+# Build:
+#   podman build -f infra/podman/Containerfile.backend -t govforge-backend .
+#
+# Run (HTTP API on :8787):
+#   podman run --rm -p 127.0.0.1:8787:8787 \
+#     -v $(pwd)/.govforge:/data \
+#     -e GOVFORGE_DB=/data/govforge.db \
+#     ghcr.io/ericvaillancourt/govforge-backend:latest \
+#     api
+
+# ----- builder ----------------------------------------------------------
+FROM python:3.12-slim AS builder
+
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+WORKDIR /build
+COPY backend/pyproject.toml backend/README.md ./
+COPY backend/src ./src
+
+# Build a wheel + install it in an isolated prefix we'll copy into the
+# final stage. This keeps the runtime image free of build tooling.
+RUN pip install --upgrade pip build && \
+    python -m build --wheel -o /dist && \
+    pip install --prefix=/install /dist/*.whl
+
+# ----- runtime ----------------------------------------------------------
+FROM python:3.12-slim
+
+# OCI labels (https://github.com/opencontainers/image-spec/blob/main/annotations.md)
+LABEL org.opencontainers.image.title="GovForge backend" \
+      org.opencontainers.image.description="FastMCP server + FastAPI HTTP API for GovForge" \
+      org.opencontainers.image.url="https://govforge.dev" \
+      org.opencontainers.image.source="https://github.com/ericvaillancourt/govforge" \
+      org.opencontainers.image.licenses="Apache-2.0"
+
+# Minimal runtime deps. `git` is required by the read-only Git extractor
+# (`govforge.core.git`); `tini` reaps zombies if a tool fork-and-exits.
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends git tini && \
+    rm -rf /var/lib/apt/lists/*
+
+# Run as non-root.
+RUN useradd --create-home --uid 10001 govforge
+USER govforge
+WORKDIR /home/govforge
+
+COPY --from=builder /install /usr/local
+
+# Default DB lives on the mounted /data volume; the user is expected to
+# bind-mount their `.govforge/` directory there.
+ENV GOVFORGE_DB=/data/govforge.db \
+    GOVFORGE_API_HOST=0.0.0.0 \
+    GOVFORGE_API_PORT=8787
+
+VOLUME ["/data"]
+EXPOSE 8787
+
+ENTRYPOINT ["tini", "--"]
+
+# `api` runs the FastAPI server; `mcp` runs the MCP stdio server. Default
+# is `api` because the container is most useful as a network service.
+CMD ["python", "-m", "govforge.api.server"]

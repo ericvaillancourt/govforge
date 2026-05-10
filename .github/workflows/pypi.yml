@@ -1,0 +1,50 @@
+name: pypi
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  # Manual trigger for re-publishing if the tagged release fails to upload.
+  workflow_dispatch:
+
+# Trusted Publishing (PyPA): no API token, OIDC instead. Requires:
+#   - id-token: write at the job level
+#   - the PyPI project must be configured to trust this workflow (see
+#     docs/release.md "PyPI publishing setup")
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build tooling
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install build twine
+
+      - name: Build sdist + wheel
+        working-directory: backend
+        run: python -m build
+
+      - name: Validate metadata
+        working-directory: backend
+        run: python -m twine check dist/*
+
+      - name: Publish to PyPI
+        # Skips automatically if the workflow runs on a non-tag dispatch.
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: backend/dist/
+          # Trusted Publishing — no `password` argument. PyPI verifies the
+          # OIDC token from this workflow against the trust configuration
+          # registered on the project page.

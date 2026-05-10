@@ -1,0 +1,48 @@
+{
+  "name": "@govforge/cli",
+  "version": "0.1.0",
+  "description": "GovForge CLI — governance for AI coding agents. Wraps the gf binary so MCP-aware tooling can install it via npx.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ericvaillancourt/govforge.git",
+    "directory": "npm"
+  },
+  "homepage": "https://govforge.dev",
+  "bugs": {
+    "url": "https://github.com/ericvaillancourt/govforge/issues"
+  },
+  "keywords": [
+    "mcp",
+    "ai-governance",
+    "claude-code",
+    "codex",
+    "audit-trail",
+    "cli"
+  ],
+  "bin": {
+    "gf": "./bin/gf.cjs"
+  },
+  "files": [
+    "bin/",
+    "scripts/install.cjs",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "postinstall": "node scripts/install.cjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "os": [
+    "linux",
+    "darwin",
+    "win32"
+  ],
+  "cpu": [
+    "x64",
+    "arm64"
+  ],
+  "preferUnplugged": true
+}

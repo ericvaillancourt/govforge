@@ -1,0 +1,43 @@
+name: npm
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+
+# id-token: write — required by `npm publish --provenance` (NPM
+#   provenance attestations via Sigstore).
+# contents: read — read-only repo access.
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Sync version with tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        working-directory: npm
+        run: |
+          tag=${GITHUB_REF#refs/tags/v}
+          npm version "$tag" --no-git-tag-version --allow-same-version
+
+      - name: Publish
+        if: startsWith(github.ref, 'refs/tags/v')
+        working-directory: npm
+        run: npm publish --provenance --access public
+        env:
+          # Trusted Publishing for npm (since Sept 2024). The NPM_TOKEN
+          # secret is still useful as a fallback while the npm registry
+          # rolls out OIDC support — keep it set on the repo.
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

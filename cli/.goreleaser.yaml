@@ -1,5 +1,9 @@
-# GoReleaser config for the gf CLI
+# GoReleaser config for the gf CLI.
 # https://goreleaser.com/customization/
+#
+# Cuts cross-platform binaries on every git tag matching v*.*.*, plus a
+# Homebrew formula and a checksums file. SBOM (Syft) and cosign keyless
+# signing are wired in for supply-chain attestation.
 
 version: 2
 
@@ -31,21 +35,51 @@ builds:
       - -X main.Version={{.Version}}
       - -X main.Commit={{.Commit}}
       - -X main.Date={{.Date}}
+    mod_timestamp: "{{ .CommitTimestamp }}"
 
 archives:
   - id: gf
-    format: tar.gz
+    formats: [tar.gz]
     format_overrides:
       - goos: windows
-        format: zip
+        formats: [zip]
     name_template: >-
       gf_{{ .Version }}_{{ .Os }}_{{ if eq .Arch "amd64" }}x86_64{{ else }}{{ .Arch }}{{ end }}
+    # Just the binary. The repo-root LICENSE + canonical README ship in
+    # the source archive (`source.enabled: true` above) and on GitHub —
+    # bundling them in every binary archive bloats downloads without
+    # adding value. The CLI's own README lives in `cli/README.md`.
     files:
-      - LICENSE
-      - README.md
+      - src: README.md
+        dst: README.md
+
+source:
+  enabled: true
+  name_template: "{{ .ProjectName }}_{{ .Version }}_source"
 
 checksum:
   name_template: "checksums.txt"
+
+# SBOM (Software Bill of Materials) per archive. Requires `syft` on the
+# runner — provided automatically by goreleaser-action when this stanza
+# is present.
+sboms:
+  - artifacts: archive
+
+# Sigstore keyless signing of the checksums file. Verifiers can then
+# trust the binaries by verifying checksums.txt + checking each archive
+# against it. Needs `id-token: write` in the workflow.
+signs:
+  - cmd: cosign
+    certificate: '${artifact}.pem'
+    args:
+      - sign-blob
+      - '--output-certificate=${certificate}'
+      - '--output-signature=${signature}'
+      - '${artifact}'
+      - '--yes'
+    artifacts: checksum
+    output: true
 
 snapshot:
   version_template: "{{ incpatch .Version }}-snapshot"
@@ -67,12 +101,39 @@ release:
     name: govforge
   draft: false
   prerelease: auto
+  header: |
+    ## GovForge {{ .Tag }}
 
+    Governance infrastructure for AI coding agents. See the
+    [CHANGELOG](https://github.com/ericvaillancourt/govforge/blob/main/CHANGELOG.md)
+    for the full list of changes.
+  footer: |
+    ---
+
+    ### Verifying the artifacts
+
+    Every release ships a SBOM (`*.sbom.json`) per archive and a cosign
+    keyless signature on `checksums.txt`. To verify:
+
+    ```bash
+    cosign verify-blob \
+      --certificate checksums.txt.pem \
+      --signature   checksums.txt.sig \
+      --certificate-identity-regexp 'https://github.com/ericvaillancourt/govforge' \
+      --certificate-oidc-issuer    https://token.actions.githubusercontent.com \
+      checksums.txt
+    ```
+
+# Homebrew tap. Requires the HOMEBREW_TAP_GITHUB_TOKEN repo secret —
+# a fine-grained PAT scoped to ericvaillancourt/homebrew-tap with
+# `Contents: read+write`. The tap repo must exist before the first run
+# (formula commits go to its `main` branch).
 brews:
   - name: govforge
     repository:
       owner: ericvaillancourt
       name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
     homepage: https://govforge.dev
     description: GovForge CLI — governance for AI coding agents
     license: Apache-2.0
@@ -80,3 +141,7 @@ brews:
       bin.install "gf"
     test: |
       system "#{bin}/gf", "version"
+    commit_author:
+      name: govforge-bot
+      email: bot@govforge.dev
+    commit_msg_template: "brew: bump govforge to {{ .Tag }}"
