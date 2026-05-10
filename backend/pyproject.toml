@@ -33,6 +33,10 @@ dependencies = [
     "pydantic-settings>=2.6.0",
     "gitpython>=3.1.43",
     "tomli>=2.0.2; python_version<'3.11'",
+    # PostgreSQL driver for hosted deployments (govforge.dev). Local dev
+    # still uses SQLite; the URL scheme switches the engine at runtime.
+    # The [binary] extra ships libpq inside the wheel — no system dep.
+    "psycopg[binary]>=3.2.0",
 ]
 
 [project.optional-dependencies]

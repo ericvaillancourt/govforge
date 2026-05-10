@@ -25,15 +25,21 @@ def default_database_url(repo_root: Path | str | None = None) -> str:
 
 
 def make_engine(database_url: str | None = None, *, echo: bool = False) -> Engine:
-    """Create an Engine. SQLite gets pragmas tuned for app use."""
+    """Create an Engine. SQLite gets pragmas tuned for app use; PostgreSQL
+    gets a small connection pool and pre-ping so stale TCP connections to
+    the DB are recycled rather than served to a request."""
     url = database_url or os.environ.get("GOVFORGE_DATABASE_URL") or default_database_url()
     is_sqlite = url.startswith("sqlite")
-    engine = create_engine(
-        url,
-        echo=echo,
-        future=True,
-        connect_args={"check_same_thread": False} if is_sqlite else {},
-    )
+    kwargs: dict[str, Any] = {
+        "echo": echo,
+        "future": True,
+        "connect_args": {"check_same_thread": False} if is_sqlite else {},
+    }
+    if not is_sqlite:
+        kwargs["pool_pre_ping"] = True
+        kwargs["pool_size"] = int(os.environ.get("GOVFORGE_DB_POOL_SIZE", "5"))
+        kwargs["max_overflow"] = int(os.environ.get("GOVFORGE_DB_MAX_OVERFLOW", "10"))
+    engine = create_engine(url, **kwargs)
     if is_sqlite:
         # Enable foreign key enforcement and reasonable durability.
         @event.listens_for(engine, "connect")

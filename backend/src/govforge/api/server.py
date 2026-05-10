@@ -33,6 +33,12 @@ def main() -> int:
     host = os.environ.get("GOVFORGE_API_HOST", "127.0.0.1")
     port = int(os.environ.get("GOVFORGE_API_PORT", "8787"))
     engine = make_engine(_default_db_url())
+    if os.environ.get("GOVFORGE_BOOTSTRAP_SCHEMA") == "1":
+        # Create core tables on first start. Idempotent — only creates
+        # what's missing. Phase 1 only; Alembic supersedes this later.
+        from govforge.db.session import create_all
+
+        create_all(engine)
     factory = make_session_factory(engine)
     app = create_app(factory)
     uvicorn.run(app, host=host, port=port, log_level="info")

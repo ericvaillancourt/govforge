@@ -1,0 +1,62 @@
+# GovForge backend (FastAPI HTTP API) — quadlet
+# Install path on hypervisor: ~/.config/containers/systemd/govforge-backend.container
+# Generated systemd unit will be: govforge-backend.service
+#
+# Runs rootless under user `eric`. Linger must be enabled:
+#   sudo loginctl enable-linger eric
+#
+# Required setup before first start:
+#   mkdir -p ~/govforge/backend
+#   # Copy backend.env (NOT backend.env.example) into place:
+#   #   ~/govforge/backend/backend.env
+#   chmod 600 ~/govforge/backend/backend.env
+#
+# Then:
+#   systemctl --user daemon-reload
+#   systemctl --user start govforge-backend.service
+#   journalctl --user -u govforge-backend.service -f
+#
+# Caddy on the same `govforge.network` reaches this container at
+# `govforge-backend:8787` — no need to publish to the host beyond LAN.
+
+[Unit]
+Description=GovForge backend (FastAPI)
+Wants=network-online.target
+After=network-online.target
+
+[Container]
+ContainerName=govforge-backend
+
+# Image is built and pushed by .github/workflows/docker.yml on every push
+# to main + every v*.*.* tag. The :latest tag tracks main; pin to a
+# version tag (e.g. :v0.1.0) for production.
+Image=ghcr.io/ericvaillancourt/govforge-backend:latest
+
+# Network: rejoint la govforge-net (créée par govforge.network quadlet)
+Network=govforge.network
+
+# LAN-only host binding so the hypervisor can be reached from the LAN
+# but not from Internet directly. Cloudflare Tunnel terminates HTTPS
+# upstream and forwards via Caddy (which sits on the same network).
+PublishPort=192.168.2.5:8787:8787
+
+# Read DB credentials, API bind, etc. from a host-side env file.
+# Path uses %h (= /home/eric on the hypervisor user account).
+EnvironmentFile=%h/govforge/backend/backend.env
+
+# Auto-pull image updates as we push :latest from CI.
+AutoUpdate=registry
+
+# Healthcheck: hit the FastAPI /health endpoint inside the container.
+HealthCmd=python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8787/health',timeout=2).status==200 else 1)"
+HealthInterval=30s
+HealthTimeout=5s
+HealthRetries=3
+HealthStartPeriod=10s
+
+[Service]
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target
