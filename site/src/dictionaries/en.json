@@ -202,6 +202,11 @@
     "subheading": "Until the dedicated docs site lands (Phase 2), every document lives in the GitHub repository under docs/. Each card links straight to the canonical source.",
     "cards": [
       {
+        "title": "Quickstart",
+        "desc": "Five minutes from clone to your first audited decision.",
+        "href": "https://github.com/ericvaillancourt/govforge/blob/main/docs/quickstart.md"
+      },
+      {
         "title": "Architecture",
         "desc": "Components, layers, sequence diagram, audit-log invariant.",
         "href": "https://github.com/ericvaillancourt/govforge/blob/main/docs/architecture.md"
@@ -212,9 +217,29 @@
         "href": "https://github.com/ericvaillancourt/govforge/blob/main/docs/data-model.md"
       },
       {
+        "title": "Configuration",
+        "desc": "config.toml + policies.toml format reference. Resolution order. Reset recipes.",
+        "href": "https://github.com/ericvaillancourt/govforge/blob/main/docs/configuration.md"
+      },
+      {
+        "title": "CLI reference",
+        "desc": "Every gf subcommand with flags and exit codes, plus environment variables.",
+        "href": "https://github.com/ericvaillancourt/govforge/blob/main/docs/cli-reference.md"
+      },
+      {
         "title": "MCP integration",
-        "desc": "Wiring guides for Claude Code, Codex, Cursor, Cline. Tool reference.",
+        "desc": "Wiring guides for Claude Code, Codex, Cursor, Cline.",
         "href": "https://github.com/ericvaillancourt/govforge/blob/main/docs/mcp-integration.md"
+      },
+      {
+        "title": "MCP reference",
+        "desc": "11 tools, 5 resources, 3 prompts — input/output schemas + side-effects.",
+        "href": "https://github.com/ericvaillancourt/govforge/blob/main/docs/mcp-reference.md"
+      },
+      {
+        "title": "Policy authoring",
+        "desc": "Add a custom policy in four steps. Design rules + runtime layout.",
+        "href": "https://github.com/ericvaillancourt/govforge/blob/main/docs/policy-authoring.md"
       },
       {
         "title": "Threat model",
@@ -225,6 +250,11 @@
         "title": "Workflow example",
         "desc": "13-step Claude → Codex → human-approval walkthrough with real CLI output.",
         "href": "https://github.com/ericvaillancourt/govforge/blob/main/docs/workflow-example.md"
+      },
+      {
+        "title": "FAQ",
+        "desc": "Local-first, scope, license, agent bypass, Postgres migration.",
+        "href": "https://github.com/ericvaillancourt/govforge/blob/main/docs/faq.md"
       },
       {
         "title": "Brand guide",
