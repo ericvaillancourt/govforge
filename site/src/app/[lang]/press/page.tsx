@@ -15,6 +15,7 @@ export async function generateMetadata(
   if (!isLocale(lang)) return {};
   const dict = (await getDictionary(lang)).press;
   return {
+    metadataBase: new URL("https://govforge.dev"),
     title: dict.metaTitle,
     description: dict.metaDescription,
     alternates: {

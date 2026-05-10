@@ -27,6 +27,7 @@ export async function generateMetadata({
   if (!isLocale(lang) || !isDocSlug(slug)) return {};
   const doc = await getDoc(slug);
   return {
+    metadataBase: new URL("https://govforge.dev"),
     title: doc.title,
     description: `${doc.title} — GovForge documentation.`,
     alternates: {

@@ -54,6 +54,12 @@
         @legacy_press path /press /press/*
         redir @legacy_press /en{uri} 301
 
+        # Browsers fetch /favicon.ico by default. Workstream L migrated to
+        # the Next 16 dynamic /icon route, which emits PNG. Rewrite so the
+        # default browser path keeps working without round-tripping a 404.
+        @favicon path /favicon.ico
+        rewrite @favicon /icon
+
         # Next 16 emits favicon/OG images at extensionless routes (/icon,
         # /apple-icon, /opengraph-image). file_server can't sniff the MIME
         # type without an extension, so we set it explicitly — OG validators
