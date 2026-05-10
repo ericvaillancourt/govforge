@@ -26,8 +26,8 @@ check() {
     local name="$1" expected="$2" url="$3" pattern="${4:-}"
     local got body
     if [[ -n "$pattern" ]]; then
-        body="$(curl -fsSL -o /tmp/smoke-body.$$ -w '%{http_code}' --max-time 10 -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' "$url" 2>/dev/null || echo "000")"
-        got="$body"
+        # No -f: we want the body even on 4xx (we may be checking a 404 page)
+        got="$(curl -sSL -o /tmp/smoke-body.$$ -w '%{http_code}' --max-time 10 -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' "$url" 2>/dev/null || echo "000")"
     else
         got="$(curl -so /dev/null -w '%{http_code}' --max-time 10 -H 'Cache-Control: no-cache' -H 'Pragma: no-cache' "$url" 2>/dev/null || echo "000")"
     fi
@@ -111,6 +111,10 @@ check "favicon_canonical"          "200" "https://govforge.dev/icon"
 # /favicon.ico is rewritten by Caddy to /icon; cache-bust query bypasses any
 # stale Cloudflare 404 cached from before the rewrite was deployed.
 check "favicon_browser_default"    "200" "https://govforge.dev/favicon.ico?v=$(date +%s)"
+
+# --- Custom 404 (apex) ---
+check "branded_404_root"           "404" "https://govforge.dev/totallymadeup"  "Page not found · Page introuvable"
+check "branded_404_locale"         "404" "https://govforge.dev/en/totallymadeup"  "Page not found · Page introuvable"
 
 rm -f /tmp/smoke-body.$$
 

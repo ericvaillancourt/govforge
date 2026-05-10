@@ -120,4 +120,22 @@
 	handle {
 		respond "Not Found" 404
 	}
+
+	# ----- Branded error pages -----
+	# handle_errors lives at the site-block level (not inside @apex) — Caddy
+	# v2.11 rejects it inside another handle without an explicit `route` or
+	# global `order`. We scope it to host=govforge.dev so api/docs/app/mcp
+	# subdomains keep their default error behaviour. The matcher uses the
+	# request's original Host even after the upstream returns the error.
+	handle_errors {
+		@apex_404 {
+			host govforge.dev
+			expression `{http.error.status_code} == 404`
+		}
+		handle @apex_404 {
+			root * /srv/govforge-site
+			rewrite * /404.html
+			file_server
+		}
+	}
 }
