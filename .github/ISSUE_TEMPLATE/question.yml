@@ -1,0 +1,26 @@
+name: Question (last resort)
+description: Open-ended questions belong in Discussions. Use this only if Discussions is unavailable.
+title: "[question]: "
+labels: ["question", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        > **Prefer [Discussions](https://github.com/ericvaillancourt/govforge/discussions)**
+        > for open-ended questions. Issues are for bugs and concrete feature
+        > requests. Questions filed as issues will likely be moved.
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Your question
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: What have you already tried?
+      description: Existing docs you read, commands you ran, related issues.
+    validations:
+      required: true

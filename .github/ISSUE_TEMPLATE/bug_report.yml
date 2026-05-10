@@ -1,0 +1,101 @@
+name: Bug report
+description: Report something that doesn't work the way the docs say it should.
+title: "[bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug. The more concrete the
+        reproduction, the faster we can fix it. **Security issues** —
+        please don't open a public issue; see [SECURITY.md](../SECURITY.md).
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear, concrete description. "I ran X and got Y" beats a screenshot.
+      placeholder: I ran `gf decision create …` and the CLI exited with code 2 and the message "…"
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+      placeholder: I expected DEC-002 to be created and the timeline event `decision.created` to be appended.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Minimal commands or a small script. We will run them.
+      render: shell
+      placeholder: |
+        gf init
+        gf task create --title "x" --risk high
+        gf decision create --task TASK-001 --author claude --title "y"
+    validations:
+      required: true
+
+  - type: input
+    id: gf-version
+    attributes:
+      label: gf version
+      description: Output of `gf version`.
+      placeholder: gf 0.1.0 — backend 0.1.0 (ok)
+    validations:
+      required: true
+
+  - type: input
+    id: python-version
+    attributes:
+      label: Python version
+      description: Output of `python --version`.
+      placeholder: Python 3.12.7
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Which component?
+      multiple: true
+      options:
+        - backend (services / models / SQL)
+        - mcp (FastMCP server / tools / resources)
+        - api (FastAPI HTTP)
+        - cli (gf binary)
+        - ui (cockpit Next.js)
+        - site (marketing govforge.dev)
+        - docs
+        - infra (Caddy / Podman / sudoers)
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating system + arch
+      placeholder: Ubuntu 24.04 x86_64 / macOS 14.4 arm64 / Windows 11 x86_64
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: Output of `gf api serve` / `gf mcp serve` if the bug is in a backend path. Redact anything sensitive.
+      render: shell
+
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: Pre-flight
+      options:
+        - label: I searched existing issues and Discussions and didn't find a duplicate.
+          required: true
+        - label: I'm running on the latest `main` branch (or stated my version above).
+          required: true
