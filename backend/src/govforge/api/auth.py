@@ -296,8 +296,94 @@ def RequireUser() -> Callable[..., UserContext]:
     return _dependency
 
 
+class Principal:
+    """Pre-built request principal accepting EITHER Bearer or cookie.
+
+    Used by endpoints that should work for both API clients (Bearer) and
+    the browser sign-in UX (cookie). `.user` is always set; `.token` is set
+    only when authenticated via Bearer (None when via cookie).
+    """
+
+    __slots__ = ("user", "token", "session")
+
+    def __init__(
+        self,
+        user: User,
+        token: ApiToken | None = None,
+        session: Session | None = None,
+    ) -> None:
+        self.user = user
+        self.token = token
+        self.session = session
+
+    @property
+    def auth_kind(self) -> str:
+        return "token" if self.token is not None else "cookie"
+
+
+def RequirePrincipal(
+    *, scope: TokenScope | None = None
+) -> Callable[..., Principal]:
+    """Accept EITHER a Bearer token (with optional scope) OR a cookie session.
+
+    Resolution order:
+      1. If `Authorization: Bearer …` is present, use the token path (with scope).
+      2. Else if a session cookie is present, use the cookie path (scope ignored —
+         the logged-in user has implicit access to their own resources).
+      3. Else → 401.
+    """
+
+    def _dependency(
+        request: Request,
+        credentials: Annotated[
+            HTTPAuthorizationCredentials | None, Depends(_bearer_scheme)
+        ],
+        db: Annotated[Session, Depends(get_session)],
+    ) -> Principal:
+        # Bearer path
+        if credentials is not None and credentials.credentials:
+            resolved = _resolve_token(db, credentials.credentials)
+            if resolved is None:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid or revoked token",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
+            token, user = resolved
+            if scope is not None and not token.has_scope(scope):
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f"Token missing required scope: {scope.value}",
+                )
+            request.state.auth_token_id = token.id
+            request.state.auth_user_id = user.id
+            request.state.auth_agent_type = token.agent_type
+            return Principal(user=user, token=token)
+
+        # Cookie path
+        if _cookie_secret() is not None:
+            raw = request.cookies.get(SESSION_COOKIE_NAME)
+            if raw:
+                resolved_cookie = resolve_session(db, raw)
+                if resolved_cookie is not None:
+                    session_row, user = resolved_cookie
+                    request.state.auth_user_id = user.id
+                    request.state.auth_session_id = session_row.id
+                    return Principal(user=user, session=session_row)
+
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing bearer token or session cookie",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    return _dependency
+
+
 __all__ = [
     "AuthContext",
+    "Principal",
+    "RequirePrincipal",
     "RequireToken",
     "RequireUser",
     "SESSION_COOKIE_NAME",

@@ -16,8 +16,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from govforge.api.auth import (
-    AuthContext,
-    RequireToken,
+    Principal,
+    RequirePrincipal,
     extract_prefix,
     generate_token_secret,
     hash_token_secret,
@@ -38,7 +38,7 @@ router = APIRouter(prefix="/tokens", tags=["tokens"])
 )
 def create_token(
     body: ApiTokenCreateIn,
-    auth: Annotated[AuthContext, Depends(RequireToken(scope=TokenScope.TOKENS_WRITE))],
+    auth: Annotated[Principal, Depends(RequirePrincipal(scope=TokenScope.TOKENS_WRITE))],
     session: Annotated[Session, Depends(get_session)],
 ) -> ApiTokenCreateOut:
     secret = generate_token_secret()
@@ -59,7 +59,7 @@ def create_token(
 
 @router.get("", response_model=list[ApiTokenOut], summary="List your API tokens")
 def list_tokens(
-    auth: Annotated[AuthContext, Depends(RequireToken(scope=TokenScope.TOKENS_READ))],
+    auth: Annotated[Principal, Depends(RequirePrincipal(scope=TokenScope.TOKENS_READ))],
     session: Annotated[Session, Depends(get_session)],
 ) -> list[ApiTokenOut]:
     tokens = session.scalars(
@@ -77,7 +77,7 @@ def list_tokens(
 )
 def revoke_token(
     token_id: UUID,
-    auth: Annotated[AuthContext, Depends(RequireToken(scope=TokenScope.TOKENS_WRITE))],
+    auth: Annotated[Principal, Depends(RequirePrincipal(scope=TokenScope.TOKENS_WRITE))],
     session: Annotated[Session, Depends(get_session)],
 ) -> None:
     token = session.get(ApiToken, token_id)
