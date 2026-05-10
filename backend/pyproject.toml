@@ -37,6 +37,10 @@ dependencies = [
     # still uses SQLite; the URL scheme switches the engine at runtime.
     # The [binary] extra ships libpq inside the wheel — no system dep.
     "psycopg[binary]>=3.2.0",
+    # fastmcp imports `packaging.version` at module load time but doesn't
+    # always pull it transitively in the lean runtime container. Pin it
+    # explicitly so the production image can't be missing it.
+    "packaging>=24.0",
 ]
 
 [project.optional-dependencies]
