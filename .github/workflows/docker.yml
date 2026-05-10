@@ -11,12 +11,15 @@ on:
       - "v*.*.*"
   workflow_dispatch:
 
-# id-token: write — provenance attestation via build attestations.
+# id-token: write — Sigstore OIDC for the keyless cert.
 # packages: write — push to ghcr.io.
+# attestations: write — required by actions/attest-build-provenance@v2 to
+#   persist the attestation back to the repo's /attestations endpoint.
 permissions:
   contents: read
   packages: write
   id-token: write
+  attestations: write
 
 env:
   IMAGE: ghcr.io/${{ github.repository_owner }}/govforge-backend
