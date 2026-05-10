@@ -55,7 +55,12 @@ gf init
 gf api serve &
 cd ~/govforge/ui && npm ci && npm run dev   # http://localhost:8788
 
-# 4. Walk a decision through the pipeline:
+# 4. (Self-hosted only) Bootstrap your first admin token — see infra/RUNBOOK.md §8.
+#    The hosted API at api.govforge.dev requires Authorization: Bearer <token>
+#    on every write; local `gf` against your own backend goes through the same
+#    code path but the bootstrap is automatic in `gf init`.
+
+# 5. Walk a decision through the pipeline:
 gf task create --title "Refactor auth" --risk high --actor claude
 gf decision create --task TASK-001 --author claude --title "Migrate to signed cookies" --risk high
 gf git attach --decision DEC-001 --commit HEAD
@@ -63,7 +68,7 @@ gf policy check --decision DEC-001
 gf review request --decision DEC-001 --reviewer codex
 gf approve DEC-001 --comment "OK after rotation patch"
 
-# 5. Audit:
+# 6. Audit:
 gf decision timeline DEC-001
 ```
 
@@ -156,12 +161,13 @@ Adding a policy is one Python class — see
 
 ## Documentation
 
-- [Architecture](docs/architecture.md) — components + sequence diagram + audit-log invariant
-- [Data model](docs/data-model.md) — 12 entities + ER diagram + status state machine
-- [MCP integration](docs/mcp-integration.md) — Claude Code / Codex / Cursor / Cline wiring
-- [Threat model](docs/threat-model.md) — security guarantees pinned by tests
-- [Workflow example](docs/workflow-example.md) — full Claude → Codex → human-approval walkthrough
-- [Brand guide](docs/brand.md) — assets, palette, tagline, tone of voice
+- [Architecture](https://docs.govforge.dev/architecture) — components + sequence diagram + audit-log invariant
+- [Data model](https://docs.govforge.dev/data-model) — 14 entities (incl. User + ApiToken) + ER diagram + state machine
+- [MCP integration](https://docs.govforge.dev/mcp-integration) — Claude Code / Codex / Cursor / Cline wiring
+- [Threat model](https://docs.govforge.dev/threat-model) — security guarantees pinned by tests
+- [Workflow example](https://docs.govforge.dev/workflow-example) — full Claude → Codex → human-approval walkthrough
+- [Auth Stage B handoff](docs/auth-stage-b-handoff.md) — what to register before OAuth + magic-link landing
+- [Brand guide](https://docs.govforge.dev/brand) — assets, palette, tagline, tone of voice
 - [CHANGELOG](CHANGELOG.md)
 
 ## Contributing

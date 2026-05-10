@@ -10,6 +10,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 The first release will be `0.1.0` and will mark Phase 1 feature-complete.
 Everything below is on `main` but unreleased.
 
+### Added — Authentication (Phase 3.0 Stage A — pulled forward 2026-05-10)
+
+> Pivot trigger: `api.govforge.dev` was discovered exposed publicly with no
+> auth (POST /projects returned 201 without any header). Phase 3.0 was
+> moved ahead of the public launch (Phase 2.7) to lock the API down.
+
+- New domain models: `User` and `ApiToken`. SHA-256 hashing of the
+  bearer secret with prefix-indexed lookup + constant-time compare;
+  plaintext is shown to the operator exactly once at creation time and
+  is unrecoverable thereafter. Per-token list of `TokenScope` values
+  with `admin` super-scope.
+- New `TokenScope` enum (14 values): `<resource>:<action>` convention
+  covering projects / tasks / decisions / reviews / policies / events /
+  tokens (read+write each), plus `admin`.
+- `RequireToken(scope=...)` FastAPI dependency factory enforces Bearer
+  presence, validity (not revoked / not expired), user is active, and
+  scope membership (or `admin`). Stamps `request.state.auth_*` for
+  downstream audit logging.
+- `/tokens` CRUD endpoints (`POST` / `GET` / `DELETE`) — owner-scoped.
+- All existing endpoints declare a per-route scope via FastAPI
+  `dependencies=[]`. `/health` stays public for monitoring.
+- `python -m govforge.scripts.bootstrap_admin` — one-shot script to
+  create the first admin user + token directly in the DB. Breaks the
+  chicken-and-egg: the `/tokens` POST itself requires a token.
+- `docs/auth-stage-b-handoff.md` — Stage B runbook (OAuth GitHub +
+  Google + magic link + frontend `/login` `/account` + CLI
+  `gf auth login`) with the credentials Eric must register before
+  coding starts.
+- 6 new auth tests (`tests/unit/test_api.py::TestAuth`): health open,
+  no-auth 401, invalid bearer 401, scoped token creation, scope
+  enforcement (403 outside scope), revoked token 401. Total backend
+  test count is now 103 (was 97), coverage 88%.
+
 ### Added — Backend (Python)
 
 - Domain layer

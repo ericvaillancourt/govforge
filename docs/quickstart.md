@@ -67,14 +67,24 @@ api url: http://127.0.0.1:8787
 api: ok — backend 0.1.0
 ```
 
+> **Authentication.** Phase 3.0 Stage A made every write endpoint require
+> `Authorization: Bearer <token>`. For `gf init` against your own local
+> backend, the bootstrap is automatic: `gf init` provisions a default
+> user + admin token in `.govforge/auth.toml`, and every `gf` command
+> reads from there. For the **hosted** backend at `api.govforge.dev`,
+> see [`infra/RUNBOOK.md` §8](https://github.com/ericvaillancourt/govforge/blob/main/infra/RUNBOOK.md)
+> for the bootstrap + per-agent token recipe.
+
 ## 4. Register the project
 
 Phase 1 needs one manual `POST /projects` after `gf init`. Phase 2 will
 fold this into `gf init`.
 
 ```bash
+TOKEN=$(jq -r .admin_token .govforge/auth.toml)
 curl -sS -X POST http://127.0.0.1:8787/projects \
   -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer $TOKEN" \
   -d '{"name":"my-repo","root_path":"'"$(pwd)"'"}' | jq
 ```
 

@@ -246,3 +246,91 @@ Append after each monthly drill. Format:
 ```
 
 (none yet — first drill due 2026-06-10)
+
+---
+
+## 8. API auth (Phase 3.0 Stage A — live since 2026-05-10)
+
+> `api.govforge.dev` requires `Authorization: Bearer <token>` on every
+> route except `/health`. Tokens are issued with a list of scopes; the
+> request needs the matching scope (or `admin`).
+
+### 8.1 Bootstrap the first admin token
+
+Only needed once per environment, OR after a DB wipe.
+
+```bash
+ssh eric@192.168.2.5 'podman exec govforge-backend bash -c \\
+  "GOVFORGE_DATABASE_URL=\"\$GOVFORGE_DB\" python -m govforge.scripts.bootstrap_admin \\
+     --email <your-email> --display-name <name> \\
+     --label rotation-$(date +%F) --ensure-tables \\
+     > /tmp/t 2>/dev/null"'
+ssh eric@192.168.2.5 'podman exec govforge-backend cat /tmp/t' \\
+  | tee >(pbcopy 2>/dev/null) | head -c 60   # then copy to 1Password
+ssh eric@192.168.2.5 'podman exec govforge-backend rm /tmp/t'
+```
+
+The script reuses an existing user if the email matches and creates a
+new token row; it's safe to re-run for token rotation.
+
+> The container env var is `GOVFORGE_DB` (not `GOVFORGE_DATABASE_URL`).
+> The shell wrapper above expands it inside the container so the value
+> never lands in your shell history or this transcript.
+
+### 8.2 Create a per-agent token (Claude / Codex / Cursor / …)
+
+Use the bootstrap admin token to call the API:
+
+```bash
+TOK=...   # admin token from 1Password
+curl -sX POST -H "Authorization: Bearer $TOK" \\
+  -H "Content-Type: application/json" \\
+  -d '{"label":"claude-laptop","agent_type":"claude",
+       "scopes":["decisions:write","reviews:read","policies:read","events:read"]}' \\
+  https://api.govforge.dev/tokens
+# → {"token":{...}, "secret":"gfp_…"} — secret shown ONCE
+```
+
+Recommended scopes per agent type:
+
+| Agent | Scopes |
+|---|---|
+| Claude (writes decisions) | `decisions:write`, `tasks:read`, `policies:read`, `reviews:read`, `events:read` |
+| Codex (reviews) | `decisions:read`, `reviews:write`, `policies:read`, `events:read` |
+| Cursor (read-only / observer) | `*:read` (every read scope) |
+| Read-only audit consumer | `decisions:read`, `events:read`, `reviews:read` |
+| Admin / ops | `admin` |
+
+### 8.3 Revoke a compromised token
+
+```bash
+ADMIN=...  # admin token
+TID=...    # token uuid (from /tokens GET, or from bootstrap stderr)
+curl -sX DELETE -H "Authorization: Bearer $ADMIN" \\
+  https://api.govforge.dev/tokens/$TID
+# → 204 No Content
+```
+
+After revocation, every request with the old token returns 401 within
+the next request cycle (no caching).
+
+### 8.4 Rotate the admin token
+
+The bootstrap script is idempotent on the user (email-keyed) but
+additive on tokens. To rotate:
+
+1. Bootstrap a new admin token (§8.1).
+2. Save the new value to 1Password.
+3. Use the new token to revoke the old one (§8.3) — find its UUID via
+   `GET /tokens` first.
+4. Verify: requests with the old token return 401, with the new one
+   return 200.
+
+### 8.5 Stage B (planned)
+
+When OAuth GitHub + Google + magic link land (cf.
+`docs/auth-stage-b-handoff.md`), site users sign in via the
+`/[lang]/login` page and manage tokens at `/[lang]/account`. The CLI
+adds `gf auth login` (device-code flow). The Bearer model from Stage
+A keeps working unchanged — Stage B adds a parallel cookie-session
+path.
