@@ -74,8 +74,16 @@
 
     @api host api.govforge.dev
     handle @api {
-        # TODO Phase 3: reverse_proxy govforge-api:8787
-        respond "GovForge API — Phase 3" 200
+        # FastAPI backend — govforge-backend.container quadlet on the
+        # hypervisor, joined to the same govforge.network so we can
+        # reach it by ContainerName. Internal port is the same as the
+        # host bind: GOVFORGE_API_PORT=8787 in backend.env.
+        reverse_proxy govforge-backend:8787 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto https
+        }
     }
 
     @mcp host mcp.govforge.dev
