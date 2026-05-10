@@ -197,11 +197,11 @@
   },
   "login": {
     "metaTitle": "Sign in",
-    "metaDescription": "Sign in to GovForge with your GitHub account.",
+    "metaDescription": "Sign in to GovForge with your GitHub or Google account.",
     "heading": "Sign in",
     "subheading": "Sign in with the provider that owns the email you want associated with your GovForge account.",
     "github": "Continue with GitHub",
-    "googleComingSoon": "Continue with Google (coming soon)",
+    "google": "Continue with Google",
     "magicComingSoon": "Email me a magic link (coming soon)",
     "tos": "By signing in you agree to our Apache 2.0 license and zero-telemetry policy.",
     "alreadySignedIn": "You're already signed in.",

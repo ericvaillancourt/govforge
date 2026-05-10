@@ -501,12 +501,52 @@ class TestOAuth:
         c, _ = fresh_app
         assert c.get("/auth/github/start", follow_redirects=False).status_code == 503
 
-    def test_google_and_magic_link_stubs_503(
+    def test_google_503_without_creds(
         self, fresh_app: tuple[TestClient, object]
     ) -> None:
         c, _ = fresh_app
-        assert c.get("/auth/google/start").status_code == 503
+        assert c.get("/auth/google/start", follow_redirects=False).status_code == 503
+
+    def test_magic_link_stub_503(
+        self, fresh_app: tuple[TestClient, object]
+    ) -> None:
+        c, _ = fresh_app
         assert c.post("/auth/magic/request").status_code == 503
+
+    @pytest.fixture()
+    def with_google_creds(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> Generator[None]:
+        monkeypatch.setenv("GOOGLE_OAUTH_CLIENT_ID", "test_google_id")
+        monkeypatch.setenv("GOOGLE_OAUTH_CLIENT_SECRET", "test_google_secret")
+        monkeypatch.setenv("GOVFORGE_COOKIE_SECRET", "x" * 48)
+        yield
+
+    def test_google_start_redirects_with_creds(
+        self, fresh_app: tuple[TestClient, object], with_google_creds: None
+    ) -> None:
+        c, _ = fresh_app
+        r = c.get("/auth/google/start", follow_redirects=False)
+        assert r.status_code == 302
+        loc = r.headers["location"]
+        assert loc.startswith("https://accounts.google.com/o/oauth2/v2/auth")
+        assert "client_id=test_google_id" in loc
+        assert "response_type=code" in loc
+        assert "scope=openid" in loc
+        assert "state=" in loc
+        cookie = r.headers.get("set-cookie", "")
+        assert "govforge_oauth_state=" in cookie
+
+    def test_google_callback_rejects_bad_state(
+        self, fresh_app: tuple[TestClient, object], with_google_creds: None
+    ) -> None:
+        c, _ = fresh_app
+        r = c.get(
+            "/auth/google/callback",
+            params={"code": "x", "state": "wrong"},
+            follow_redirects=False,
+        )
+        assert r.status_code == 400
 
     def test_session_401_without_cookie(
         self, fresh_app: tuple[TestClient, object]

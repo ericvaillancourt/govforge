@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { ButtonLink } from "@/components/site/button-link";
-import { GithubIcon } from "@/components/site/icons";
+import { GithubIcon, GoogleIcon } from "@/components/site/icons";
 import { getDictionary } from "@/dictionaries";
 import { isLocale, type Locale } from "@/lib/i18n";
 
@@ -64,13 +64,18 @@ export default async function LoginPage({
           <ArrowRight className="h-4 w-4" />
         </ButtonLink>
 
-        <button
-          type="button"
-          disabled
-          className="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-border/40 bg-card/40 px-4 py-2.5 text-sm text-muted-foreground/60 cursor-not-allowed"
+        <ButtonLink
+          href={`${API_BASE}/auth/google/start`}
+          external
+          size="lg"
+          variant="outline"
+          className="w-full justify-center"
         >
-          {dict.googleComingSoon}
-        </button>
+          <GoogleIcon className="h-4 w-4" />
+          {dict.google}
+          <ArrowRight className="h-4 w-4" />
+        </ButtonLink>
+
         <button
           type="button"
           disabled

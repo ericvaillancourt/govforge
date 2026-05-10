@@ -17,3 +17,19 @@ export function GithubIcon(props: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+
+export function GoogleIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+      {...props}
+    >
+      <path
+        d="M21.35 11.1H12v3.5h5.35c-.5 2.4-2.55 4.05-5.35 4.05-3.25 0-5.9-2.65-5.9-5.9 0-3.25 2.65-5.9 5.9-5.9 1.5 0 2.85.55 3.9 1.45l2.65-2.65C16.95 4.2 14.65 3.25 12 3.25 7.05 3.25 3 7.3 3 12.25c0 4.95 4.05 9 9 9 5.2 0 8.65-3.65 8.65-8.8 0-.6-.05-1.05-.3-1.35Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}

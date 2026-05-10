@@ -197,11 +197,11 @@
   },
   "login": {
     "metaTitle": "Connexion",
-    "metaDescription": "Connectez-vous à GovForge avec votre compte GitHub.",
+    "metaDescription": "Connectez-vous à GovForge avec votre compte GitHub ou Google.",
     "heading": "Connexion",
     "subheading": "Connectez-vous avec le fournisseur qui détient l'adresse courriel que vous voulez associer à votre compte GovForge.",
     "github": "Continuer avec GitHub",
-    "googleComingSoon": "Continuer avec Google (bientôt)",
+    "google": "Continuer avec Google",
     "magicComingSoon": "M'envoyer un lien magique par courriel (bientôt)",
     "tos": "En vous connectant vous acceptez notre licence Apache 2.0 et politique zéro-télémétrie.",
     "alreadySignedIn": "Vous êtes déjà connecté.",

@@ -52,6 +52,9 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 GITHUB_CLIENT_ID_ENV = "GITHUB_OAUTH_CLIENT_ID"
 GITHUB_CLIENT_SECRET_ENV = "GITHUB_OAUTH_CLIENT_SECRET"
 
+GOOGLE_CLIENT_ID_ENV = "GOOGLE_OAUTH_CLIENT_ID"
+GOOGLE_CLIENT_SECRET_ENV = "GOOGLE_OAUTH_CLIENT_SECRET"
+
 OAUTH_STATE_COOKIE = "govforge_oauth_state"
 OAUTH_STATE_TTL_SECONDS = 600  # 10 min
 
@@ -64,6 +67,14 @@ DEFAULT_POST_LOGIN_PATH = "/en/account/"
 def _github_creds() -> tuple[str, str] | None:
     cid = os.environ.get(GITHUB_CLIENT_ID_ENV)
     cs = os.environ.get(GITHUB_CLIENT_SECRET_ENV)
+    if not cid or not cs:
+        return None
+    return cid, cs
+
+
+def _google_creds() -> tuple[str, str] | None:
+    cid = os.environ.get(GOOGLE_CLIENT_ID_ENV)
+    cs = os.environ.get(GOOGLE_CLIENT_SECRET_ENV)
     if not cid or not cs:
         return None
     return cid, cs
@@ -341,16 +352,178 @@ def logout(
 
 
 # ---------------------------------------------------------------------------
-# Provider stubs (Google + magic link) — return 503 until wired
+# /auth/google/start
 # ---------------------------------------------------------------------------
 
 
-@router.get("/google/start", summary="Google OAuth — not yet configured")
-def google_start() -> RedirectResponse:
-    raise HTTPException(
-        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-        detail="Google OAuth not yet configured. Coming next iteration.",
+@router.get("/google/start", summary="Begin Google OAuth handshake")
+def google_start(request: Request) -> RedirectResponse:
+    creds = _google_creds()
+    if creds is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=(
+                "Google OAuth not configured. Set "
+                f"{GOOGLE_CLIENT_ID_ENV} and {GOOGLE_CLIENT_SECRET_ENV} "
+                "in the backend environment."
+            ),
+        )
+    client_id, _ = creds
+    state = secrets.token_urlsafe(32)
+    redirect_uri = _callback_url(request, "google")
+    # `access_type=offline` is intentionally omitted — we don't refresh,
+    # we issue our own cookie. `prompt=select_account` lets users pick a
+    # Google account if multiple are logged in.
+    authorize_url = (
+        "https://accounts.google.com/o/oauth2/v2/auth"
+        f"?client_id={client_id}"
+        f"&redirect_uri={redirect_uri}"
+        f"&state={state}"
+        "&response_type=code"
+        "&scope=openid%20email%20profile"
+        "&prompt=select_account"
     )
+    redirect = RedirectResponse(authorize_url, status_code=status.HTTP_302_FOUND)
+    redirect.set_cookie(
+        OAUTH_STATE_COOKIE,
+        state,
+        max_age=OAUTH_STATE_TTL_SECONDS,
+        httponly=True,
+        secure=True,
+        samesite="lax",
+        path="/auth",
+    )
+    return redirect
+
+
+# ---------------------------------------------------------------------------
+# /auth/google/callback
+# ---------------------------------------------------------------------------
+
+
+@router.get("/google/callback", summary="Receive Google OAuth callback")
+def google_callback(
+    request: Request,
+    code: Annotated[str, Query()],
+    state: Annotated[str, Query()],
+    db: Annotated[DBSession, Depends(get_session)],
+) -> RedirectResponse:
+    creds = _google_creds()
+    if creds is None:
+        raise HTTPException(503, "Google OAuth not configured")
+    client_id, client_secret = creds
+
+    state_cookie = request.cookies.get(OAUTH_STATE_COOKIE)
+    if not state_cookie or not secrets.compare_digest(state_cookie, state):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired OAuth state",
+        )
+
+    # Exchange the code for an access token.
+    token_resp = httpx.post(
+        "https://oauth2.googleapis.com/token",
+        data={
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "code": code,
+            "redirect_uri": _callback_url(request, "google"),
+            "grant_type": "authorization_code",
+        },
+        timeout=10.0,
+    )
+    if token_resp.status_code != 200:
+        raise HTTPException(502, "Google token exchange failed")
+    token_data = token_resp.json()
+    access_token = token_data.get("access_token")
+    if not access_token:
+        raise HTTPException(401, f"Google denied access: {token_data.get('error', 'unknown')}")
+
+    # Fetch profile via OpenID userinfo endpoint.
+    user_resp = httpx.get(
+        "https://www.googleapis.com/oauth2/v3/userinfo",
+        headers={"Authorization": f"Bearer {access_token}"},
+        timeout=10.0,
+    )
+    if user_resp.status_code != 200:
+        raise HTTPException(502, "Failed to fetch Google profile")
+    profile = user_resp.json()
+
+    email = profile.get("email")
+    if not email or not profile.get("email_verified", False):
+        raise HTTPException(
+            400, "Google account has no verified email — cannot sign in"
+        )
+
+    provider_user_id = str(profile["sub"])
+    display_name = profile.get("name") or profile.get("given_name")
+    avatar_url = profile.get("picture")
+
+    # Upsert User + Account.
+    account = db.scalar(
+        select(Account).where(
+            Account.provider == AuthProvider.GOOGLE,
+            Account.provider_user_id == provider_user_id,
+        )
+    )
+    if account is not None:
+        user = db.get(User, account.user_id)
+        if user is None:
+            raise HTTPException(500, "Orphaned Account row")
+        account.provider_email = email
+        if display_name and not user.display_name:
+            user.display_name = display_name
+        if avatar_url and user.avatar_url != avatar_url:
+            user.avatar_url = avatar_url
+    else:
+        user = db.scalar(select(User).where(User.email == email))
+        if user is None:
+            user = User(email=email, display_name=display_name, avatar_url=avatar_url)
+            db.add(user)
+            db.flush()
+        elif not user.is_active:
+            raise HTTPException(403, "User is deactivated")
+        account = Account(
+            user_id=user.id,
+            provider=AuthProvider.GOOGLE,
+            provider_user_id=provider_user_id,
+            provider_email=email,
+            provider_login=None,  # Google has no equivalent of GitHub's login handle
+        )
+        db.add(account)
+
+    session_row = create_session_row(
+        db,
+        user_id=user.id,
+        user_agent=request.headers.get("user-agent"),
+        ip_address=request.client.host if request.client else None,
+    )
+    db.flush()
+    cookie_value = encode_session_cookie(session_row.id)
+    if cookie_value is None:
+        raise HTTPException(503, "Cookie sessions not configured (GOVFORGE_COOKIE_SECRET)")
+
+    redirect = RedirectResponse(
+        DEFAULT_SITE_ORIGIN + DEFAULT_POST_LOGIN_PATH,
+        status_code=status.HTTP_302_FOUND,
+    )
+    cookie_domain = os.environ.get("GOVFORGE_COOKIE_DOMAIN")
+    redirect.set_cookie(
+        SESSION_COOKIE_NAME,
+        cookie_value,
+        max_age=SESSION_TTL_DAYS * 86400,
+        httponly=True,
+        secure=True,
+        samesite="lax",
+        domain=cookie_domain,
+    )
+    redirect.delete_cookie(OAUTH_STATE_COOKIE, path="/auth")
+    return redirect
+
+
+# ---------------------------------------------------------------------------
+# Magic link stub — kept until Resend is configured
+# ---------------------------------------------------------------------------
 
 
 @router.post("/magic/request", summary="Magic link email — not yet configured")
