@@ -34,7 +34,7 @@
           { "href": "/docs", "label": "Documentation" },
           { "href": "/press", "label": "Press kit" },
           { "href": "/changelog", "label": "Changelog" },
-          { "href": "/docs/api", "label": "API" }
+          { "href": "https://api.govforge.dev/docs", "label": "API", "external": true }
         ]
       },
       {
