@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GovForge</title>
+  <meta name="robots" content="noindex">
+  <link rel="canonical" href="https://govforge.dev/en/">
+  <link rel="alternate" hreflang="en" href="https://govforge.dev/en/">
+  <link rel="alternate" hreflang="fr" href="https://govforge.dev/fr/">
+  <link rel="alternate" hreflang="x-default" href="https://govforge.dev/en/">
+  <meta http-equiv="refresh" content="0; url=/en/">
+  <script>
+    (function () {
+      try {
+        var l = (navigator.language || 'en').toLowerCase();
+        var target = l.indexOf('fr') === 0 ? '/fr/' : '/en/';
+        location.replace(target);
+      } catch (e) {
+        location.replace('/en/');
+      }
+    })();
+  </script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; padding: 2rem; color: #888; background: #0a0a0a; }
+    a { color: #fafafa; }
+  </style>
+</head>
+<body>
+  <p>Redirecting… <a href="/en/">English</a> · <a href="/fr/">Français</a></p>
+</body>
+</html>

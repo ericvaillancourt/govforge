@@ -1,0 +1,301 @@
+{
+  "metadata": {
+    "title": "GovForge — Infrastructure de gouvernance pour agents IA de codage",
+    "description": "Auditez, révisez et gouvernez chaque décision de code produite par Claude Code, Codex, Cursor et autres agents IA. Local-first, natif Git, Apache 2.0.",
+    "ogTitle": "GovForge — Infrastructure de gouvernance pour agents IA de codage",
+    "ogDescription": "Auditez, révisez et gouvernez chaque décision de code produite par les agents IA. Local-first, natif Git, Apache 2.0.",
+    "twitterTitle": "GovForge — Infrastructure de gouvernance pour agents IA de codage",
+    "twitterDescription": "Auditez, révisez et gouvernez chaque décision de code produite par les agents IA."
+  },
+  "nav": {
+    "features": "Fonctionnalités",
+    "workflow": "Flux de travail",
+    "pricing": "Tarifs",
+    "docs": "Doc",
+    "github": "GitHub",
+    "starsAriaLabel": "étoiles GitHub",
+    "themeAriaLabel": "Changer le thème"
+  },
+  "footer": {
+    "tagline": "Infrastructure de gouvernance pour agents IA de codage.",
+    "columns": [
+      {
+        "title": "Produit",
+        "links": [
+          { "href": "/#features", "label": "Fonctionnalités" },
+          { "href": "/pricing", "label": "Tarifs" },
+          { "href": "/#workflow", "label": "Flux de travail" },
+          { "href": "https://github.com/ericvaillancourt/govforge#roadmap", "label": "Feuille de route", "external": true }
+        ]
+      },
+      {
+        "title": "Ressources",
+        "links": [
+          { "href": "/docs", "label": "Documentation" },
+          { "href": "/changelog", "label": "Journal des versions" },
+          { "href": "/blog", "label": "Blogue" },
+          { "href": "/docs/api", "label": "API" }
+        ]
+      },
+      {
+        "title": "Entreprise",
+        "links": [
+          { "href": "/about", "label": "À propos" },
+          { "href": "mailto:eric.vaillancourt@talsom.com", "label": "Contact" },
+          { "href": "https://github.com/ericvaillancourt/govforge", "label": "GitHub", "external": true }
+        ]
+      },
+      {
+        "title": "Légal",
+        "links": [
+          { "href": "https://www.apache.org/licenses/LICENSE-2.0", "label": "Licence", "external": true },
+          { "href": "/security", "label": "Sécurité" },
+          { "href": "/privacy", "label": "Confidentialité" }
+        ]
+      }
+    ],
+    "rights": "© {year} GovForge. Sous licence Apache 2.0.",
+    "made": "Fait avec soin à Montréal."
+  },
+  "hero": {
+    "titleLine1": "Gouvernez les agents IA de codage",
+    "titleLine2": "avant qu'ils ne gouvernent votre code.",
+    "subtitle": "Auditez, révisez et contrôlez chaque décision de code produite par Claude Code, Codex, Cursor et autres agents IA de codage.",
+    "ctaPrimary": "Commencer",
+    "ctaGithub": "Voir sur GitHub",
+    "ctaDocs": "Lire la documentation →",
+    "trust": ["Code ouvert", "Apache 2.0", "Auto-hébergé", "Aucune télémétrie"]
+  },
+  "supportedAgents": {
+    "heading": "Compatible avec les agents que vous utilisez déjà",
+    "agents": [
+      { "name": "Claude Code", "short": "Claude" },
+      { "name": "Codex", "short": "Codex" },
+      { "name": "Cursor", "short": "Cursor" },
+      { "name": "Cline", "short": "Cline" },
+      { "name": "Aider", "short": "Aider" },
+      { "name": "RooCode", "short": "RooCode" },
+      { "name": "Continue", "short": "Continue" },
+      { "name": "Zed", "short": "Zed" },
+      { "name": "Tout client MCP", "short": "+ MCP" }
+    ],
+    "footnoteBefore": "Tout outil parlant le ",
+    "footnoteLink": "Model Context Protocol",
+    "footnoteAfter": " fonctionne."
+  },
+  "problemStatement": {
+    "title": "Les agents IA écrivent maintenant du code en production.",
+    "subtitle": "La plupart des équipes ignorent ce qu'ils ont décidé, et pourquoi.",
+    "withoutHeading": "Sans GovForge",
+    "withoutItems": [
+      "Les décisions sont implicites",
+      "Les revues sont incohérentes",
+      "Les risques passent inaperçus",
+      "Aucun journal d'audit",
+      "Les désaccords sont perdus",
+      "Les humains approuvent en aveugle"
+    ],
+    "withHeading": "Avec GovForge",
+    "withItems": [
+      "Chaque décision est consignée",
+      "Les revues sont structurées",
+      "Les politiques les détectent",
+      "Journal d'audit lié à Git",
+      "Les désaccords sont explicites",
+      "Les humains approuvent en contexte"
+    ]
+  },
+  "features": {
+    "heading": "Ce que GovForge vous apporte",
+    "subheading": "Pas un autre agent. L'infrastructure qui gouverne ceux que vous utilisez déjà.",
+    "cards": [
+      {
+        "icon": "ScrollText",
+        "title": "Registre des décisions",
+        "description": "Chaque modification de code devient une décision structurée : auteur, intention, justification, risque, statut."
+      },
+      {
+        "icon": "Scale",
+        "title": "Moteur de politiques",
+        "description": "Bloquez les changements qui touchent à l'authentification, aux secrets ou au schéma sans revue ni approbation explicites."
+      },
+      {
+        "icon": "Shield",
+        "title": "Journal d'audit",
+        "description": "Journal d'événements append-only relié à chaque commit, revue, finding et approbation."
+      },
+      {
+        "icon": "Handshake",
+        "title": "Désaccord structuré",
+        "description": "Capturez les conflits entre agents comme des artéfacts de premier ordre — pas enfouis dans l'historique de chat."
+      },
+      {
+        "icon": "CircleCheck",
+        "title": "Approbation humaine",
+        "description": "Les diffs à haut risque exigent une signature humaine. Avec tout le contexte, pas une approbation automatique."
+      },
+      {
+        "icon": "Search",
+        "title": "Revues Git-aware",
+        "description": "Revues d'un autre agent attachées aux lignes, fichiers et commits. Des findings, pas des opinions."
+      }
+    ]
+  },
+  "workflow": {
+    "heading": "Comment ça fonctionne",
+    "subheading": "Quatre étapes. De vraies commandes CLI. Un vrai journal d'audit à la fin.",
+    "stepTitles": [
+      "Claude modifie auth.py",
+      "Le moteur de politiques signale le changement",
+      "Codex révise et exprime un désaccord",
+      "Un humain approuve après correction"
+    ],
+    "ctaFull": "Voir le flux complet",
+    "ctaDemo": "Regarder la démo (90s)"
+  },
+  "architecture": {
+    "heading": "Local-first. Natif Git.",
+    "subheading": "Tout s'exécute sur votre machine. Aucun cloud sauf si vous le choisissez. Synchronisation d'équipe optionnelle (Phase 3) pour la collaboration et l'entreprise.",
+    "footnote": "Le serveur MCP est le point d'intégration. Tout le reste est hors-ligne par défaut.",
+    "nodes": [
+      { "id": "agents", "title": "Agents IA", "items": ["Claude Code", "Codex", "Cursor", "+ clients MCP"] },
+      { "id": "mcp", "title": "Serveur MCP GovForge", "items": ["create_task", "record_decision", "submit_review", "..."] },
+      { "id": "git", "title": "Git (lecture seule)", "items": ["diff, commits", "fichiers, branches"] },
+      { "id": "store", "title": "Magasin de décisions", "items": ["SQLite local", "événements, revues", "politiques, approbations"] },
+      { "id": "policy", "title": "Moteur de politiques", "items": ["auth-change", "secret-pattern", "diff-size", "..."] },
+      { "id": "audit", "title": "Journal d'audit", "items": ["append-only", "Git-aware", "event sourced"] }
+    ]
+  },
+  "ossVsEnterprise": {
+    "heading": "Cœur ouvert. Payez seulement pour ce dont les équipes ont vraiment besoin.",
+    "ossLabel": "Code ouvert",
+    "ossSubtitle": "Apache 2.0 · Gratuit pour toujours",
+    "ossItems": [
+      "Serveur MCP",
+      "CLI (gf)",
+      "SQLite local",
+      "Revues Git-aware",
+      "Journal des décisions",
+      "Politiques par défaut",
+      "Cockpit UI local",
+      "Auto-hébergé"
+    ],
+    "ossCta": "Installer",
+    "enterpriseLabel": "Entreprise",
+    "enterpriseSubtitle": "Pour les équipes et la conformité",
+    "enterpriseEverythingPlus": "Tout du code ouvert, plus :",
+    "enterpriseItems": [
+      "Synchronisation cloud",
+      "Espaces d'équipe",
+      "RBAC + SSO/SAML",
+      "Déploiement en réseau isolé",
+      "Politiques avancées",
+      "Rapports de conformité",
+      "Support SLA"
+    ],
+    "enterpriseCta": "Contacter les ventes"
+  },
+  "trustStrip": {
+    "heading": "Conçu pour le code qui compte vraiment.",
+    "items": [
+      { "icon": "Lock", "title": "Local-first", "desc": "Votre code ne quitte jamais votre machine." },
+      { "icon": "FileText", "title": "Apache 2.0", "desc": "Licence permissive, adaptée à l'entreprise." },
+      { "icon": "ShieldOff", "title": "Aucune télémétrie", "desc": "Aucun appel sortant. Vérifiable sur GitHub." },
+      { "icon": "Network", "title": "Réseau isolé prêt", "desc": "Déploiement en environnements air-gapped." }
+    ]
+  },
+  "finalCta": {
+    "titleLine1": "Cessez de faire confiance aux agents IA sur parole.",
+    "titleLine2": "Commencez à les gouverner.",
+    "ctaPrimary": "Commencer",
+    "ctaGithub": "Étoiler sur GitHub"
+  },
+  "pricing": {
+    "metaTitle": "Tarifs",
+    "metaDescription": "Code ouvert pour toujours. Payez seulement quand vos équipes ont besoin de synchronisation cloud, RBAC, SSO ou rapports de conformité.",
+    "heading": "Une tarification aussi tranquille que la gouvernance devrait l'être.",
+    "subheading": "Cœur ouvert. Code ouvert gratuit pour toujours. Payez seulement quand vos équipes ont besoin de collaboration ou de conformité.",
+    "noLockIn": "Aucun verrouillage. Changez de palier à tout moment. Le code ouvert fonctionne pour toujours, même si le SaaS s'arrête.",
+    "tiers": [
+      {
+        "name": "Code ouvert",
+        "price": "0 $",
+        "period": "pour toujours",
+        "description": "Tout ce qu'il faut pour gouverner les agents IA sur votre propre machine.",
+        "features": [
+          "Serveur MCP",
+          "CLI gf",
+          "Cockpit UI local",
+          "Toutes les politiques par défaut",
+          "Auto-hébergé, sans cloud",
+          "Licence Apache 2.0",
+          "Support communautaire"
+        ],
+        "ctaLabel": "Installer",
+        "ctaHref": "/docs/quickstart",
+        "ctaVariant": "outline",
+        "highlighted": false
+      },
+      {
+        "name": "Équipe",
+        "price": "À déterminer",
+        "period": "par poste / mois",
+        "description": "Synchronisation cloud, journaux partagés, notifications. (Phase 3 à venir.)",
+        "badge": "Phase 3",
+        "features": [
+          "Tout du code ouvert",
+          "Synchronisation cloud",
+          "Espaces d'équipe",
+          "Notifications Slack / Teams",
+          "Journaux partagés",
+          "Support par courriel"
+        ],
+        "ctaLabel": "Être avisé",
+        "ctaHref": "mailto:eric.vaillancourt@talsom.com?subject=GovForge%20Team%20waitlist",
+        "ctaVariant": "default",
+        "highlighted": true
+      },
+      {
+        "name": "Entreprise",
+        "price": "Sur mesure",
+        "period": "contactez-nous",
+        "description": "Air-gapped, RBAC, SSO/SAML, rapports de conformité, SLA.",
+        "features": [
+          "Tout d'Équipe",
+          "Déploiement en réseau isolé",
+          "SSO / SAML",
+          "RBAC + export d'audit",
+          "Rapports de conformité (Loi 25, AI Act, SOC2)",
+          "Support dédié + SLA"
+        ],
+        "ctaLabel": "Contacter les ventes",
+        "ctaHref": "mailto:eric.vaillancourt@talsom.com?subject=GovForge%20Enterprise",
+        "ctaVariant": "default",
+        "highlighted": false
+      }
+    ],
+    "faqHeading": "Questions fréquentes",
+    "faq": [
+      {
+        "q": "La version code ouvert est-elle réellement complète ?",
+        "a": "Oui. La Phase 1 livre un produit local-first complet. Vous pouvez gouverner les agents IA de bout en bout sans payer un sou."
+      },
+      {
+        "q": "Puis-je auto-héberger les fonctionnalités Entreprise ?",
+        "a": "Oui — le déploiement en réseau isolé est l'une des fonctionnalités Entreprise centrales. La synchronisation cloud devient optionnelle plutôt qu'obligatoire."
+      },
+      {
+        "q": "Stockez-vous mon code ?",
+        "a": "Jamais sur le palier code ouvert. Sur Équipe/Entreprise, seules les métadonnées que vous choisissez explicitement de synchroniser (décisions, revues, événements) — jamais le code source."
+      },
+      {
+        "q": "Quand Équipe / Entreprise seront-ils disponibles ?",
+        "a": "Équipe : Phase 3 (après le lancement). Entreprise : programmes pilotes disponibles dès maintenant par contact direct, GA complète après Équipe."
+      },
+      {
+        "q": "Et si vous fermez le SaaS un jour ?",
+        "a": "Le cœur code ouvert fonctionne pour toujours, entièrement auto-hébergé, sans dépendance à notre cloud. Aucun verrouillage par conception."
+      }
+    ]
+  }
+}

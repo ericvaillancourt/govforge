@@ -1,9 +1,16 @@
 import Link from "next/link";
+import { localePath, type Locale } from "@/lib/i18n";
 
-export function Logo({ className = "" }: { className?: string }) {
+interface LogoProps {
+  className?: string;
+  lang?: Locale;
+}
+
+export function Logo({ className = "", lang }: LogoProps) {
+  const href = lang ? localePath(lang, "/") : "/";
   return (
     <Link
-      href="/"
+      href={href}
       className={`inline-flex items-center gap-2 font-semibold tracking-tight ${className}`}
       aria-label="GovForge home"
     >

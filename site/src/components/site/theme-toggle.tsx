@@ -5,7 +5,11 @@ import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 
-export function ThemeToggle() {
+interface ThemeToggleProps {
+  ariaLabel?: string;
+}
+
+export function ThemeToggle({ ariaLabel = "Toggle theme" }: ThemeToggleProps) {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
@@ -18,7 +22,7 @@ export function ThemeToggle() {
       variant="ghost"
       size="icon"
       onClick={toggle}
-      aria-label="Toggle theme"
+      aria-label={ariaLabel}
       className="h-9 w-9"
     >
       {mounted && theme === "dark" ? (
