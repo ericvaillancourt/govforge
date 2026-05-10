@@ -22,4 +22,6 @@ GovForge est une couche de gouvernance Git-aware pour agents IA de développemen
 
 ## License
 
-Apache 2.0 (à ajouter formellement quand le code arrive).
+[Apache License 2.0](./LICENSE) — see [`LICENSE`](./LICENSE) and [`NOTICE`](./NOTICE).
+
+Copyright 2026 Eric Vaillancourt and GovForge contributors.
