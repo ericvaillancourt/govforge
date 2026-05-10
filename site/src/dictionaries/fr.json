@@ -197,79 +197,86 @@
   },
   "docs": {
     "metaTitle": "Documentation",
-    "metaDescription": "Architecture, modèle de données, intégration MCP, threat model, workflow — chaque document vit dans le repo GitHub.",
+    "metaDescription": "Architecture, modèle de données, intégration MCP, threat model, workflow — chaque document est rendu en page statique.",
     "heading": "Documentation",
-    "subheading": "En attendant le site de documentation dédié (Phase 2), chaque document vit dans le repo GitHub sous docs/. Chaque carte pointe directement vers la source canonique.",
+    "subheading": "Tous les guides et références de GovForge — rendus directement depuis le Markdown source du repo GitHub. Le contenu est actuellement en anglais ; la traduction française est prévue.",
     "cards": [
       {
         "title": "Quickstart",
         "desc": "Cinq minutes du clone à votre première décision auditée.",
-        "href": "https://github.com/ericvaillancourt/govforge/blob/main/docs/quickstart.md"
+        "href": "/docs/quickstart"
       },
       {
         "title": "Architecture",
         "desc": "Composants, couches, diagramme de séquence, invariant du audit log.",
-        "href": "https://github.com/ericvaillancourt/govforge/blob/main/docs/architecture.md"
+        "href": "/docs/architecture"
       },
       {
         "title": "Modèle de données",
         "desc": "12 entités, diagramme ER, machine à états du statut de décision, référence des enums.",
-        "href": "https://github.com/ericvaillancourt/govforge/blob/main/docs/data-model.md"
+        "href": "/docs/data-model"
       },
       {
         "title": "Configuration",
         "desc": "Format de config.toml + policies.toml. Ordre de résolution. Recipes de reset.",
-        "href": "https://github.com/ericvaillancourt/govforge/blob/main/docs/configuration.md"
+        "href": "/docs/configuration"
       },
       {
         "title": "Référence CLI",
         "desc": "Chaque sous-commande gf avec ses flags + codes de sortie + variables d'environnement.",
-        "href": "https://github.com/ericvaillancourt/govforge/blob/main/docs/cli-reference.md"
+        "href": "/docs/cli-reference"
       },
       {
         "title": "Intégration MCP",
         "desc": "Guides de wiring pour Claude Code, Codex, Cursor, Cline.",
-        "href": "https://github.com/ericvaillancourt/govforge/blob/main/docs/mcp-integration.md"
+        "href": "/docs/mcp-integration"
       },
       {
         "title": "Référence MCP",
         "desc": "11 outils, 5 resources, 3 prompts — schémas input/output + effets de bord.",
-        "href": "https://github.com/ericvaillancourt/govforge/blob/main/docs/mcp-reference.md"
+        "href": "/docs/mcp-reference"
       },
       {
         "title": "Écrire une policy",
         "desc": "Ajoutez une policy custom en quatre étapes. Design rules + layout runtime.",
-        "href": "https://github.com/ericvaillancourt/govforge/blob/main/docs/policy-authoring.md"
+        "href": "/docs/policy-authoring"
       },
       {
         "title": "Threat model",
         "desc": "Garanties de sécurité et les tests qui les verrouillent en CI.",
-        "href": "https://github.com/ericvaillancourt/govforge/blob/main/docs/threat-model.md"
+        "href": "/docs/threat-model"
       },
       {
         "title": "Exemple de workflow",
         "desc": "Walkthrough en 13 étapes Claude → Codex → approbation humaine avec sortie CLI réelle.",
-        "href": "https://github.com/ericvaillancourt/govforge/blob/main/docs/workflow-example.md"
+        "href": "/docs/workflow-example"
       },
       {
         "title": "FAQ",
         "desc": "Local-first, scope, licence, contournement des agents, migration Postgres.",
-        "href": "https://github.com/ericvaillancourt/govforge/blob/main/docs/faq.md"
+        "href": "/docs/faq"
       },
       {
         "title": "Brand guide",
         "desc": "Wordmark, palette, typographie, tagline, ton.",
-        "href": "https://github.com/ericvaillancourt/govforge/blob/main/docs/brand.md"
+        "href": "/docs/brand"
+      },
+      {
+        "title": "Runbook de release",
+        "desc": "GoReleaser, PyPI, npm, GHCR, Docker provenance — le chemin de publication.",
+        "href": "/docs/release"
       },
       {
         "title": "Changelog",
         "desc": "Format Keep a Changelog. [Unreleased] regroupe chaque workstream Phase 1.",
-        "href": "https://github.com/ericvaillancourt/govforge/blob/main/CHANGELOG.md"
+        "href": "https://github.com/ericvaillancourt/govforge/blob/main/CHANGELOG.md",
+        "external": true
       },
       {
         "title": "Contributing",
         "desc": "Setup local par package, convention de commits, recipes par scope.",
-        "href": "https://github.com/ericvaillancourt/govforge/blob/main/CONTRIBUTING.md"
+        "href": "https://github.com/ericvaillancourt/govforge/blob/main/CONTRIBUTING.md",
+        "external": true
       }
     ]
   },

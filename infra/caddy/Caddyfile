@@ -60,8 +60,13 @@
 
     @docs host docs.govforge.dev
     handle @docs {
-        # TODO Phase 2: reverse_proxy govforge-docs:3001
-        respond "GovForge docs — coming soon" 200
+        # docs.govforge.dev is an alias of govforge.dev/en/docs/.
+        # No separate docs container: the marketing site renders every
+        # /docs/*.md page at build time under [lang]/docs/[slug].
+        # Bare host → /en/docs/; any path → /en/docs/<path>.
+        @docs_root path /
+        redir @docs_root https://govforge.dev/en/docs/ 301
+        redir https://govforge.dev/en/docs{uri} 301
     }
 
     # ----- Phase 3 hostnames (réservés ASAP, placeholders) -----
