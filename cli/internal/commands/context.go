@@ -14,7 +14,9 @@ package commands
 import (
 	"errors"
 	"fmt"
+	"path/filepath"
 
+	"github.com/ericvaillancourt/govforge/cli/internal/auth"
 	"github.com/ericvaillancourt/govforge/cli/internal/client"
 	"github.com/ericvaillancourt/govforge/cli/internal/config"
 	"github.com/ericvaillancourt/govforge/cli/internal/render"
@@ -59,9 +61,14 @@ func Resolve(flags *RootFlags, requireProject bool) (*CmdContext, error) {
 		return nil, fmt.Errorf("%w — run `gf init` first", config.ErrNotInitialized)
 	}
 	out := render.Default(cfg.JSON, cfg.NoColor)
+	var projectAuthDir string
+	if cfg.ProjectPath != "" {
+		projectAuthDir = filepath.Join(cfg.ProjectPath, ".govforge")
+	}
+	token, _ := auth.Token(projectAuthDir)
 	return &CmdContext{
 		Cfg:    cfg,
-		Client: client.New(cfg.APIURL),
+		Client: client.NewWithToken(cfg.APIURL, token),
 		Out:    out,
 	}, nil
 }

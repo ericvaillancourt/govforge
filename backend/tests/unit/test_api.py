@@ -463,3 +463,128 @@ class TestAuth:
             client.get("/projects", headers={"Authorization": f"Bearer {secret}"}).status_code
             == 401
         )
+
+
+# ---------------------------------------------------------------------------
+# OAuth + sessions (Phase 3.0 Stage B)
+# ---------------------------------------------------------------------------
+
+
+class TestOAuth:
+    """Verify the OAuth router 503s without creds, redirects with creds, and
+    the session lifecycle works end-to-end (mocked GitHub API)."""
+
+    @pytest.fixture()
+    def fresh_app(self, tmp_path: Path) -> Generator[tuple[TestClient, object]]:
+        """Bare app (no admin token) + the session factory for direct DB access."""
+        db = tmp_path / "oauth.db"
+        engine = make_engine(f"sqlite:///{db}")
+        Base.metadata.create_all(engine)
+        factory = make_session_factory(engine)
+        app = create_app(factory)
+        with TestClient(app) as c:
+            yield c, factory
+        engine.dispose()
+
+    @pytest.fixture()
+    def with_github_creds(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> Generator[None]:
+        monkeypatch.setenv("GITHUB_OAUTH_CLIENT_ID", "test_client_id")
+        monkeypatch.setenv("GITHUB_OAUTH_CLIENT_SECRET", "test_client_secret")
+        monkeypatch.setenv("GOVFORGE_COOKIE_SECRET", "x" * 48)
+        yield
+
+    def test_github_start_503_without_creds(
+        self, fresh_app: tuple[TestClient, object]
+    ) -> None:
+        c, _ = fresh_app
+        assert c.get("/auth/github/start", follow_redirects=False).status_code == 503
+
+    def test_google_and_magic_link_stubs_503(
+        self, fresh_app: tuple[TestClient, object]
+    ) -> None:
+        c, _ = fresh_app
+        assert c.get("/auth/google/start").status_code == 503
+        assert c.post("/auth/magic/request").status_code == 503
+
+    def test_session_401_without_cookie(
+        self, fresh_app: tuple[TestClient, object]
+    ) -> None:
+        c, _ = fresh_app
+        assert c.get("/auth/session").status_code == 401
+
+    def test_github_start_redirects_with_creds(
+        self, fresh_app: tuple[TestClient, object], with_github_creds: None
+    ) -> None:
+        c, _ = fresh_app
+        r = c.get("/auth/github/start", follow_redirects=False)
+        assert r.status_code == 302
+        loc = r.headers["location"]
+        assert loc.startswith("https://github.com/login/oauth/authorize")
+        assert "client_id=test_client_id" in loc
+        assert "state=" in loc
+        # The state cookie is also set so callback can verify CSRF.
+        cookie = r.headers.get("set-cookie", "")
+        assert "govforge_oauth_state=" in cookie
+
+    def test_github_callback_rejects_bad_state(
+        self, fresh_app: tuple[TestClient, object], with_github_creds: None
+    ) -> None:
+        c, _ = fresh_app
+        # No state cookie set on the client → callback should reject.
+        r = c.get(
+            "/auth/github/callback",
+            params={"code": "x", "state": "wrong"},
+            follow_redirects=False,
+        )
+        assert r.status_code == 400
+
+    def test_session_roundtrip_with_seeded_session(
+        self,
+        fresh_app: tuple[TestClient, object],
+        with_github_creds: None,
+    ) -> None:
+        """Skip the OAuth handshake (network-dependent) and seed a User +
+        Session directly, then verify the /auth/session cookie path works."""
+        c, factory = fresh_app
+        from govforge.api.auth import create_session_row, encode_session_cookie  # noqa: PLC0415
+
+        with factory() as s:
+            user = User(email="oauth-tester@local", display_name="Tester")
+            s.add(user)
+            s.flush()
+            session_row = create_session_row(s, user_id=user.id)
+            s.flush()
+            sid = session_row.id
+            uid = user.id
+            s.commit()
+
+        cookie_value = encode_session_cookie(sid)
+        assert cookie_value is not None
+        c.cookies.set("govforge_session", cookie_value)
+
+        r = c.get("/auth/session")
+        assert r.status_code == 200
+        body = r.json()
+        assert body["user"]["email"] == "oauth-tester@local"
+        assert body["user"]["id"] == str(uid)
+
+        # Logout revokes the session.
+        assert c.post("/auth/logout").status_code == 204
+        # Subsequent /auth/session reads should fail — the cookie still carries
+        # the (now-revoked) session id, but resolve_session rejects revoked rows.
+        c.cookies.set("govforge_session", cookie_value)
+        assert c.get("/auth/session").status_code == 401
+
+    def test_session_rejects_bad_signature(
+        self,
+        fresh_app: tuple[TestClient, object],
+        with_github_creds: None,
+    ) -> None:
+        c, _ = fresh_app
+        # Forged cookie — random uuid with a made-up signature.
+        c.cookies.set(
+            "govforge_session", "00000000-0000-0000-0000-000000000000.deadbeef"
+        )
+        assert c.get("/auth/session").status_code == 401

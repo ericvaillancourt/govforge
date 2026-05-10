@@ -17,6 +17,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from govforge import __version__
 from govforge.api.errors import install_exception_handlers
 from govforge.api.routers import (
+    auth,
     decisions,
     events,
     health,
@@ -47,6 +48,9 @@ def create_app(session_factory: sessionmaker[Session]) -> FastAPI:
             "http://127.0.0.1:3000",
             "http://localhost:8788",
             "http://127.0.0.1:8788",
+            # Production marketing site needs cookie-auth read access to
+            # /auth/session and /tokens via fetch(credentials: "include").
+            "https://govforge.dev",
         ],
         allow_credentials=True,
         allow_methods=["*"],
@@ -56,6 +60,7 @@ def create_app(session_factory: sessionmaker[Session]) -> FastAPI:
     install_exception_handlers(app)
 
     app.include_router(health.router)
+    app.include_router(auth.router)
     app.include_router(projects.router)
     app.include_router(tasks.router)
     app.include_router(decisions.router)

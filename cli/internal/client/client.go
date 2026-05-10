@@ -31,6 +31,21 @@ func New(baseURL string) *Client {
 	return &Client{r: r}
 }
 
+// NewWithToken builds a Client targeting baseURL and attaches a Bearer token
+// to every outgoing request. Empty token = no header (same as New).
+func NewWithToken(baseURL, token string) *Client {
+	c := New(baseURL)
+	if token != "" {
+		c.r.SetAuthToken(token)
+	}
+	return c
+}
+
+// SetToken updates the Bearer token on an existing client. Pass "" to clear.
+func (c *Client) SetToken(token string) {
+	c.r.SetAuthToken(token)
+}
+
 // APIError is returned for any non-2xx response.
 type APIError struct {
 	Status int

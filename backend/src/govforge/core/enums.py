@@ -78,6 +78,14 @@ class AgentType(StrEnum):
     OTHER = "other"
 
 
+class AuthProvider(StrEnum):
+    """OAuth / passwordless providers backing a user account."""
+
+    GITHUB = "github"
+    GOOGLE = "google"
+    MAGIC_LINK = "magic_link"
+
+
 class TokenScope(StrEnum):
     """API-token capability scopes. `<resource>:<action>` convention.
 

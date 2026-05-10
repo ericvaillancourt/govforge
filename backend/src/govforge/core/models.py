@@ -41,6 +41,7 @@ from sqlalchemy.orm import (
 from govforge.core.enums import (
     AgentType,
     ApprovalStatus,
+    AuthProvider,
     DecisionStatus,
     FindingCategory,
     FindingSeverity,
@@ -417,18 +418,103 @@ class Event(Base):
 
 class User(TimestampMixin, Base):
     """End-user of GovForge. Phase 3.0 Stage A: created via bootstrap script
-    only (no signup UI). Stage B will add OAuth-based creation."""
+    only (no signup UI). Stage B adds OAuth-based creation via `Account`."""
 
     __tablename__ = "users"
 
     id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
     email: Mapped[str] = mapped_column(String(320), nullable=False, unique=True)
     display_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    avatar_url: Mapped[str | None] = mapped_column(String(1024), nullable=True)
     is_active: Mapped[bool] = mapped_column(default=True, nullable=False)
 
     tokens: Mapped[list[ApiToken]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
+    accounts: Mapped[list[Account]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    sessions: Mapped[list[Session]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+
+
+class Account(TimestampMixin, Base):
+    """OAuth identity linked to a `User`. One row per (provider, provider_user_id).
+
+    Stage B adds GitHub. Google + magic_link slots are reserved in
+    `AuthProvider`; rows show up when those providers ship.
+    """
+
+    __tablename__ = "accounts"
+    __table_args__ = (
+        UniqueConstraint(
+            "provider", "provider_user_id", name="uq_accounts_provider_user_id"
+        ),
+        Index("ix_accounts_user_id", "user_id"),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
+    user_id: Mapped[UUID] = mapped_column(Uuid, ForeignKey("users.id"), nullable=False)
+    provider: Mapped[AuthProvider] = mapped_column(
+        Enum(AuthProvider, native_enum=False, length=32), nullable=False
+    )
+    # Provider's stable user ID (e.g. GitHub's numeric `id`, Google's `sub`).
+    provider_user_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    # Provider's primary email at link time (informational, not unique).
+    provider_email: Mapped[str | None] = mapped_column(String(320), nullable=True)
+    # Provider's display handle (GitHub login, Google name, etc.).
+    provider_login: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+    user: Mapped[User] = relationship(back_populates="accounts")
+
+
+class Session(Base):
+    """Cookie-backed session for the marketing site + cockpit UI.
+
+    The cookie sent to the browser carries `<session_id>.<signature>`
+    where the signature is HMAC-SHA256(session_id, GOVFORGE_COOKIE_SECRET).
+    Server-side verification rejects sessions with bad signatures BEFORE
+    a DB lookup. Lookup is by `id` (UUID) once the signature validates.
+
+    Sessions auto-expire after `GOVFORGE_SESSION_TTL_DAYS` (default 30).
+    Revocation = setting `revoked_at`.
+    """
+
+    __tablename__ = "sessions"
+    __table_args__ = (
+        Index("ix_sessions_user_id", "user_id"),
+        Index("ix_sessions_expires_at", "expires_at"),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
+    user_id: Mapped[UUID] = mapped_column(Uuid, ForeignKey("users.id"), nullable=False)
+    user_agent: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    ip_address: Mapped[str | None] = mapped_column(String(45), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False
+    )
+    last_seen_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False
+    )
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    revoked_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    user: Mapped[User] = relationship(back_populates="sessions")
+
+    @property
+    def is_active(self) -> bool:
+        if self.revoked_at is not None:
+            return False
+        # SQLite strips tzinfo on read; coerce to UTC for comparison.
+        exp = self.expires_at
+        if exp.tzinfo is None:
+            exp = exp.replace(tzinfo=UTC)
+        return exp > _now()
 
 
 class ApiToken(Base):
@@ -509,6 +595,7 @@ class ApiToken(Base):
 
 
 __all__ = [
+    "Account",
     "Agent",
     "ApiToken",
     "Approval",
@@ -522,6 +609,7 @@ __all__ = [
     "PolicyResult",
     "Project",
     "Review",
+    "Session",
     "Task",
     "User",
 ]

@@ -25,19 +25,21 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import os
 import secrets
 from collections.abc import Callable
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session as DBSession
 
 from govforge.api.deps import get_session
 from govforge.core.enums import TokenScope
-from govforge.core.models import ApiToken, User
+from govforge.core.models import ApiToken, Session, User
 
 TOKEN_PREFIX = "gfp_"
 TOKEN_PREFIX_LEN = 8  # first 8 chars after `gfp_` are stored for indexed lookup
@@ -66,7 +68,7 @@ _bearer_scheme = HTTPBearer(auto_error=False, description="Bearer api token")
 
 
 def _resolve_token(
-    session: Session, secret: str
+    session: DBSession, secret: str
 ) -> tuple[ApiToken, User] | None:
     """Look up an active ApiToken matching the bearer secret, plus its owner.
 
@@ -115,7 +117,7 @@ def RequireToken(
         def create_task(
             ...,
             auth: Annotated[AuthContext, Depends(RequireToken(scope=TokenScope.TASKS_WRITE))],
-            session: Annotated[Session, Depends(get_session)],
+            session: Annotated[DBSession, Depends(get_session)],
         ): ...
     """
 
@@ -154,11 +156,158 @@ def RequireToken(
     return _dependency
 
 
+# ---------------------------------------------------------------------------
+# Cookie sessions (Phase 3.0 Stage B)
+# ---------------------------------------------------------------------------
+#
+# Cookie format: `<session_id>.<signature>` where signature is
+# HMAC-SHA256(session_id_str.encode(), GOVFORGE_COOKIE_SECRET.encode()) hex.
+# Verification rejects bad signatures BEFORE touching the DB.
+#
+# Configuration:
+#   GOVFORGE_COOKIE_SECRET      — required for cookie auth to work (32+ bytes random)
+#   GOVFORGE_COOKIE_NAME        — default `govforge_session`
+#   GOVFORGE_COOKIE_DOMAIN      — default unset (host-only); use `.govforge.dev`
+#                                  in prod so the cookie covers api.govforge.dev too
+#   GOVFORGE_SESSION_TTL_DAYS   — default 30
+
+SESSION_COOKIE_NAME = os.environ.get("GOVFORGE_COOKIE_NAME", "govforge_session")
+SESSION_TTL_DAYS = int(os.environ.get("GOVFORGE_SESSION_TTL_DAYS", "30"))
+
+
+def _cookie_secret() -> str | None:
+    """The signing secret. Falsy if not configured — callers must 503."""
+    val = os.environ.get("GOVFORGE_COOKIE_SECRET")
+    return val if val else None
+
+
+def _sign_session_id(session_id: UUID, secret: str) -> str:
+    sig = hmac.new(
+        secret.encode("utf-8"), str(session_id).encode("ascii"), hashlib.sha256
+    ).hexdigest()
+    return f"{session_id}.{sig}"
+
+
+def _verify_session_cookie(raw: str, secret: str) -> UUID | None:
+    """Return the session_id if signature checks out, else None."""
+    if "." not in raw:
+        return None
+    sid_str, sig = raw.rsplit(".", 1)
+    expected_sig = hmac.new(
+        secret.encode("utf-8"), sid_str.encode("ascii"), hashlib.sha256
+    ).hexdigest()
+    if not hmac.compare_digest(sig, expected_sig):
+        return None
+    try:
+        return UUID(sid_str)
+    except ValueError:
+        return None
+
+
+def create_session_row(
+    db: DBSession,
+    *,
+    user_id: UUID,
+    user_agent: str | None = None,
+    ip_address: str | None = None,
+    ttl_days: int | None = None,
+) -> Session:
+    """Insert a Session row with default TTL. Returns the row (caller flushes/commits)."""
+    now = datetime.now(UTC)
+    ttl = ttl_days if ttl_days is not None else SESSION_TTL_DAYS
+    s = Session(
+        user_id=user_id,
+        user_agent=user_agent[:512] if user_agent else None,
+        ip_address=ip_address[:45] if ip_address else None,
+        created_at=now,
+        last_seen_at=now,
+        expires_at=now + timedelta(days=ttl),
+    )
+    db.add(s)
+    return s
+
+
+def encode_session_cookie(session_id: UUID) -> str | None:
+    """Returns the value to set on the `govforge_session` cookie."""
+    secret = _cookie_secret()
+    if secret is None:
+        return None
+    return _sign_session_id(session_id, secret)
+
+
+def resolve_session(db: DBSession, raw_cookie: str) -> tuple[Session, User] | None:
+    """Verify signature → DB lookup. Returns (session, user) iff active."""
+    secret = _cookie_secret()
+    if secret is None:
+        return None
+    sid = _verify_session_cookie(raw_cookie, secret)
+    if sid is None:
+        return None
+    s = db.get(Session, sid)
+    if s is None or not s.is_active:
+        return None
+    user = db.get(User, s.user_id)
+    if user is None or not user.is_active:
+        return None
+    # Touch last_seen_at (best-effort).
+    s.last_seen_at = datetime.now(UTC)
+    return s, user
+
+
+class UserContext:
+    """Pre-built request principal for cookie-authenticated users."""
+
+    __slots__ = ("session", "user")
+
+    def __init__(self, session: Session, user: User) -> None:
+        self.session = session
+        self.user = user
+
+
+def RequireUser() -> Callable[..., UserContext]:
+    """FastAPI dependency: enforce a valid cookie session."""
+
+    def _dependency(
+        request: Request,
+        db: Annotated[DBSession, Depends(get_session)],
+    ) -> UserContext:
+        if _cookie_secret() is None:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Cookie sessions not configured on this server",
+            )
+        raw = request.cookies.get(SESSION_COOKIE_NAME)
+        if not raw:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Missing session cookie",
+            )
+        resolved = resolve_session(db, raw)
+        if resolved is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid or expired session",
+            )
+        session, user = resolved
+        request.state.auth_user_id = user.id
+        request.state.auth_session_id = session.id
+        return UserContext(session=session, user=user)
+
+    return _dependency
+
+
 __all__ = [
     "AuthContext",
     "RequireToken",
+    "RequireUser",
+    "SESSION_COOKIE_NAME",
+    "SESSION_TTL_DAYS",
     "TOKEN_PREFIX",
+    "UserContext",
+    "create_session_row",
+    "encode_session_cookie",
     "extract_prefix",
     "generate_token_secret",
     "hash_token_secret",
+    "resolve_session",
 ]

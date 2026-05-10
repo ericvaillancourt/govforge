@@ -53,6 +53,8 @@ func NewRoot(version string) *cobra.Command {
 		NewReviewCmd(flags),
 		NewApproveCmd(flags),
 		NewRejectCmd(flags),
+		NewAuthCmd(flags),
+		NewTokenCmd(flags),
 		NewMCPCmd(flags),
 		NewAPICmd(flags),
 		NewUICmd(flags),
