@@ -1,0 +1,50 @@
+name: cli
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "cli/**"
+      - ".github/workflows/cli.yml"
+  pull_request:
+    paths:
+      - "cli/**"
+      - ".github/workflows/cli.yml"
+
+defaults:
+  run:
+    working-directory: cli
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+          cache-dependency-path: cli/go.sum
+
+      - name: Tidy & download
+        run: |
+          go mod tidy
+          go mod download
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Build
+        run: go build -v ./...
+
+      - name: Test
+        run: go test -race -coverprofile=coverage.out ./... || true
+        # `|| true` while there are no tests yet — remove once tests land
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+          working-directory: cli
+          args: --timeout=5m

@@ -13,12 +13,16 @@ GovForge est une couche de gouvernance Git-aware pour agents IA de développemen
 - **UI** : Next.js + Tailwind + shadcn/ui
 - **Infra** : Podman rootless + Cloudflare Tunnel + Caddy
 
-## Repository layout
+## Repository layout (monorepo)
 
-| Dossier / fichier | Rôle |
-|-------------------|------|
-| [`site/`](./site/) | Site marketing Next.js (govforge.dev) |
-| [`infra/`](./infra/) | Configurations infrastructure (sudoers, Caddy, Podman quadlet) |
+| Dossier | Rôle | Statut |
+|---------|------|--------|
+| [`backend/`](./backend/) | Python : FastMCP server + FastAPI + SQLAlchemy services | 🚧 scaffolding |
+| [`cli/`](./cli/) | Go : binaire `gf` (developer CLI) | 🚧 scaffolding |
+| [`ui/`](./ui/) | Next.js : cockpit local (lancé par `gf ui serve`) | 🚧 scaffolding |
+| [`site/`](./site/) | Next.js : site marketing public (govforge.dev) | ✅ déployé |
+| [`infra/`](./infra/) | Configurations infrastructure (sudoers, Caddy, Podman quadlet) | ✅ déployé |
+| [`.github/workflows/`](./.github/workflows/) | CI : backend, cli, ui, release (GoReleaser) | ✅ |
 
 ## License
 

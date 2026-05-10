@@ -1,0 +1,82 @@
+# GoReleaser config for the gf CLI
+# https://goreleaser.com/customization/
+
+version: 2
+
+project_name: govforge
+
+before:
+  hooks:
+    - go mod tidy
+    - go mod download
+
+builds:
+  - id: gf
+    main: ./cmd/gf
+    binary: gf
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+    ldflags:
+      - -s -w
+      - -X main.Version={{.Version}}
+      - -X main.Commit={{.Commit}}
+      - -X main.Date={{.Date}}
+
+archives:
+  - id: gf
+    format: tar.gz
+    format_overrides:
+      - goos: windows
+        format: zip
+    name_template: >-
+      gf_{{ .Version }}_{{ .Os }}_{{ if eq .Arch "amd64" }}x86_64{{ else }}{{ .Arch }}{{ end }}
+    files:
+      - LICENSE
+      - README.md
+
+checksum:
+  name_template: "checksums.txt"
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-snapshot"
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - "^docs:"
+      - "^chore:"
+      - "^test:"
+      - "Merge pull request"
+      - "Merge branch"
+
+release:
+  github:
+    owner: ericvaillancourt
+    name: govforge
+  draft: false
+  prerelease: auto
+
+brews:
+  - name: govforge
+    repository:
+      owner: ericvaillancourt
+      name: homebrew-tap
+    homepage: https://govforge.dev
+    description: GovForge CLI — governance for AI coding agents
+    license: Apache-2.0
+    install: |
+      bin.install "gf"
+    test: |
+      system "#{bin}/gf", "version"
