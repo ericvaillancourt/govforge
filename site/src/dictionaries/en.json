@@ -32,8 +32,8 @@
         "title": "Resources",
         "links": [
           { "href": "/docs", "label": "Documentation" },
+          { "href": "/press", "label": "Press kit" },
           { "href": "/changelog", "label": "Changelog" },
-          { "href": "/blog", "label": "Blog" },
           { "href": "/docs/api", "label": "API" }
         ]
       },
@@ -449,5 +449,133 @@
         "a": "The OSS core works forever, fully self-hosted, with no dependency on our cloud. There is no vendor lock-in by design."
       }
     ]
+  },
+  "press": {
+    "metaTitle": "Press kit",
+    "metaDescription": "Logos, boilerplate, screenshots, and contact for press, podcasts, and conference coverage of GovForge.",
+    "heading": "Press kit",
+    "subheading": "Everything you need to write about, talk about, or link to GovForge — without emailing us first.",
+    "facts": [
+      { "label": "Product", "value": "GovForge" },
+      { "label": "Tagline", "value": "Govern AI coding agents before they govern your codebase." },
+      { "label": "Launched", "value": "May 2026" },
+      { "label": "License", "value": "Apache 2.0 (open core)" },
+      { "label": "Headquarters", "value": "Montréal, Québec, Canada" },
+      { "label": "Pricing", "value": "Free local OSS · Team / Enterprise paid (Phase 3+)" }
+    ],
+    "boilerplate": {
+      "heading": "Boilerplate",
+      "subheading": "Copy any of the three lengths below. They all carry the same claims; pick the one that fits your space.",
+      "entries": [
+        {
+          "length": "Short — 1 sentence",
+          "text": "GovForge is a local-first audit trail for AI coding agents — open source, Apache 2.0, govforge.dev."
+        },
+        {
+          "length": "Medium — 1 paragraph",
+          "text": "GovForge is open-source governance infrastructure for AI coding agents. It records every code decision an agent makes — diff, rationale, policy verdict, peer review, human approval — in an append-only local audit trail. The CLI, MCP server, and HTTP API run entirely on the developer's machine; no telemetry, no outbound network calls."
+        },
+        {
+          "length": "Long — 2 paragraphs",
+          "text": "GovForge is open-source governance infrastructure for AI coding agents like Claude Code, Codex, Cursor, Cline and Aider. It captures the seven artefacts that turn an agentic code change into an auditable one — Decision, GitChange, PolicyResult, Review, Disagreement, Approval, Event — and exposes them through MCP tools, an HTTP API, a Go CLI (gf), and a local cockpit UI. The whole stack is local-first: a SQLite file at .govforge/govforge.db, no cloud sync, no telemetry, verifiable by source-grep tests in CI. Released in May 2026 under Apache 2.0 by Eric Vaillancourt (Talsom, Montréal). The OSS path stays free forever; a future SaaS layer (RBAC, SSO, signed approvals, compliance reports) targets teams that need it."
+        }
+      ]
+    },
+    "assets": {
+      "heading": "Logo & marks",
+      "subheading": "Three SVG variants, all monochrome via currentColor. Drop them on any background that has enough contrast.",
+      "downloadLabel": "Download SVG",
+      "items": [
+        {
+          "name": "Mark — stroked",
+          "file": "mark.svg",
+          "alt": "GovForge stroked mark",
+          "description": "Use on coloured surfaces — nav bars, dark heroes, card chrome.",
+          "width": 64,
+          "height": 64
+        },
+        {
+          "name": "Mark — filled",
+          "file": "mark-filled.svg",
+          "alt": "GovForge filled mark",
+          "description": "Solid mark for favicons, app tiles, OG images, profile pictures.",
+          "width": 64,
+          "height": 64
+        },
+        {
+          "name": "Wordmark",
+          "file": "wordmark.svg",
+          "alt": "GovForge wordmark",
+          "description": "Mark + name lockup. README headers, conference slides, email signatures.",
+          "width": 180,
+          "height": 48
+        }
+      ],
+      "note": "Need a raster export, transparent PNG, or larger size? Email press@govforge.dev — most requests turn around within 24 hours."
+    },
+    "dos": {
+      "heading": "Do",
+      "items": [
+        "Use the wordmark when you have horizontal space; the mark when you don't.",
+        "Reserve clear space at least equal to the height of the rounded square.",
+        "Match the foreground colour of the surrounding text.",
+        "Spell the product name as one word: GovForge.",
+        "Refer to the CLI as gf (lowercase, two letters)."
+      ]
+    },
+    "donts": {
+      "heading": "Don't",
+      "items": [
+        "Don't recolour individual paths. The mark is monochrome on purpose.",
+        "Don't outline the wordmark text — it ships at semi-bold already.",
+        "Don't rotate, skew, or stretch any of the assets.",
+        "Don't write the product name as Gov Forge, Gov-Forge, or GOVFORGE.",
+        "Don't lay the wordmark over a busy photographic background — use the filled mark instead."
+      ]
+    },
+    "screenshots": {
+      "heading": "Screenshots",
+      "subheading": "High-res screenshots of the cockpit UI and CLI workflow. Email us if you need a specific shot for a story.",
+      "note": "Cockpit screenshots ship with the v0.2 release. Until then, the OG image and asciinema cast are the canonical visuals.",
+      "items": [
+        {
+          "label": "Decision timeline",
+          "description": "Append-only event log for a single decision — diff, policy verdicts, reviews, approval.",
+          "placeholderHint": "Cockpit screenshot · v0.2"
+        },
+        {
+          "label": "Disagreement view",
+          "description": "Two agents review the same change and disagree. The disagreement is its own first-class record.",
+          "placeholderHint": "Cockpit screenshot · v0.2"
+        },
+        {
+          "label": "CLI workflow",
+          "description": "End-to-end gf flow from gf init through gf approve, captured as an asciinema cast.",
+          "placeholderHint": "asciinema cast · /docs/quickstart"
+        },
+        {
+          "label": "Open Graph image",
+          "description": "Charcoal canvas with the GovForge wordmark and tagline. Used as the default social card.",
+          "placeholderHint": "1200×630 · /opengraph-image"
+        }
+      ]
+    },
+    "founder": {
+      "heading": "Founder & maintainer",
+      "name": "Eric Vaillancourt",
+      "bio": "Principal engineer at Talsom (Montréal). Builds tooling at the boundary between AI coding agents and the engineering practices that keep production systems alive. Previously: data platforms, ML infrastructure, and a long stretch of being on-call at 3 AM for things he didn't write.",
+      "links": [
+        { "label": "GitHub", "href": "https://github.com/ericvaillancourt" },
+        { "label": "LinkedIn", "href": "https://www.linkedin.com/in/ericvaillancourt/" },
+        { "label": "Email", "href": "mailto:eric.vaillancourt@talsom.com" }
+      ]
+    },
+    "contact": {
+      "heading": "Press inquiries",
+      "subheading": "Podcasts, articles, conference invites, security disclosures with embargo — all welcome. Same-day reply during EST business hours.",
+      "email": "eric.vaillancourt@talsom.com",
+      "emailLabel": "Email press contact",
+      "githubLabel": "Visit GitHub repo"
+    }
   }
 }

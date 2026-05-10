@@ -32,8 +32,8 @@
         "title": "Ressources",
         "links": [
           { "href": "/docs", "label": "Documentation" },
+          { "href": "/press", "label": "Trousse de presse" },
           { "href": "/changelog", "label": "Journal des versions" },
-          { "href": "/blog", "label": "Blogue" },
           { "href": "/docs/api", "label": "API" }
         ]
       },
@@ -449,5 +449,133 @@
         "a": "Le cœur code ouvert fonctionne pour toujours, entièrement auto-hébergé, sans dépendance à notre cloud. Aucun verrouillage par conception."
       }
     ]
+  },
+  "press": {
+    "metaTitle": "Trousse de presse",
+    "metaDescription": "Logos, descriptions, captures d'écran et contact pour la presse, les balados et la couverture de conférences sur GovForge.",
+    "heading": "Trousse de presse",
+    "subheading": "Tout ce qu'il faut pour parler de GovForge, écrire à son sujet ou y faire référence — sans nous écrire d'abord.",
+    "facts": [
+      { "label": "Produit", "value": "GovForge" },
+      { "label": "Slogan", "value": "Encadrez les agents de codage IA avant qu'ils n'encadrent votre code." },
+      { "label": "Lancement", "value": "Mai 2026" },
+      { "label": "Licence", "value": "Apache 2.0 (cœur ouvert)" },
+      { "label": "Siège", "value": "Montréal, Québec, Canada" },
+      { "label": "Tarifs", "value": "Code ouvert local gratuit · Équipe / Entreprise (Phase 3+)" }
+    ],
+    "boilerplate": {
+      "heading": "Descriptions à copier",
+      "subheading": "Trois longueurs, mêmes faits. Choisissez celle qui rentre dans votre format.",
+      "entries": [
+        {
+          "length": "Court — 1 phrase",
+          "text": "GovForge est une piste d'audit locale pour agents de codage IA — code ouvert, Apache 2.0, govforge.dev."
+        },
+        {
+          "length": "Moyen — 1 paragraphe",
+          "text": "GovForge est une infrastructure de gouvernance à code ouvert pour les agents de codage IA. Elle enregistre chaque décision de code prise par un agent — diff, justification, verdict de politique, revue par les pairs, approbation humaine — dans une piste d'audit locale en mode ajout seul. La CLI, le serveur MCP et l'API HTTP s'exécutent entièrement sur la machine du développeur, sans télémétrie ni appels réseau sortants."
+        },
+        {
+          "length": "Long — 2 paragraphes",
+          "text": "GovForge est une infrastructure de gouvernance à code ouvert pour les agents de codage IA tels que Claude Code, Codex, Cursor, Cline et Aider. Elle capture les sept artefacts qui transforment un changement de code agentique en un changement auditable — Decision, GitChange, PolicyResult, Review, Disagreement, Approval, Event — et les expose via des outils MCP, une API HTTP, une CLI Go (gf) et un poste de pilotage local. Toute la pile est locale d'abord : un fichier SQLite à .govforge/govforge.db, aucune synchronisation cloud, aucune télémétrie, vérifiable par des tests source-grep dans la CI. Publiée en mai 2026 sous Apache 2.0 par Eric Vaillancourt (Talsom, Montréal). Le palier code ouvert reste gratuit pour toujours ; une future couche SaaS (RBAC, SSO, approbations signées, rapports de conformité) cible les équipes qui en ont besoin."
+        }
+      ]
+    },
+    "assets": {
+      "heading": "Logo & symboles",
+      "subheading": "Trois variantes SVG, toutes monochromes via currentColor. À déposer sur tout fond ayant un contraste suffisant.",
+      "downloadLabel": "Télécharger le SVG",
+      "items": [
+        {
+          "name": "Symbole — tracé",
+          "file": "mark.svg",
+          "alt": "Symbole GovForge tracé",
+          "description": "À utiliser sur surfaces colorées — barres de navigation, héros foncés, cartes.",
+          "width": 64,
+          "height": 64
+        },
+        {
+          "name": "Symbole — plein",
+          "file": "mark-filled.svg",
+          "alt": "Symbole GovForge plein",
+          "description": "Symbole solide pour favicons, tuiles d'app, images OG, photos de profil.",
+          "width": 64,
+          "height": 64
+        },
+        {
+          "name": "Logotype",
+          "file": "wordmark.svg",
+          "alt": "Logotype GovForge",
+          "description": "Symbole + nom. En-têtes README, diapositives, signatures courriel.",
+          "width": 180,
+          "height": 48
+        }
+      ],
+      "note": "Besoin d'un export raster, d'un PNG transparent ou d'une plus grande taille ? Écrivez à press@govforge.dev — la plupart des demandes sont traitées en moins de 24 heures."
+    },
+    "dos": {
+      "heading": "À faire",
+      "items": [
+        "Utiliser le logotype quand l'espace horizontal le permet ; le symbole sinon.",
+        "Réserver un espace libre au moins égal à la hauteur du carré arrondi.",
+        "Adopter la couleur du texte environnant.",
+        "Écrire le nom du produit en un seul mot : GovForge.",
+        "Désigner la CLI par gf (en minuscules, deux lettres)."
+      ]
+    },
+    "donts": {
+      "heading": "À éviter",
+      "items": [
+        "Ne recolorez pas les tracés un par un. Le symbole est monochrome par choix.",
+        "Ne contourez pas le texte du logotype — il est déjà en demi-gras.",
+        "Ne faites pas pivoter, oblique ou étirer aucun des éléments.",
+        "N'écrivez pas Gov Forge, Gov-Forge ou GOVFORGE.",
+        "Ne posez pas le logotype sur un fond photographique chargé — utilisez le symbole plein."
+      ]
+    },
+    "screenshots": {
+      "heading": "Captures d'écran",
+      "subheading": "Captures haute résolution du poste de pilotage et du flux CLI. Écrivez-nous pour une vue précise.",
+      "note": "Les captures du poste de pilotage seront disponibles avec la version v0.2. D'ici là, l'image OG et le cast asciinema sont les visuels canoniques.",
+      "items": [
+        {
+          "label": "Chronologie de décision",
+          "description": "Journal d'événements en mode ajout seul pour une décision — diff, verdicts de politique, revues, approbation.",
+          "placeholderHint": "Capture cockpit · v0.2"
+        },
+        {
+          "label": "Vue désaccord",
+          "description": "Deux agents revoient le même changement et ne sont pas d'accord. Le désaccord est un enregistrement de premier ordre.",
+          "placeholderHint": "Capture cockpit · v0.2"
+        },
+        {
+          "label": "Flux CLI",
+          "description": "Flux gf de bout en bout, de gf init à gf approve, capturé comme cast asciinema.",
+          "placeholderHint": "Cast asciinema · /docs/quickstart"
+        },
+        {
+          "label": "Image Open Graph",
+          "description": "Toile charbon avec le logotype et le slogan. Carte sociale par défaut.",
+          "placeholderHint": "1200×630 · /opengraph-image"
+        }
+      ]
+    },
+    "founder": {
+      "heading": "Fondateur et mainteneur",
+      "name": "Eric Vaillancourt",
+      "bio": "Ingénieur principal chez Talsom (Montréal). Construit de l'outillage à la frontière entre les agents de codage IA et les pratiques d'ingénierie qui maintiennent les systèmes en production. Auparavant : plateformes de données, infrastructure ML, et de longues périodes de garde à 3 h du matin pour du code qu'il n'avait pas écrit.",
+      "links": [
+        { "label": "GitHub", "href": "https://github.com/ericvaillancourt" },
+        { "label": "LinkedIn", "href": "https://www.linkedin.com/in/ericvaillancourt/" },
+        { "label": "Courriel", "href": "mailto:eric.vaillancourt@talsom.com" }
+      ]
+    },
+    "contact": {
+      "heading": "Contacts presse",
+      "subheading": "Balados, articles, invitations en conférence, divulgations de sécurité sous embargo — tous bienvenus. Réponse le jour même pendant les heures ouvrables (EST).",
+      "email": "eric.vaillancourt@talsom.com",
+      "emailLabel": "Écrire au contact presse",
+      "githubLabel": "Voir le dépôt GitHub"
+    }
   }
 }
