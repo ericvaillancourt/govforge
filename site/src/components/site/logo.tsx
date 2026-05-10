@@ -6,6 +6,15 @@ interface LogoProps {
   lang?: Locale;
 }
 
+/**
+ * Site brand mark — same composition as `public/brand/mark.svg` and the
+ * favicon at `app/icon.tsx`. Inherits colour via `currentColor` so the
+ * single component works on any background. Marked aria-hidden because
+ * the wordmark text alongside it is the accessible label.
+ *
+ * Source of truth for the artwork: `docs/brand.md`. Don't fork the
+ * paths into another component — import this one.
+ */
 export function Logo({ className = "", lang }: LogoProps) {
   const href = lang ? localePath(lang, "/") : "/";
   return (
@@ -15,26 +24,19 @@ export function Logo({ className = "", lang }: LogoProps) {
       aria-label="GovForge home"
     >
       <svg
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
+        width="28"
+        height="28"
+        viewBox="0 0 64 64"
         fill="none"
-        xmlns="http://www.w3.org/2000/svg"
+        stroke="currentColor"
+        strokeWidth="6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
         aria-hidden="true"
       >
-        <path
-          d="M4 7L12 3L20 7V17L12 21L4 17V7Z"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinejoin="round"
-        />
-        <path
-          d="M4 7L12 11M12 11L20 7M12 11V21"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinejoin="round"
-        />
-        <circle cx="12" cy="11" r="2" fill="currentColor" />
+        <rect x="4" y="4" width="56" height="56" rx="12" ry="12" />
+        <path d="M40 22 H26 a8 8 0 0 0 -8 8 v4 a8 8 0 0 0 8 8 h6 a4 4 0 0 0 4 -4 v-4 H30" />
+        <path d="M44 38 v6" />
       </svg>
       <span className="text-base">GovForge</span>
     </Link>

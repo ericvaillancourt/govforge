@@ -1,0 +1,12 @@
+<!--
+  GovForge — primary mark.
+  64×64 viewBox, single colour via currentColor so the same file works on
+  light and dark backgrounds. The glyph is a stylised G whose serif extends
+  out the right edge — a quiet "forge" / engineering tick that disappears
+  at small sizes but reads cleanly at 32 px+.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="4" y="4" width="56" height="56" rx="12" ry="12" />
+  <path d="M40 22 H26 a8 8 0 0 0 -8 8 v4 a8 8 0 0 0 8 8 h6 a4 4 0 0 0 4 -4 v-4 H30" />
+  <path d="M44 38 v6" />
+</svg>

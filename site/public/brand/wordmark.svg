@@ -1,0 +1,21 @@
+<!--
+  GovForge — full lockup (mark + wordmark). Inherits text colour from
+  currentColor so the same file works in headers + emails + READMEs.
+  Width 220, height 64 — proportions tuned for nav bars at 48 px tall.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 64">
+  <g fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="4" y="4" width="56" height="56" rx="12" ry="12" />
+    <path d="M40 22 H26 a8 8 0 0 0 -8 8 v4 a8 8 0 0 0 8 8 h6 a4 4 0 0 0 4 -4 v-4 H30" />
+    <path d="M44 38 v6" />
+  </g>
+  <text
+    x="76"
+    y="42"
+    font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Inter, 'Segoe UI', Roboto, sans-serif"
+    font-size="28"
+    font-weight="600"
+    letter-spacing="-0.02em"
+    fill="currentColor"
+  >GovForge</text>
+</svg>

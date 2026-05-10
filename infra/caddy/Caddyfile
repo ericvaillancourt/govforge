@@ -40,6 +40,14 @@
     @apex host govforge.dev
     handle @apex {
         root * /srv/govforge-site
+
+        # Next 16 emits favicon/OG images at extensionless routes (/icon,
+        # /apple-icon, /opengraph-image). file_server can't sniff the MIME
+        # type without an extension, so we set it explicitly — OG validators
+        # (Twitter / LinkedIn / Slack) refuse images that lack Content-Type.
+        @brand_images path /icon /apple-icon /opengraph-image
+        header @brand_images Content-Type image/png
+
         try_files {path} {path}/index.html
         file_server
     }

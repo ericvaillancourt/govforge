@@ -69,15 +69,25 @@ export async function generateMetadata(
       description: dict.metadata.ogDescription,
       locale: ogLocale,
       alternateLocale: altLocale,
+      images: [
+        {
+          url: "/opengraph-image",
+          width: 1200,
+          height: 630,
+          alt: "GovForge — Govern AI coding agents before they govern your codebase.",
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
       title: dict.metadata.twitterTitle,
       description: dict.metadata.twitterDescription,
+      images: ["/opengraph-image"],
     },
-    icons: {
-      icon: "/favicon.ico",
-    },
+    // Icons + OG/Twitter images intentionally omitted: Next picks up the
+    // app/icon.tsx, app/apple-icon.tsx, and app/opengraph-image.tsx routes
+    // automatically and injects the right <link>/<meta> tags. Setting
+    // `icons.icon` here would shadow the generated `/icon` route.
   };
 }
 

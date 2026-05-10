@@ -1,0 +1,18 @@
+<!--
+  GovForge — solid mark for places that need filled artwork (favicon,
+  OG image, app launcher tiles). Same composition as mark.svg but the
+  rounded square is filled with currentColor and the glyph is reversed
+  out as background.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect x="0" y="0" width="64" height="64" rx="14" ry="14" fill="currentColor" />
+  <path
+    d="M40 22 H26 a8 8 0 0 0 -8 8 v4 a8 8 0 0 0 8 8 h6 a4 4 0 0 0 4 -4 v-4 H30"
+    fill="none"
+    stroke="white"
+    stroke-width="5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path d="M44 38 v6" fill="none" stroke="white" stroke-width="5" stroke-linecap="round" />
+</svg>
