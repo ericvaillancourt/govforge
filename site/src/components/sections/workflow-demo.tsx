@@ -119,11 +119,11 @@ export function WorkflowDemo({ dict, lang }: WorkflowDemoProps) {
       </div>
 
       <div className="mt-10 flex flex-wrap gap-3">
-        <ButtonLink href={localePath(lang, "/docs/workflow")}>
+        <ButtonLink href={localePath(lang, "/docs/workflow-example")}>
           {dict.ctaFull}
           <ArrowRight className="h-4 w-4" />
         </ButtonLink>
-        <ButtonLink href={localePath(lang, "/demo")} variant="outline">
+        <ButtonLink href={localePath(lang, "/docs/quickstart")} variant="outline">
           <Play className="h-4 w-4" />
           {dict.ctaDemo}
         </ButtonLink>

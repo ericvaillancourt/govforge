@@ -9,116 +9,115 @@
 #   - Phase 3 will add: govforge-ui, govforge-api, govforge-mcp containers
 #   - Unknown hosts: 404
 #
-
 {
-    # Cloudflare terminates TLS — no need for Caddy auto-HTTPS
-    auto_https off
-    # Disable admin endpoint (we don't expose it anyway)
-    admin off
-    # Trust X-Forwarded-* headers from .4 (cloudflared) and Podman bridge
-    servers {
-        trusted_proxies static 192.168.2.4/32 private_ranges
-    }
-    # Compact JSON logs to stdout (captured by journald)
-    log {
-        output stdout
-        format json
-        level INFO
-    }
+	# Cloudflare terminates TLS — no need for Caddy auto-HTTPS
+	auto_https off
+	# Disable admin endpoint (we don't expose it anyway)
+	admin off
+	# Trust X-Forwarded-* headers from .4 (cloudflared) and Podman bridge
+	servers {
+		trusted_proxies static 192.168.2.4/32 private_ranges
+	}
+	# Compact JSON logs to stdout (captured by journald)
+	log {
+		output stdout
+		format json
+		level INFO
+	}
 }
 
 :8080 {
-    # ----- Health endpoint (any host, must come first) -----
+	# ----- Health endpoint (any host, must come first) -----
 
-    @health path /healthz
-    handle @health {
-        respond "ok" 200
-    }
+	@health path /healthz
+	handle @health {
+		respond "ok" 200
+	}
 
-    # ----- Phase 2 hostnames (pre-deploy placeholders) -----
+	# ----- Phase 2 hostnames (pre-deploy placeholders) -----
 
-    @apex host govforge.dev
-    handle @apex {
-        root * /srv/govforge-site
+	@apex host govforge.dev
+	handle @apex {
+		root * /srv/govforge-site
 
-        # Legacy URLs from before the bilingual move (i18n routes everything
-        # under /<lang>/...). Anyone with a bookmark or external backlink to
-        # an unlocalized path gets a permanent redirect to /en/. Patterns
-        # cover both the bare path and any sub-paths (e.g. /docs/quickstart).
-        @legacy_pricing path /pricing /pricing/*
-        redir @legacy_pricing /en{uri} 301
+		# Legacy URLs from before the bilingual move (i18n routes everything
+		# under /<lang>/...). Anyone with a bookmark or external backlink to
+		# an unlocalized path gets a permanent redirect to /en/. Patterns
+		# cover both the bare path and any sub-paths (e.g. /docs/quickstart).
+		@legacy_pricing path /pricing /pricing/*
+		redir @legacy_pricing /en{uri} 301
 
-        @legacy_docs path /docs /docs/*
-        redir @legacy_docs /en{uri} 301
+		@legacy_docs path /docs /docs/*
+		redir @legacy_docs /en{uri} 301
 
-        @legacy_press path /press /press/*
-        redir @legacy_press /en{uri} 301
+		@legacy_press path /press /press/*
+		redir @legacy_press /en{uri} 301
 
-        # Browsers fetch /favicon.ico by default. Workstream L migrated to
-        # the Next 16 dynamic /icon route, which emits PNG. Rewrite so the
-        # default browser path keeps working without round-tripping a 404.
-        @favicon path /favicon.ico
-        rewrite @favicon /icon
+		# Browsers fetch /favicon.ico by default. Workstream L migrated to
+		# the Next 16 dynamic /icon route, which emits PNG. Rewrite so the
+		# default browser path keeps working without round-tripping a 404.
+		@favicon path /favicon.ico
+		rewrite @favicon /icon
 
-        # Next 16 emits favicon/OG images at extensionless routes (/icon,
-        # /apple-icon, /opengraph-image). file_server can't sniff the MIME
-        # type without an extension, so we set it explicitly — OG validators
-        # (Twitter / LinkedIn / Slack) refuse images that lack Content-Type.
-        @brand_images path /icon /apple-icon /opengraph-image
-        header @brand_images Content-Type image/png
+		# Next 16 emits favicon/OG images at extensionless routes (/icon,
+		# /apple-icon, /opengraph-image). file_server can't sniff the MIME
+		# type without an extension, so we set it explicitly — OG validators
+		# (Twitter / LinkedIn / Slack) refuse images that lack Content-Type.
+		@brand_images path /icon /apple-icon /opengraph-image
+		header @brand_images Content-Type image/png
 
-        try_files {path} {path}/index.html
-        file_server
-    }
+		try_files {path} {path}/index.html
+		file_server
+	}
 
-    @www host www.govforge.dev
-    handle @www {
-        # Permanent redirect to canonical apex
-        redir https://govforge.dev{uri} 301
-    }
+	@www host www.govforge.dev
+	handle @www {
+		# Permanent redirect to canonical apex
+		redir https://govforge.dev{uri} 301
+	}
 
-    @docs host docs.govforge.dev
-    handle @docs {
-        # docs.govforge.dev is an alias of govforge.dev/en/docs/.
-        # No separate docs container: the marketing site renders every
-        # /docs/*.md page at build time under [lang]/docs/[slug].
-        # Bare host → /en/docs/; any path → /en/docs/<path>.
-        @docs_root path /
-        redir @docs_root https://govforge.dev/en/docs/ 301
-        redir https://govforge.dev/en/docs{uri} 301
-    }
+	@docs host docs.govforge.dev
+	handle @docs {
+		# docs.govforge.dev is an alias of govforge.dev/en/docs/.
+		# No separate docs container: the marketing site renders every
+		# /docs/*.md page at build time under [lang]/docs/[slug].
+		# Bare host → /en/docs/; any path → /en/docs/<path>.
+		@docs_root path /
+		redir @docs_root https://govforge.dev/en/docs/ 301
+		redir https://govforge.dev/en/docs{uri} 301
+	}
 
-    # ----- Phase 3 hostnames (réservés ASAP, placeholders) -----
+	# ----- Phase 3 hostnames (réservés ASAP, placeholders) -----
 
-    @app host app.govforge.dev
-    handle @app {
-        # TODO Phase 3: reverse_proxy govforge-ui:8788
-        respond "GovForge app — Phase 3" 200
-    }
+	@app host app.govforge.dev
+	handle @app {
+		# TODO Phase 3: reverse_proxy govforge-ui:8788
+		respond "GovForge app — Phase 3" 200
+	}
 
-    @api host api.govforge.dev
-    handle @api {
-        # FastAPI backend — govforge-backend.container quadlet on the
-        # hypervisor, joined to the same govforge.network so we can
-        # reach it by ContainerName. Internal port is the same as the
-        # host bind: GOVFORGE_API_PORT=8787 in backend.env.
-        reverse_proxy govforge-backend:8787 {
-            header_up Host {host}
-            header_up X-Real-IP {remote_host}
-            header_up X-Forwarded-For {remote_host}
-            header_up X-Forwarded-Proto https
-        }
-    }
+	@api host api.govforge.dev
+	handle @api {
+		# FastAPI backend — govforge-backend.container quadlet on the
+		# hypervisor, joined to the same govforge.network so we can
+		# reach it by ContainerName. Internal port is the same as the
+		# host bind: GOVFORGE_API_PORT=8787 in backend.env.
+		reverse_proxy govforge-backend:8787 {
+			header_up Host {host}
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-For {remote_host}
+			header_up X-Forwarded-Proto https
+		}
+	}
 
-    @mcp host mcp.govforge.dev
-    handle @mcp {
-        # TODO Phase 3: reverse_proxy govforge-mcp:8789
-        respond "GovForge MCP — Phase 3" 200
-    }
+	@mcp host mcp.govforge.dev
+	handle @mcp {
+		# TODO Phase 3: reverse_proxy govforge-mcp:8789
+		respond "GovForge MCP — Phase 3" 200
+	}
 
-    # ----- Default: hostname unknown -----
+	# ----- Default: hostname unknown -----
 
-    handle {
-        respond "Not Found" 404
-    }
+	handle {
+		respond "Not Found" 404
+	}
 }

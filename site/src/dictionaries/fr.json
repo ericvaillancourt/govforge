@@ -33,14 +33,14 @@
         "links": [
           { "href": "/docs", "label": "Documentation" },
           { "href": "/press", "label": "Trousse de presse" },
-          { "href": "/changelog", "label": "Journal des versions" },
+          { "href": "https://github.com/ericvaillancourt/govforge/blob/main/CHANGELOG.md", "label": "Journal des versions", "external": true },
           { "href": "https://api.govforge.dev/docs", "label": "API", "external": true }
         ]
       },
       {
         "title": "Entreprise",
         "links": [
-          { "href": "/about", "label": "À propos" },
+          { "href": "https://github.com/ericvaillancourt/govforge#what-is-govforge", "label": "À propos", "external": true },
           { "href": "mailto:eric.vaillancourt@talsom.com", "label": "Contact" },
           { "href": "https://github.com/ericvaillancourt/govforge", "label": "GitHub", "external": true }
         ]
@@ -49,7 +49,7 @@
         "title": "Légal",
         "links": [
           { "href": "https://www.apache.org/licenses/LICENSE-2.0", "label": "Licence", "external": true },
-          { "href": "/security", "label": "Sécurité" },
+          { "href": "https://github.com/ericvaillancourt/govforge/blob/main/SECURITY.md", "label": "Sécurité", "external": true },
           { "href": "/privacy", "label": "Confidentialité" }
         ]
       }
@@ -194,6 +194,38 @@
       "Support SLA"
     ],
     "enterpriseCta": "Contacter les ventes"
+  },
+  "privacy": {
+    "metaTitle": "Confidentialité",
+    "metaDescription": "Politique de confidentialité de GovForge. Local-first par conception — aucune télémétrie, aucune analytique, aucun pistage tiers sur le site marketing.",
+    "heading": "Confidentialité",
+    "lastUpdated": "Dernière mise à jour : 2026-05-10",
+    "sections": [
+      {
+        "heading": "Ce que ce site collecte",
+        "body": "Rien au-delà de ce que votre navigateur envoie à n'importe quel serveur web : adresse IP, user agent, URL demandée, statut de réponse. Ces données apparaissent dans nos logs Caddy auto-hébergés (conservation ≤ 14 jours) pour le diagnostic. Aucun cookie, aucune analytique, aucun tracker JavaScript, aucun script tiers."
+      },
+      {
+        "heading": "Ce que le produit GovForge collecte",
+        "body": "Rien. Le CLI (`gf`) et le backend tournent entièrement sur votre machine. SQLite stocke vos décisions, revues et journal d'audit sous `.govforge/` dans votre projet. Aucun phone-home, aucune télémétrie opt-in, aucune analytique d'usage. Vérifiable en lisant le code source sur GitHub."
+      },
+      {
+        "heading": "Interactions GitHub",
+        "body": "Quand vous visitez notre repository GitHub (issues, discussions, releases), les conditions de GitHub s'appliquent. Nous n'opérons pas et ne proxifions pas GitHub."
+      },
+      {
+        "heading": "Hébergement",
+        "body": "Le site marketing (govforge.dev) et le swagger FastAPI (api.govforge.dev) sont auto-hébergés sur notre infrastructure, frontés par Cloudflare pour le DNS et la terminaison TLS. La politique de confidentialité de Cloudflare s'applique à cette couche edge."
+      },
+      {
+        "heading": "Paliers futurs",
+        "body": "Si nous lançons un palier payant Team (planifié Phase 3.1), il demandera un compte et stockera les métadonnées que vous choisissez de synchroniser (décisions, revues, événements) — jamais le code source. Les détails seront publiés avant ce lancement et ajoutés ici."
+      },
+      {
+        "heading": "Contact",
+        "body": "Questions sur la confidentialité : eric.vaillancourt@talsom.com."
+      }
+    ]
   },
   "docs": {
     "metaTitle": "Documentation",

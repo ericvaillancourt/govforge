@@ -13,9 +13,15 @@ at an audit timeline within ~90 seconds. The cast is the proof of the
 ## Setup before recording
 
 ```bash
+# 0. Tools you need (one-time, on the recording host)
+pipx install asciinema       # the recorder itself
+npm i -g asciinema-edit      # for tightening idle pauses (optional but recommended)
+# asciicast2gif is needed only for the GIF preview — see "Publishing".
+
 # 1. Clean state — temp dir + temp shell
 WORKDIR="$(mktemp -d)/demo-repo"
 mkdir -p "$WORKDIR" && cd "$WORKDIR"
+git init -q && git commit -q --allow-empty -m "initial"
 
 # 2. Optional: pre-warm the binaries so download time doesn't show
 test -x ~/bin/gf || (cd /path/to/govforge/cli && go build -o ~/bin/gf ./cmd/gf)
@@ -170,11 +176,14 @@ asciinema-edit speed --start-pause-threshold 2.5 \
 asciinema upload quickstart.tight.cast
 # → https://asciinema.org/a/<id>
 
-# 2. Generate the static GIF preview for the README hero
-docker run --rm -v "$PWD:/data" asciinema/asciicast2gif \
+# 2. Generate the static GIF preview for the README hero.
+#    Podman works the same as Docker here — pick either.
+podman run --rm -v "$PWD:/data:Z" asciinema/asciicast2gif \
   /data/quickstart.tight.cast /data/quickstart.gif
 
-# 3. Drop the .cast and .gif into site/public/quickstart/
+# 3. Drop the .cast and .gif into site/public/quickstart/ (create the dir
+#    on first run; the deploy rsync picks it up automatically).
+mkdir -p site/public/quickstart
 mv quickstart.tight.cast quickstart.gif site/public/quickstart/
 ```
 
