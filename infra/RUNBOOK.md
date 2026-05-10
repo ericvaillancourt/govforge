@@ -326,21 +326,34 @@ additive on tokens. To rotate:
 4. Verify: requests with the old token return 401, with the new one
    return 200.
 
-### 8.5 Stage B (GitHub-only — live since 2026-05-10)
+### 8.5 Stage B (live since 2026-05-10)
 
-Site users sign in at `/[lang]/login/` (GitHub button) and manage
-tokens at `/[lang]/account/`. CLI `gf auth login --token gfp_…` saves
-to `.govforge/auth.toml` (per-project) or
+Site users sign in at `/[lang]/login/` (GitHub + Google buttons) and
+manage tokens at `/[lang]/account/`. CLI `gf auth login --token gfp_…`
+saves to `.govforge/auth.toml` (per-project) or
 `~/.config/govforge/auth.toml` (global), with `GOVFORGE_API_TOKEN` env
 var taking precedence. The Bearer model from Stage A keeps working
 unchanged — Stage B adds a parallel cookie-session path on the same
 FastAPI app.
 
+`/tokens` (POST/GET/DELETE) is dual-auth via the `RequirePrincipal`
+dependency: it accepts **either** a Bearer token (with scope check)
+**or** a cookie session (no scope check — the logged-in user has
+implicit access to their own tokens). The browser sign-in UX
+needs the cookie path; CLI/MCP agents use the Bearer path.
+
 #### Stage B env vars (in `~/govforge/backend/backend.env` on .5)
 
 ```
+# GitHub OAuth (required for /auth/github/*)
 GITHUB_OAUTH_CLIENT_ID=<client id from github.com/settings/developers>
 GITHUB_OAUTH_CLIENT_SECRET=<client secret>
+
+# Google OAuth (optional — when absent, /auth/google/* returns 503)
+GOOGLE_OAUTH_CLIENT_ID=<client id from console.cloud.google.com>
+GOOGLE_OAUTH_CLIENT_SECRET=<client secret>
+
+# Cookie-session signing (required for any OAuth flow)
 GOVFORGE_COOKIE_SECRET=<random ≥32 bytes, base64url>
 GOVFORGE_COOKIE_DOMAIN=.govforge.dev
 ```
@@ -370,13 +383,21 @@ keep this in.
 #### Smoke test
 
 ```bash
+# GitHub
 curl -s -o /dev/null -w "HTTP %{http_code}\nLocation: %{redirect_url}\n" \
   https://api.govforge.dev/auth/github/start
+
+# Google (503 until creds present, 302 once GOOGLE_OAUTH_* are in env)
+curl -s -o /dev/null -w "HTTP %{http_code}\nLocation: %{redirect_url}\n" \
+  https://api.govforge.dev/auth/google/start
 ```
 
-Expected: `HTTP 302` with `Location:
+GitHub expected: `HTTP 302` with `Location:
 https://github.com/login/oauth/authorize?…&redirect_uri=https://api.govforge.dev/auth/github/callback&…`
 (note the **https** in `redirect_uri`).
+
+Google expected (once configured): `HTTP 302` with `Location:
+https://accounts.google.com/o/oauth2/v2/auth?…&redirect_uri=https://api.govforge.dev/auth/google/callback&…`.
 
 #### Rollback
 
@@ -386,7 +407,32 @@ in `backend.env`, restart the service. Routes fall back to clean
 
 ### 8.6 Stage B follow-ups (planned)
 
-Google OAuth and Resend magic link routes are wired up but return
-`503 Service Unavailable` until their credentials are added. CLI
-`gf auth login --device` (device-code flow) is deferred — users
-currently paste the `gfp_…` token from the `/account` page.
+Magic link (Resend) route is wired up but returns `503 Service
+Unavailable` until `RESEND_API_KEY` is provisioned. Google OAuth
+code is shipped and route returns 503 only until the four
+`GOOGLE_OAUTH_*` env vars land (cf. `docs/auth-stage-b-handoff.md`
+for the Google Cloud Console registration steps). CLI `gf auth login
+--device` (device-code flow) is deferred — users currently paste
+the `gfp_…` token from the `/account` page.
+
+### 8.7 Schema migrations — interim policy
+
+Until Alembic lands, schema changes that touch existing tables must
+be applied manually. `create_all` only creates **missing** tables; it
+does not run `ALTER TABLE` on existing ones. The Stage B
+`users.avatar_url` column was added in-place on prod on 2026-05-10
+because Stage A's `users` table already existed. Pattern :
+
+```bash
+ssh eric@192.168.2.5
+podman exec govforge-backend bash -c 'GOVFORGE_DATABASE_URL="$GOVFORGE_DB" python -c "
+from govforge.db.session import make_engine
+from sqlalchemy import text, inspect
+eng = make_engine()
+with eng.begin() as c:
+    c.execute(text(\"ALTER TABLE <table> ADD COLUMN IF NOT EXISTS <col> <type>\"))
+print(inspect(eng).get_columns(\"<table>\"))
+"'
+```
+
+This is a stop-gap. Before the next schema change, introduce Alembic.

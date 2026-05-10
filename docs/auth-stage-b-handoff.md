@@ -1,16 +1,20 @@
 # Phase 3.0 Stage B — handoff checklist
 
-> **Status: GitHub-only flow is LIVE since 2026-05-10.** See
-> `infra/RUNBOOK.md` §8.5 for the operational runbook. This file
-> now tracks the **remaining** handoffs needed for Google OAuth and
-> the Resend-backed magic link, which still 503-stub on prod.
+> **Status:**
+> - GitHub-only flow is LIVE since 2026-05-10
+> - Google OAuth **code is shipped** (route returns 503 until creds in env)
+> - Magic link still 503-stub until Resend is set up
+>
+> See `infra/RUNBOOK.md` §8.5 for the operational runbook. This file
+> tracks the **remaining** credential handoffs Eric needs to provision.
 
 ## ✅ Done — GitHub OAuth (live)
 
 1. GitHub OAuth app registered, callback `https://api.govforge.dev/auth/github/callback`
 2. `GITHUB_OAUTH_CLIENT_ID` + `GITHUB_OAUTH_CLIENT_SECRET` + `GOVFORGE_COOKIE_SECRET` + `GOVFORGE_COOKIE_DOMAIN=.govforge.dev` deployed to `~/govforge/backend/backend.env` on `.5`
 3. `accounts` + `sessions` tables created via `create_all`
-4. Smoke-tested: `/auth/github/start` returns `302` with `redirect_uri=https://…`
+4. `users.avatar_url` column patched in-place (the model added the column but `create_all` doesn't ALTER existing tables — pre-Alembic stop-gap)
+5. Smoke-tested: `/auth/github/start` returns `302` with `redirect_uri=https://…`
 
 ## What Eric still needs to do for the follow-ups
 
@@ -27,7 +31,7 @@
    - Click **Generate a new client secret** → `GITHUB_OAUTH_CLIENT_SECRET` (shown once)
 4. (Optional) Register a SECOND app for local dev with callback `http://localhost:8787/auth/github/callback`.
 
-### 2. Register the Google OAuth app
+### 2. Register the Google OAuth app — **NEXT UP** (code already deployed, just needs creds)
 
 1. https://console.cloud.google.com/ → create or pick a project
 2. **APIs & Services** → **OAuth consent screen**:
@@ -44,6 +48,8 @@
 4. After creation:
    - Copy the **Client ID** → `GOOGLE_OAUTH_CLIENT_ID`
    - Copy the **Client Secret** → `GOOGLE_OAUTH_CLIENT_SECRET`
+5. Append both to `~/govforge/backend/backend.env` on `.5`, then `systemctl --user restart govforge-backend.service` (and Caddy if 502 — stale podman DNS cache).
+6. Smoke test: `curl -s -o /dev/null -w "HTTP %{http_code}\n" https://api.govforge.dev/auth/google/start` — expect `302` (was `503` before the env vars landed).
 
 > Google's OAuth screen stays in "Testing" mode (only allowlisted users) until you submit it for verification. For Stage B beta, testing mode is enough — verification can come later.
 

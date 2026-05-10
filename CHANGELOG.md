@@ -10,11 +10,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 The first release will be `0.1.0` and will mark Phase 1 feature-complete.
 Everything below is on `main` but unreleased.
 
-### Added — Authentication (Phase 3.0 Stage B GitHub-only — live 2026-05-10)
+### Added — Authentication (Phase 3.0 Stage B — live 2026-05-10)
 
 > Stage B (OAuth + cookie sessions + browser login) shipped same-day as
-> Stage A. Scope of this initial cut: GitHub-only. Google + magic link
-> stubbed as `503 Service Unavailable` until their credentials land.
+> Stage A. GitHub is fully live in prod. Google OAuth code shipped same
+> day; awaiting Google Cloud Console OAuth client registration to flip
+> from `503 Service Unavailable` to live. Magic link still stubbed.
+
+#### Google OAuth (code shipped 2026-05-10, awaiting creds)
+
+- `/auth/google/{start,callback}` mirrors the GitHub flow:
+  authorize at `https://accounts.google.com/o/oauth2/v2/auth` with
+  `response_type=code` + `scope=openid email profile` +
+  `prompt=select_account`; exchange at
+  `https://oauth2.googleapis.com/token`; profile via OpenID userinfo
+  `https://www.googleapis.com/oauth2/v3/userinfo`. We explicitly
+  require `email_verified=true` from Google.
+- `RequirePrincipal(scope=...)` dependency: tokens endpoints
+  (`/tokens` POST/GET/DELETE) accept **either** a Bearer token (with
+  scope enforcement) **or** a cookie session (scope ignored — the
+  logged-in user has implicit access to their own tokens). Fixes a
+  401 the browser hit immediately after a successful GitHub sign-in.
+- `users.avatar_url` column added (one-time `ALTER TABLE` on the prod
+  PostgreSQL — `create_all` only creates missing tables, it doesn't
+  migrate existing schemas). This is a pre-Alembic stop-gap.
+- Frontend `/[lang]/login/`: Google button is now a live link (replaces
+  the previous "coming soon" disabled state). Magic link still stubbed.
+
+#### GitHub OAuth (live)
 
 - New domain models: `Account` (one row per linked OAuth provider) and
   `Session` (HMAC-SHA256-signed cookie, 30-day TTL by default). The
@@ -28,8 +51,8 @@ Everything below is on `main` but unreleased.
   cookie for CSRF protection on the state parameter.
 - `/auth/{session,logout}` — return the current user (or `{detail: "No
   active session"}`) and revoke the session row.
-- `/auth/google/start` + `/auth/magic/request` — wired up but return
-  `503 Service Unavailable` until their credentials are provisioned.
+- `/auth/magic/request` — wired up but returns `503 Service Unavailable`
+  until `RESEND_API_KEY` lands.
 - `bin/govforge.api.server`: `uvicorn.run(...)` now passes
   `proxy_headers=True, forwarded_allow_ips="*"` so Starlette honours
   `X-Forwarded-Proto` from Caddy. Without this the GitHub `redirect_uri`
@@ -44,11 +67,11 @@ Everything below is on `main` but unreleased.
   Tokens persist to `.govforge/auth.toml` (per-project) or
   `~/.config/govforge/auth.toml` (global). `GOVFORGE_API_TOKEN` env var
   wins over both.
-- 13 new auth/oauth tests (`tests/unit/test_api.py::TestOAuth` +
+- 16 new auth/oauth tests (`tests/unit/test_api.py::TestOAuth` +
   `TestAuth`): cookie signing roundtrip, anonymous session probe,
-  `/auth/github/start` 307 with state cookie, callback rejects bad
-  state, account+session upsert. Total backend test count is now 110,
-  coverage 75%.
+  `/auth/{github,google}/start` 302 with state cookie, callback
+  rejects bad state for both providers, account+session upsert. Total
+  backend test count is now 113, coverage ~75%.
 
 ### Added — Authentication (Phase 3.0 Stage A — pulled forward 2026-05-10)
 
