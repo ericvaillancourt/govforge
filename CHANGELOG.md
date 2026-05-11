@@ -10,14 +10,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 The first release will be `0.1.0` and will mark Phase 1 feature-complete.
 Everything below is on `main` but unreleased.
 
-### Added — Authentication (Phase 3.0 Stage B — live 2026-05-10)
+### Added — Authentication (Phase 3.0 Stage B — live 2026-05-10/05-11)
 
-> Stage B (OAuth + cookie sessions + browser login) shipped same-day as
-> Stage A. GitHub is fully live in prod. Google OAuth code shipped same
-> day; awaiting Google Cloud Console OAuth client registration to flip
-> from `503 Service Unavailable` to live. Magic link still stubbed.
+> Stage B (OAuth + cookie sessions + browser login) shipped 2026-05-10
+> with GitHub. Google OAuth followed same-day (code) and was activated
+> 2026-05-11 (Google Cloud Console OAuth client registered, env vars
+> deployed). The signed-in UX (avatar dropdown, login/account guards,
+> footer entry point) shipped 2026-05-11. Magic link still stubbed.
 
-#### Google OAuth (code shipped 2026-05-10, awaiting creds)
+#### Sign-in UX (live 2026-05-11)
+
+- Nav avatar dropdown (`NavAuth` client component) — fetches
+  `/auth/session` on mount and renders one of three states: loading
+  skeleton, "Sign in" button, or a 32 px avatar (Google/GitHub photo
+  or initials fallback) with a menu listing the user's name + email +
+  linked providers, an **Account** link, and **Sign out** (POST
+  `/auth/logout`, clears local state regardless of API result).
+  Dropdown closes on outside-click or Escape.
+- `/[lang]/login/` detects already-signed-in users via
+  `/auth/session` on mount. If a session exists, the OAuth buttons
+  are replaced by an "already signed in" card with avatar and a link
+  to `/account/`. Anonymous visitors see the GitHub + Google buttons
+  as before (logic extracted into a `LoginPanel` client component).
+- `/[lang]/account/` redirects anonymous visitors to `/login/` via
+  `window.location.replace` instead of showing a passive "not signed
+  in" message — back-button stays clean.
+- Footer `Resources` column adds an `Account` link (bilingual EN/FR).
+  Combined with the avatar dropdown and the auto-redirect, every page
+  of the site now exposes a path to the auth surface.
+
+#### Google OAuth (live 2026-05-11)
 
 - `/auth/google/{start,callback}` mirrors the GitHub flow:
   authorize at `https://accounts.google.com/o/oauth2/v2/auth` with
@@ -34,8 +56,9 @@ Everything below is on `main` but unreleased.
 - `users.avatar_url` column added (one-time `ALTER TABLE` on the prod
   PostgreSQL — `create_all` only creates missing tables, it doesn't
   migrate existing schemas). This is a pre-Alembic stop-gap.
-- Frontend `/[lang]/login/`: Google button is now a live link (replaces
-  the previous "coming soon" disabled state). Magic link still stubbed.
+- Frontend `/[lang]/login/`: Google button is now a live link
+  (replaces the previous "coming soon" disabled state). Magic link
+  still stubbed.
 
 #### GitHub OAuth (live)
 
@@ -97,10 +120,6 @@ Everything below is on `main` but unreleased.
 - `python -m govforge.scripts.bootstrap_admin` — one-shot script to
   create the first admin user + token directly in the DB. Breaks the
   chicken-and-egg: the `/tokens` POST itself requires a token.
-- `docs/auth-stage-b-handoff.md` — Stage B runbook (OAuth GitHub +
-  Google + magic link + frontend `/login` `/account` + CLI
-  `gf auth login`) with the credentials Eric must register before
-  coding starts.
 - 6 new auth tests (`tests/unit/test_api.py::TestAuth`): health open,
   no-auth 401, invalid bearer 401, scoped token creation, scope
   enforcement (403 outside scope), revoked token 401. Total backend

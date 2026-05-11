@@ -326,10 +326,15 @@ additive on tokens. To rotate:
 4. Verify: requests with the old token return 401, with the new one
    return 200.
 
-### 8.5 Stage B (live since 2026-05-10)
+### 8.5 Stage B (live since 2026-05-10/05-11)
 
 Site users sign in at `/[lang]/login/` (GitHub + Google buttons) and
-manage tokens at `/[lang]/account/`. CLI `gf auth login --token gfp_…`
+manage tokens at `/[lang]/account/`. The avatar dropdown in the nav
+gives a one-click path to **Account** / **Sign out** on every page;
+the footer `Resources` column also exposes **Account**. Anonymous
+visitors hitting `/account/` get auto-redirected to `/login/`;
+already-signed-in visitors hitting `/login/` see an "already signed
+in" card instead of OAuth buttons. CLI `gf auth login --token gfp_…`
 saves to `.govforge/auth.toml` (per-project) or
 `~/.config/govforge/auth.toml` (global), with `GOVFORGE_API_TOKEN` env
 var taking precedence. The Bearer model from Stage A keeps working
@@ -345,11 +350,11 @@ needs the cookie path; CLI/MCP agents use the Bearer path.
 #### Stage B env vars (in `~/govforge/backend/backend.env` on .5)
 
 ```
-# GitHub OAuth (required for /auth/github/*)
+# GitHub OAuth (live)
 GITHUB_OAUTH_CLIENT_ID=<client id from github.com/settings/developers>
 GITHUB_OAUTH_CLIENT_SECRET=<client secret>
 
-# Google OAuth (optional — when absent, /auth/google/* returns 503)
+# Google OAuth (live since 2026-05-11)
 GOOGLE_OAUTH_CLIENT_ID=<client id from console.cloud.google.com>
 GOOGLE_OAUTH_CLIENT_SECRET=<client secret>
 
@@ -357,6 +362,10 @@ GOOGLE_OAUTH_CLIENT_SECRET=<client secret>
 GOVFORGE_COOKIE_SECRET=<random ≥32 bytes, base64url>
 GOVFORGE_COOKIE_DOMAIN=.govforge.dev
 ```
+
+If a provider's two env vars are absent, the matching
+`/auth/<provider>/start` returns `503 Service Unavailable` and the
+rest of the app keeps running unchanged.
 
 Generate the cookie secret with:
 
@@ -408,12 +417,9 @@ in `backend.env`, restart the service. Routes fall back to clean
 ### 8.6 Stage B follow-ups (planned)
 
 Magic link (Resend) route is wired up but returns `503 Service
-Unavailable` until `RESEND_API_KEY` is provisioned. Google OAuth
-code is shipped and route returns 503 only until the four
-`GOOGLE_OAUTH_*` env vars land (cf. `docs/auth-stage-b-handoff.md`
-for the Google Cloud Console registration steps). CLI `gf auth login
---device` (device-code flow) is deferred — users currently paste
-the `gfp_…` token from the `/account` page.
+Unavailable` until `RESEND_API_KEY` is provisioned. CLI `gf auth
+login --device` (device-code flow) is deferred — users currently
+paste the `gfp_…` token from the `/account` page.
 
 ### 8.7 Schema migrations — interim policy
 
