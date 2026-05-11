@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { ButtonLink } from "@/components/site/button-link";
 import { Logo } from "@/components/site/logo";
 import { LanguageToggle } from "@/components/site/language-toggle";
+import { NavAuth } from "@/components/site/nav-auth";
 import { ThemeToggle } from "@/components/site/theme-toggle";
 import { GithubIcon } from "@/components/site/icons";
 import { formatStars } from "@/lib/github";
@@ -82,6 +83,15 @@ export function Nav({ stars, repo, dict, lang }: NavProps) {
             <GithubIcon className="h-4 w-4" />
             {dict.github}
           </ButtonLink>
+          <NavAuth
+            lang={lang}
+            dict={{
+              login: dict.login,
+              account: dict.account,
+              logout: dict.logout,
+              menuAriaLabel: dict.menuAriaLabel,
+            }}
+          />
         </div>
       </nav>
     </header>

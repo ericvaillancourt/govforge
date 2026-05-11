@@ -14,7 +14,11 @@
     "docs": "Doc",
     "github": "GitHub",
     "starsAriaLabel": "étoiles GitHub",
-    "themeAriaLabel": "Changer le thème"
+    "themeAriaLabel": "Changer le thème",
+    "login": "Connexion",
+    "account": "Mon compte",
+    "logout": "Déconnexion",
+    "menuAriaLabel": "Menu du compte"
   },
   "footer": {
     "tagline": "Infrastructure de gouvernance pour agents IA de codage.",

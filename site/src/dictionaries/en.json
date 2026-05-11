@@ -14,7 +14,11 @@
     "docs": "Docs",
     "github": "GitHub",
     "starsAriaLabel": "GitHub stars",
-    "themeAriaLabel": "Toggle theme"
+    "themeAriaLabel": "Toggle theme",
+    "login": "Sign in",
+    "account": "Account",
+    "logout": "Sign out",
+    "menuAriaLabel": "Account menu"
   },
   "footer": {
     "tagline": "Governance infrastructure for AI coding agents.",
