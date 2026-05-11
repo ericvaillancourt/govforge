@@ -1,6 +1,6 @@
 [Unit]
 Description=Weekly trigger for govforge-backup.service
-Documentation=file:%h/AgentMCP/infra/RUNBOOK.md
+Documentation=https://github.com/ericvaillancourt/govforge/blob/main/infra/RUNBOOK.md
 
 [Timer]
 # Sunday 03:30 local — low traffic, post-weekend agent activity if any.

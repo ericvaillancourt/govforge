@@ -33,7 +33,7 @@ Volume=%h/govforge/caddy/Caddyfile:/etc/caddy/Caddyfile:ro,Z
 Volume=govforge-caddy-data:/data:Z
 Volume=govforge-caddy-config:/config:Z
 
-# Static site export from /home/eric/AgentMCP/site/out/ (rsynced)
+# Static site export at /home/eric/govforge/site/out/ (rsynced from the govforge-site repo on the dev host)
 Volume=%h/govforge/site/out:/srv/govforge-site:ro,Z
 
 # Auto-pull image updates (registry tag stays at 2-alpine)

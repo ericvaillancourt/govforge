@@ -1,6 +1,6 @@
 [Unit]
 Description=GovForge weekly backup to Cloudflare R2 (restic)
-Documentation=file:%h/AgentMCP/infra/RUNBOOK.md
+Documentation=https://github.com/ericvaillancourt/govforge/blob/main/infra/RUNBOOK.md
 # Don't run if the network is flaky — the timer will retry next week
 After=network-online.target
 Wants=network-online.target

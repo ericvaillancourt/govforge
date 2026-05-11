@@ -53,7 +53,7 @@ gf init
 
 # 3. Start the local API + cockpit:
 gf api serve &
-cd ~/govforge/ui && npm ci && npm run dev   # http://localhost:8788
+(cd <govforge-clone>/ui && npm ci && npm run dev)   # http://localhost:8788 — in a separate terminal
 
 # 4. (Self-hosted only) Bootstrap your first admin token — see infra/RUNBOOK.md §8.
 #    The hosted API at api.govforge.dev requires Authorization: Bearer <token>
