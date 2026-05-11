@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"sort"
 	"strings"
 	"testing"
 
@@ -12,11 +13,21 @@ import (
 
 // router is a tiny mux that returns canned responses based on path prefix.
 // Cuts the boilerplate of writing a fresh httptest.Server per test.
+//
+// Prefixes are matched longest-first so that e.g. "/policies/check" wins
+// over "/policies" when both are registered. Go map iteration order is
+// randomised, so without this sort the test would be order-dependent
+// (passing on dev machines, failing in CI based on hash seed).
 func router(handlers map[string]http.HandlerFunc) http.Handler {
+	prefixes := make([]string, 0, len(handlers))
+	for p := range handlers {
+		prefixes = append(prefixes, p)
+	}
+	sort.Slice(prefixes, func(i, j int) bool { return len(prefixes[i]) > len(prefixes[j]) })
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		for prefix, h := range handlers {
+		for _, prefix := range prefixes {
 			if strings.HasPrefix(r.URL.Path, prefix) {
-				h(w, r)
+				handlers[prefix](w, r)
 				return
 			}
 		}
