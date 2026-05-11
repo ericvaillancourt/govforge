@@ -31,9 +31,7 @@ from alembic.config import Config
 def _make_config() -> Config:
     """Build an Alembic Config that points at the packaged migration tree."""
     cfg = Config()
-    cfg.set_main_option(
-        "script_location", str(files("govforge.db.migrations"))
-    )
+    cfg.set_main_option("script_location", str(files("govforge.db.migrations")))
     # `version_table` keeps a single source of truth for migration bookkeeping.
     cfg.set_main_option("version_table", "alembic_version")
     # Render ALTER TABLE on SQLite via batch mode — needed for future

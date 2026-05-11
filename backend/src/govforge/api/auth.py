@@ -67,9 +67,7 @@ def extract_prefix(secret: str) -> str:
 _bearer_scheme = HTTPBearer(auto_error=False, description="Bearer api token")
 
 
-def _resolve_token(
-    session: DBSession, secret: str
-) -> tuple[ApiToken, User] | None:
+def _resolve_token(session: DBSession, secret: str) -> tuple[ApiToken, User] | None:
     """Look up an active ApiToken matching the bearer secret, plus its owner.
 
     Returns None if no match, or if the token is revoked / expired.
@@ -78,9 +76,7 @@ def _resolve_token(
     if not prefix:
         return None
     expected_hash = hash_token_secret(secret)
-    candidates = session.scalars(
-        select(ApiToken).where(ApiToken.prefix == prefix)
-    ).all()
+    candidates = session.scalars(select(ApiToken).where(ApiToken.prefix == prefix)).all()
     for token in candidates:
         # constant-time compare on the hash
         if not hmac.compare_digest(token.hashed_secret, expected_hash):
@@ -106,9 +102,7 @@ class AuthContext:
         self.user = user
 
 
-def RequireToken(
-    *, scope: TokenScope | None = None
-) -> Callable[..., AuthContext]:
+def RequireToken(*, scope: TokenScope | None = None) -> Callable[..., AuthContext]:
     """FastAPI dependency factory: returns a callable that enforces a Bearer
     token AND an optional scope.
 
@@ -123,9 +117,7 @@ def RequireToken(
 
     def _dependency(
         request: Request,
-        credentials: Annotated[
-            HTTPAuthorizationCredentials | None, Depends(_bearer_scheme)
-        ],
+        credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(_bearer_scheme)],
         session: Annotated[Session, Depends(get_session)],
     ) -> AuthContext:
         if credentials is None or not credentials.credentials:
@@ -321,9 +313,7 @@ class Principal:
         return "token" if self.token is not None else "cookie"
 
 
-def RequirePrincipal(
-    *, scope: TokenScope | None = None
-) -> Callable[..., Principal]:
+def RequirePrincipal(*, scope: TokenScope | None = None) -> Callable[..., Principal]:
     """Accept EITHER a Bearer token (with optional scope) OR a cookie session.
 
     Resolution order:
@@ -335,9 +325,7 @@ def RequirePrincipal(
 
     def _dependency(
         request: Request,
-        credentials: Annotated[
-            HTTPAuthorizationCredentials | None, Depends(_bearer_scheme)
-        ],
+        credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(_bearer_scheme)],
         db: Annotated[Session, Depends(get_session)],
     ) -> Principal:
         # Bearer path

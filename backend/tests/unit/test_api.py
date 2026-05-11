@@ -424,9 +424,7 @@ class TestAuth:
 
         base = urlsplit(str(client.base_url))
         # We can reuse `client` — it's just an HTTP client.
-        assert (
-            client.get("/projects", headers=narrow).status_code == 403
-        )  # missing projects:read
+        assert client.get("/projects", headers=narrow).status_code == 403  # missing projects:read
         assert (
             client.get(
                 f"{base.scheme}://{base.netloc}/reviews",
@@ -488,36 +486,26 @@ class TestOAuth:
         engine.dispose()
 
     @pytest.fixture()
-    def with_github_creds(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> Generator[None]:
+    def with_github_creds(self, monkeypatch: pytest.MonkeyPatch) -> Generator[None]:
         monkeypatch.setenv("GITHUB_OAUTH_CLIENT_ID", "test_client_id")
         monkeypatch.setenv("GITHUB_OAUTH_CLIENT_SECRET", "test_client_secret")
         monkeypatch.setenv("GOVFORGE_COOKIE_SECRET", "x" * 48)
         yield
 
-    def test_github_start_503_without_creds(
-        self, fresh_app: tuple[TestClient, object]
-    ) -> None:
+    def test_github_start_503_without_creds(self, fresh_app: tuple[TestClient, object]) -> None:
         c, _ = fresh_app
         assert c.get("/auth/github/start", follow_redirects=False).status_code == 503
 
-    def test_google_503_without_creds(
-        self, fresh_app: tuple[TestClient, object]
-    ) -> None:
+    def test_google_503_without_creds(self, fresh_app: tuple[TestClient, object]) -> None:
         c, _ = fresh_app
         assert c.get("/auth/google/start", follow_redirects=False).status_code == 503
 
-    def test_magic_link_stub_503(
-        self, fresh_app: tuple[TestClient, object]
-    ) -> None:
+    def test_magic_link_stub_503(self, fresh_app: tuple[TestClient, object]) -> None:
         c, _ = fresh_app
         assert c.post("/auth/magic/request").status_code == 503
 
     @pytest.fixture()
-    def with_google_creds(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> Generator[None]:
+    def with_google_creds(self, monkeypatch: pytest.MonkeyPatch) -> Generator[None]:
         monkeypatch.setenv("GOOGLE_OAUTH_CLIENT_ID", "test_google_id")
         monkeypatch.setenv("GOOGLE_OAUTH_CLIENT_SECRET", "test_google_secret")
         monkeypatch.setenv("GOVFORGE_COOKIE_SECRET", "x" * 48)
@@ -549,9 +537,7 @@ class TestOAuth:
         )
         assert r.status_code == 400
 
-    def test_session_401_without_cookie(
-        self, fresh_app: tuple[TestClient, object]
-    ) -> None:
+    def test_session_401_without_cookie(self, fresh_app: tuple[TestClient, object]) -> None:
         c, _ = fresh_app
         assert c.get("/auth/session").status_code == 401
 
@@ -620,9 +606,7 @@ class TestOAuth:
         with_github_creds: None,
     ) -> None:
         c, _ = fresh_app
-        c.cookies.set(
-            "govforge_session", "00000000-0000-0000-0000-000000000000.deadbeef"
-        )
+        c.cookies.set("govforge_session", "00000000-0000-0000-0000-000000000000.deadbeef")
         assert c.get("/auth/session").status_code == 401
 
 
@@ -646,15 +630,11 @@ class TestDeviceCode:
         engine.dispose()
 
     @pytest.fixture()
-    def with_cookie_secret(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> Generator[None]:
+    def with_cookie_secret(self, monkeypatch: pytest.MonkeyPatch) -> Generator[None]:
         monkeypatch.setenv("GOVFORGE_COOKIE_SECRET", "x" * 48)
         yield
 
-    def _seed_logged_in_user(
-        self, factory: object
-    ) -> tuple[str, UUID]:
+    def _seed_logged_in_user(self, factory: object) -> tuple[str, UUID]:
         """Create a User + Session and return (cookie_value, user_id)."""
         from govforge.api.auth import create_session_row, encode_session_cookie
 

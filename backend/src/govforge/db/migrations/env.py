@@ -20,6 +20,7 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
+
 # Resolve the DB URL the same way the runtime API does so migrations always
 # target the same database as the running app.
 def _resolve_db_url() -> str:

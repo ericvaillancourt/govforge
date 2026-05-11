@@ -207,16 +207,12 @@ def github_callback(
         )
         if emails_resp.status_code == 200:
             primaries = [
-                e["email"]
-                for e in emails_resp.json()
-                if e.get("primary") and e.get("verified")
+                e["email"] for e in emails_resp.json() if e.get("primary") and e.get("verified")
             ]
             if primaries:
                 email = primaries[0]
     if not email:
-        raise HTTPException(
-            400, "GitHub account has no verified primary email — cannot sign in"
-        )
+        raise HTTPException(400, "GitHub account has no verified primary email — cannot sign in")
 
     provider_user_id = str(profile["id"])
     display_name = profile.get("name") or profile.get("login")
@@ -450,9 +446,7 @@ def google_callback(
 
     email = profile.get("email")
     if not email or not profile.get("email_verified", False):
-        raise HTTPException(
-            400, "Google account has no verified email — cannot sign in"
-        )
+        raise HTTPException(400, "Google account has no verified email — cannot sign in")
 
     provider_user_id = str(profile["sub"])
     display_name = profile.get("name") or profile.get("given_name")
@@ -611,10 +605,10 @@ class DeviceCodeStartIn(BaseModel):
 
 class DeviceCodeStartOut(BaseModel):
     device_code: str
-    user_code: str           # display form: "ABCD-EFGH"
-    verification_uri: str    # site URL the user should open
-    expires_in: int          # seconds
-    interval: int            # poll interval in seconds
+    user_code: str  # display form: "ABCD-EFGH"
+    verification_uri: str  # site URL the user should open
+    expires_in: int  # seconds
+    interval: int  # poll interval in seconds
 
 
 class DeviceCodePollIn(BaseModel):
@@ -623,7 +617,7 @@ class DeviceCodePollIn(BaseModel):
 
 class DeviceCodePollOut(BaseModel):
     # When status == "complete", `token` is the plaintext gfp_… secret.
-    status: str              # "authorization_pending" | "complete" | "expired" | "denied"
+    status: str  # "authorization_pending" | "complete" | "expired" | "denied"
     token: str | None = None
     token_id: str | None = None
 
@@ -696,9 +690,7 @@ def device_code_poll(
     db: Annotated[DBSession, Depends(get_session)],
 ) -> DeviceCodePollOut:
     row = db.scalar(
-        select(DeviceCode).where(
-            DeviceCode.device_code_hash == _hash_device_code(body.device_code)
-        )
+        select(DeviceCode).where(DeviceCode.device_code_hash == _hash_device_code(body.device_code))
     )
     if row is None:
         # Don't leak whether the secret was ever issued.
@@ -747,9 +739,7 @@ def device_code_approve(
     if len(normalized) != DEVICE_CODE_USER_CODE_LEN:
         raise HTTPException(400, "Code must be 8 characters")
 
-    row = db.scalar(
-        select(DeviceCode).where(DeviceCode.user_code == normalized)
-    )
+    row = db.scalar(select(DeviceCode).where(DeviceCode.user_code == normalized))
     if row is None:
         raise HTTPException(404, "Unknown code")
     if row.revoked_at is not None or row.is_expired:

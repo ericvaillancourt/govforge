@@ -448,9 +448,7 @@ class Account(TimestampMixin, Base):
 
     __tablename__ = "accounts"
     __table_args__ = (
-        UniqueConstraint(
-            "provider", "provider_user_id", name="uq_accounts_provider_user_id"
-        ),
+        UniqueConstraint("provider", "provider_user_id", name="uq_accounts_provider_user_id"),
         Index("ix_accounts_user_id", "user_id"),
     )
 
@@ -497,12 +495,8 @@ class Session(Base):
     last_seen_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_now, nullable=False
     )
-    expires_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False
-    )
-    revoked_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     user: Mapped[User] = relationship(back_populates="sessions")
 
@@ -557,15 +551,9 @@ class ApiToken(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_now, nullable=False
     )
-    last_used_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
-    expires_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
-    revoked_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     user: Mapped[User] = relationship(back_populates="tokens")
 
@@ -626,26 +614,16 @@ class DeviceCode(Base):
         Enum(AgentType, native_enum=False, length=32), nullable=False
     )
     # Approver: set when a logged-in user POSTs /auth/device/approve.
-    user_id: Mapped[UUID | None] = mapped_column(
-        Uuid, ForeignKey("users.id"), nullable=True
-    )
+    user_id: Mapped[UUID | None] = mapped_column(Uuid, ForeignKey("users.id"), nullable=True)
     # The ApiToken issued at approval time; null until approved.
-    token_id: Mapped[UUID | None] = mapped_column(
-        Uuid, ForeignKey("api_tokens.id"), nullable=True
-    )
+    token_id: Mapped[UUID | None] = mapped_column(Uuid, ForeignKey("api_tokens.id"), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_now, nullable=False
     )
-    expires_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False
-    )
-    approved_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
-    revoked_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     @property
     def is_expired(self) -> bool:
