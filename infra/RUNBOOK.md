@@ -373,12 +373,16 @@ Generate the cookie secret with:
 python3 -c "import secrets; print(secrets.token_urlsafe(48))"
 ```
 
-#### One-time schema migration (creates `accounts` + `sessions`)
+#### One-time schema migration
 
 ```bash
+# After 2026-05-11: use Alembic (see §8.7).
 podman exec govforge-backend bash -c \
-  'GOVFORGE_DATABASE_URL="$GOVFORGE_DB" python -c "from govforge.db.session import make_engine, create_all; create_all(make_engine())"'
+  'GOVFORGE_DATABASE_URL="$GOVFORGE_DB" python -m govforge.scripts.migrate upgrade head'
 ```
+
+For deployments that pre-date Alembic (where tables already exist via
+`create_all`), run `migrate stamp head` first — see §8.7.
 
 #### Critical: proxy_headers
 
@@ -414,12 +418,15 @@ Comment out / delete the four `GITHUB_*` + `GOVFORGE_COOKIE_*` lines
 in `backend.env`, restart the service. Routes fall back to clean
 `503 Service Unavailable`. Stage A Bearer auth continues to work.
 
-### 8.6 Stage B follow-ups (planned)
+### 8.6 Stage B follow-ups
 
-Magic link (Resend) route is wired up but returns `503 Service
-Unavailable` until `RESEND_API_KEY` is provisioned. CLI `gf auth
-login --device` (device-code flow) is deferred — users currently
-paste the `gfp_…` token from the `/account` page.
+- **Device-code flow** — live since 2026-05-11. `gf auth login
+  --device` prints a short code + URL; the user types the code on
+  `/[lang]/device/` after signing in, the CLI polls
+  `/auth/device/poll` until the page approves, then saves the
+  resulting `gfp_…` token locally.
+- **Magic link (Resend)** — route wired up but returns `503
+  Service Unavailable` until `RESEND_API_KEY` is provisioned. No ETA.
 
 ### 8.7 Schema migrations — Alembic (live since 2026-05-11)
 
@@ -472,3 +479,18 @@ podman exec govforge-backend bash -c \
 
 After this one-time stamp, future migrations apply normally via
 `upgrade head`.
+
+#### Important: `GOVFORGE_BOOTSTRAP_SCHEMA=1` must be unset in prod
+
+Before Alembic landed, the backend's `server.py` ran
+`Base.metadata.create_all()` on boot if `GOVFORGE_BOOTSTRAP_SCHEMA=1`
+was set — this was prod's only way to grow the schema. Now that
+Alembic owns migrations, leaving the flag enabled is harmful: every
+restart of the backend creates whatever new tables exist in the
+model layer BEFORE the operator runs `migrate upgrade head`, which
+then fails with `DuplicateTable`. The flag was removed from prod
+`backend.env` on 2026-05-11. Do not re-add it.
+
+`create_all` itself is kept in the codebase — it stays the path for
+`gf init` local dev and pytest fixtures, which want a one-shot schema
+bring-up without Alembic ceremony.

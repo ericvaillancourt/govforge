@@ -10,6 +10,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 The first release will be `0.1.0` and will mark Phase 1 feature-complete.
 Everything below is on `main` but unreleased.
 
+### Added — Schema migrations via Alembic (live 2026-05-11)
+
+> Closes the gap that surfaced during Stage B activation when
+> `users.avatar_url` had to be added with a manual `ALTER TABLE` on prod.
+> Future schema changes ship as Alembic revisions packaged in the wheel.
+
+- `backend/alembic.ini` + `backend/src/govforge/db/migrations/env.py` —
+  config + env. DB URL resolves from `GOVFORGE_DATABASE_URL` (alias
+  `GOVFORGE_DB`), matching the API runtime exactly. `render_as_batch`
+  on so SQLite can do `ALTER TABLE` in future migrations.
+- Baseline revision `21c163745df5` capturing the 2026-05-11 schema
+  (16 domain tables incl. `users.avatar_url`).
+- Follow-up revision `aa2ce082f322` adding `device_codes` (for the
+  new device-code flow below).
+- `python -m govforge.scripts.migrate` — self-contained wrapper that
+  finds the migration tree via `importlib.resources` so it works
+  identically from a checkout and inside the prod wheel. Subcommands:
+  upgrade, downgrade, stamp, current, history, heads, check.
+- `tests/unit/test_alembic.py` — 4 guard tests, including
+  `check`-clean-after-upgrade (model-drift detector).
+- Onboarding for the live prod DB: `migrate stamp head` (no DDL,
+  records the baseline + device_codes revisions as already-applied).
+- `GOVFORGE_BOOTSTRAP_SCHEMA=1` removed from prod env — `create_all`
+  on boot conflicted with Alembic by pre-creating tables ahead of
+  migrations. `create_all` stays for `gf init` local dev and tests.
+
+### Added — `gf auth login --device` (browser approval flow, live 2026-05-11)
+
+> Adds a no-paste authentication path: the CLI prints a short code +
+> URL, the user types it on the site after signing in, and the CLI
+> auto-receives the issued `gfp_…` token via polling.
+
+- Backend: new `device_codes` table + Alembic migration. Stores
+  SHA-256 of the device secret, the human-typable user_code (8 chars,
+  ambiguity-free alphabet, displayed `XXXX-YYYY`), requested label +
+  agent_type, and the eventual `ApiToken` FK.
+- New routes:
+  - `POST /auth/device/code` (anon) — issues a fresh code pair, 10 min
+    TTL, 5 s poll interval; plaintext `device_code` returned ONCE.
+  - `POST /auth/device/poll` (anon) — returns
+    `authorization_pending` / `complete` / `expired` / `denied`. On
+    `complete`, response includes the plaintext token, consumed
+    in-process (second poll returns `denied`).
+  - `POST /auth/device/approve` (cookie-authed) — looks up the typed
+    code, creates an `ApiToken` for the signed-in user with default
+    scopes matching what a coding agent typically needs.
+- Frontend: new `/[lang]/device/` page (bilingual EN/FR) with a
+  centered input, auto-format `ABCDEFGH` → `ABCD-EFGH` while typing,
+  prefill from `?code=…` query string (the CLI links there), redirect
+  to `/login/?next=…` if anonymous.
+- CLI: `gf auth login --device` (alongside the existing `--token`
+  path). Defaults to `cli on <hostname>` label, overridable via
+  `--label` / `--agent`. Polls every 5 s up to the 10 min TTL.
+- 5 new backend tests (`tests/unit/test_api.py::TestDeviceCode`):
+  start, pending → approve → complete, anon approve fails, unknown
+  code denied, malformed code 400. Total backend test count is now
+  118 (was 113).
+
 ### Added — Authentication (Phase 3.0 Stage B — live 2026-05-10/05-11)
 
 > Stage B (OAuth + cookie sessions + browser login) shipped 2026-05-10
