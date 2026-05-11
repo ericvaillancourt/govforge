@@ -1,13 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { ArrowRight } from "lucide-react";
-import { ButtonLink } from "@/components/site/button-link";
-import { GithubIcon, GoogleIcon } from "@/components/site/icons";
+import { LoginPanel } from "@/components/account/login-panel";
 import { getDictionary } from "@/dictionaries";
 import { isLocale, type Locale } from "@/lib/i18n";
-
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://api.govforge.dev";
 
 export async function generateMetadata({
   params,
@@ -52,42 +47,17 @@ export default async function LoginPage({
         </p>
       </header>
 
-      <div className="mt-8 space-y-3">
-        <ButtonLink
-          href={`${API_BASE}/auth/github/start`}
-          external
-          size="lg"
-          className="w-full justify-center"
-        >
-          <GithubIcon className="h-4 w-4" />
-          {dict.github}
-          <ArrowRight className="h-4 w-4" />
-        </ButtonLink>
-
-        <ButtonLink
-          href={`${API_BASE}/auth/google/start`}
-          external
-          size="lg"
-          variant="outline"
-          className="w-full justify-center"
-        >
-          <GoogleIcon className="h-4 w-4" />
-          {dict.google}
-          <ArrowRight className="h-4 w-4" />
-        </ButtonLink>
-
-        <button
-          type="button"
-          disabled
-          className="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-border/40 bg-card/40 px-4 py-2.5 text-sm text-muted-foreground/60 cursor-not-allowed"
-        >
-          {dict.magicComingSoon}
-        </button>
-      </div>
-
-      <p className="mt-8 text-xs text-muted-foreground leading-relaxed">
-        {dict.tos}
-      </p>
+      <LoginPanel
+        lang={lang as Locale}
+        dict={{
+          github: dict.github,
+          google: dict.google,
+          magicComingSoon: dict.magicComingSoon,
+          tos: dict.tos,
+          alreadySignedIn: dict.alreadySignedIn,
+          goToAccount: dict.goToAccount,
+        }}
+      />
     </main>
   );
 }

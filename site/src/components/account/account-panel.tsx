@@ -71,21 +71,16 @@ export function AccountPanel({ dict, lang }: Props) {
     void reload();
   }, [reload]);
 
-  if (state.kind === "loading") {
+  // Redirect anonymous users to the login page. We use `replace` so the
+  // history doesn't trap them in a back-button loop.
+  useEffect(() => {
+    if (state.kind === "unauthed") {
+      window.location.replace(`/${lang}/login/`);
+    }
+  }, [state.kind, lang]);
+
+  if (state.kind === "loading" || state.kind === "unauthed") {
     return <p className="text-muted-foreground">{dict.loading}</p>;
-  }
-  if (state.kind === "unauthed") {
-    return (
-      <div>
-        <p className="text-muted-foreground">{dict.notSignedIn}</p>
-        <a
-          href={`/${lang}/login/`}
-          className="mt-3 inline-flex text-foreground hover:underline"
-        >
-          {dict.signInHere}
-        </a>
-      </div>
-    );
   }
 
   const { session, tokens } = state;

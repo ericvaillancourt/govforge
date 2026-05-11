@@ -37,6 +37,7 @@
         "links": [
           { "href": "/docs", "label": "Documentation" },
           { "href": "/press", "label": "Trousse de presse" },
+          { "href": "/account", "label": "Mon compte" },
           { "href": "https://github.com/ericvaillancourt/govforge/blob/main/CHANGELOG.md", "label": "Journal des versions", "external": true },
           { "href": "https://api.govforge.dev/docs", "label": "API", "external": true }
         ]
