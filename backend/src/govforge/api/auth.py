@@ -118,7 +118,7 @@ def RequireToken(*, scope: TokenScope | None = None) -> Callable[..., AuthContex
     def _dependency(
         request: Request,
         credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(_bearer_scheme)],
-        session: Annotated[Session, Depends(get_session)],
+        session: Annotated[DBSession, Depends(get_session)],
     ) -> AuthContext:
         if credentials is None or not credentials.credentials:
             raise HTTPException(
@@ -326,7 +326,7 @@ def RequirePrincipal(*, scope: TokenScope | None = None) -> Callable[..., Princi
     def _dependency(
         request: Request,
         credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(_bearer_scheme)],
-        db: Annotated[Session, Depends(get_session)],
+        db: Annotated[DBSession, Depends(get_session)],
     ) -> Principal:
         # Bearer path
         if credentials is not None and credentials.credentials:
