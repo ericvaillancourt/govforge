@@ -32,10 +32,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session as DBSession
 
 from govforge.api.auth import (
-    RequireUser,
     SESSION_COOKIE_NAME,
     SESSION_TTL_DAYS,
-    UserContext,
     create_session_row,
     encode_session_cookie,
     resolve_session,
@@ -583,7 +581,7 @@ def _generate_device_secret() -> str:
 
 
 def _hash_device_code(secret: str) -> str:
-    import hashlib  # noqa: PLC0415
+    import hashlib
 
     return hashlib.sha256(secret.encode("utf-8")).hexdigest()
 
@@ -766,12 +764,12 @@ def device_code_approve(
     except ValueError as e:
         raise HTTPException(400, f"unknown scope: {e}") from None
 
-    from govforge.api.auth import (  # noqa: PLC0415
+    from govforge.api.auth import (
         extract_prefix,
         generate_token_secret,
         hash_token_secret,
     )
-    from govforge.core.models import ApiToken  # noqa: PLC0415
+    from govforge.core.models import ApiToken
 
     secret = generate_token_secret()
     token = ApiToken(

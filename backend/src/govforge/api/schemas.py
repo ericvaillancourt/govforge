@@ -264,10 +264,10 @@ class EventOut(_ORM):
 
 __all__ = [
     "AgentOut",
-    "ApprovalIn",
     "ApiTokenCreateIn",
     "ApiTokenCreateOut",
     "ApiTokenOut",
+    "ApprovalIn",
     "ApprovalOut",
     "AttachGitIn",
     "DecisionIn",

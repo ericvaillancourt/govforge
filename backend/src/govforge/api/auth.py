@@ -304,7 +304,7 @@ class Principal:
     only when authenticated via Bearer (None when via cookie).
     """
 
-    __slots__ = ("user", "token", "session")
+    __slots__ = ("session", "token", "user")
 
     def __init__(
         self,
@@ -381,14 +381,14 @@ def RequirePrincipal(
 
 
 __all__ = [
+    "SESSION_COOKIE_NAME",
+    "SESSION_TTL_DAYS",
+    "TOKEN_PREFIX",
     "AuthContext",
     "Principal",
     "RequirePrincipal",
     "RequireToken",
     "RequireUser",
-    "SESSION_COOKIE_NAME",
-    "SESSION_TTL_DAYS",
-    "TOKEN_PREFIX",
     "UserContext",
     "create_session_row",
     "encode_session_cookie",

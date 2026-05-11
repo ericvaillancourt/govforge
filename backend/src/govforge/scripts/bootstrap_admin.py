@@ -26,13 +26,13 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy import select
 
 from govforge.api.auth import (
+    extract_prefix,
     generate_token_secret,
     hash_token_secret,
-    extract_prefix,
 )
 from govforge.core.enums import AgentType, TokenScope
 from govforge.core.models import ApiToken, User
-from govforge.db.session import make_engine, make_session_factory, create_all
+from govforge.db.session import create_all, make_engine, make_session_factory
 
 
 def main(argv: list[str] | None = None) -> int:

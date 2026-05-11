@@ -9,6 +9,7 @@ from __future__ import annotations
 import subprocess
 from collections.abc import Generator
 from pathlib import Path
+from uuid import UUID
 
 import pytest
 from fastapi.testclient import TestClient
@@ -419,7 +420,7 @@ class TestAuth:
         narrow = {"Authorization": f"Bearer {narrow_secret}"}
 
         # Same app/DB, but using the narrow token via direct request().
-        from urllib.parse import urlsplit  # noqa: PLC0415
+        from urllib.parse import urlsplit
 
         base = urlsplit(str(client.base_url))
         # We can reuse `client` — it's just an HTTP client.
@@ -586,7 +587,7 @@ class TestOAuth:
         """Skip the OAuth handshake (network-dependent) and seed a User +
         Session directly, then verify the /auth/session cookie path works."""
         c, factory = fresh_app
-        from govforge.api.auth import create_session_row, encode_session_cookie  # noqa: PLC0415
+        from govforge.api.auth import create_session_row, encode_session_cookie
 
         with factory() as s:
             user = User(email="oauth-tester@local", display_name="Tester")
@@ -655,7 +656,7 @@ class TestDeviceCode:
         self, factory: object
     ) -> tuple[str, UUID]:
         """Create a User + Session and return (cookie_value, user_id)."""
-        from govforge.api.auth import create_session_row, encode_session_cookie  # noqa: PLC0415
+        from govforge.api.auth import create_session_row, encode_session_cookie
 
         with factory() as s:  # type: ignore[operator]
             user = User(email="dev-cli@local", display_name="CLI Tester")
