@@ -11,7 +11,7 @@
 
 | What | Where | Command |
 |---|---|---|
-| Site files | `192.168.2.5:~/govforge/site/out/` | `cd ~/AgentMCP-site && rsync -av --delete out/ eric@192.168.2.5:~/govforge/site/out/` *(site is now a separate private repo)* |
+| Site files | `192.168.2.5:~/govforge/site/out/` | `cd ~/GovForge.dev/govforge-site && rsync -av --delete out/ eric@192.168.2.5:~/govforge/site/out/` *(site is now a separate private repo)* |
 | Caddyfile | `192.168.2.5:~/govforge/caddy/Caddyfile` | `rsync -av infra/caddy/Caddyfile eric@192.168.2.5:~/govforge/caddy/Caddyfile` |
 | Caddy service | systemd user unit | `systemctl --user {status,restart} govforge-caddy.service` |
 | Backend (FastAPI) | systemd user unit | `systemctl --user {status,restart} govforge-backend.service` |
@@ -188,7 +188,7 @@ The dictionary fell out of sync. Rebuild + redeploy from the site repo
 (separate private repo; see RUNBOOK note in §0):
 
 ```bash
-cd ~/AgentMCP-site && rm -rf .next out && npx next build
+cd ~/GovForge.dev/govforge-site && rm -rf .next out && npx next build
 rsync -av --delete out/ eric@192.168.2.5:~/govforge/site/out/
 ```
 

@@ -63,8 +63,10 @@ def test_current_after_upgrade_is_head(fresh_sqlite_url: str) -> None:
     _run_migrate("upgrade", "head", env={"GOVFORGE_DATABASE_URL": fresh_sqlite_url})
     res = _run_migrate("current", env={"GOVFORGE_DATABASE_URL": fresh_sqlite_url})
     assert res.returncode == 0
-    # `current` prints the revision id; head should be the baseline.
-    assert "21c163745df5" in (res.stdout + res.stderr)
+    # `current` prints "<revision> (head)" when the DB is at the latest migration.
+    # Check for the "(head)" marker rather than a specific revision so this test
+    # doesn't break every time a new migration is added.
+    assert "(head)" in (res.stdout + res.stderr)
 
 
 def test_stamp_marks_pre_existing_schema(fresh_sqlite_url: str) -> None:

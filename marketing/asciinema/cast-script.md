@@ -184,8 +184,8 @@ podman run --rm -v "$PWD:/data:Z" asciinema/asciicast2gif \
 # 3. Drop the .cast and .gif into the marketing site repo at
 #    public/quickstart/ (create the dir on first run; the deploy rsync
 #    picks it up automatically). The site lives in a separate private repo.
-mkdir -p ~/AgentMCP-site/public/quickstart
-mv quickstart.tight.cast quickstart.gif ~/AgentMCP-site/public/quickstart/
+mkdir -p ~/GovForge.dev/govforge-site/public/quickstart
+mv quickstart.tight.cast quickstart.gif ~/GovForge.dev/govforge-site/public/quickstart/
 ```
 
 The README hero embeds:
