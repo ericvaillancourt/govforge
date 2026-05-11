@@ -10,6 +10,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 The first release will be `0.1.0` and will mark Phase 1 feature-complete.
 Everything below is on `main` but unreleased.
 
+### Fixed — CI hygiene + legacy-name cleanup (2026-05-11)
+
+> Restoring all three validation pipelines (`backend`, `cli`, `ui`) to
+> green after the repo-relocation work. Same-day batch of small infra
+> fixes that each unblocked the next.
+
+- **Backend lint**: 24 ruff errors (mostly `RUF100` unused-noqa on a
+  rule that isn't enabled, plus `F821` missing `UUID` import in
+  `test_api.py`). Auto-fixed 23, added the import.
+- **Backend format**: applied `ruff format` to 8 files. The CI runs
+  `ruff format --check` after `ruff check` — both must pass.
+- **Backend mypy**: 3 `Argument type` errors in `api/auth.py` from the
+  two-`Session` shadowing (`govforge.core.models.Session` vs
+  `sqlalchemy.orm.Session`). Annotated DB-session params with the
+  pre-existing `DBSession` alias.
+- **CLI flaky test**: `TestPolicyCheckCommand` rendered an empty table
+  in CI but passed on dev. Root cause: the `router(map[string])` test
+  helper matched paths by `HasPrefix` over a Go map, whose iteration
+  order is randomised. With `/policies` and `/policies/check` both
+  registered, requests to the latter could resolve to the former.
+  Sort prefixes longest-first.
+- **CLI lint stack**: bumped `golangci/golangci-lint-action@v6 → v8`
+  and pinned `version: v2.12.2`. v1.x is built with Go 1.24 and
+  refuses `go 1.25.0` go.mod targets. v2.x defaults to stricter
+  `errcheck` — fixed 9 unchecked `fmt.Fprint*` / `Close()` sites with
+  `_ = ...` to make the intent explicit.
+- **CI ergonomics**: added `workflow_dispatch:` to `backend.yml`,
+  `cli.yml`, `ui.yml`. Validation pipelines can now be re-run from
+  the Actions UI without a dummy commit.
+- **AgentMCP rename cleanup**: dropped 7 stale references to the old
+  project name across podman quadlets (`Documentation=` URLs now
+  point to the canonical GitHub blob), README quickstart, and the
+  `govforge-site` docs resolver fallback path.
+
 ### Added — Schema migrations via Alembic (live 2026-05-11)
 
 > Closes the gap that surfaced during Stage B activation when
