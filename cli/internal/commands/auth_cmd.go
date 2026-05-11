@@ -112,8 +112,8 @@ func runDeviceLogin(cmd *cobra.Command, flags *RootFlags, label, agent string) e
 	out.Detail("1. Open in your browser", start.VerificationURI+"?code="+stripDash(start.UserCode))
 	out.Detail("2. Enter the code", start.UserCode)
 	out.Detail("3. Sign in & authorize", "(GitHub or Google)")
-	fmt.Fprintln(cmd.OutOrStderr(), "")
-	fmt.Fprintln(cmd.OutOrStderr(), "Waiting for approval… (Ctrl+C to abort)")
+	_, _ = fmt.Fprintln(cmd.OutOrStderr(), "")
+	_, _ = fmt.Fprintln(cmd.OutOrStderr(), "Waiting for approval… (Ctrl+C to abort)")
 
 	interval := time.Duration(start.Interval) * time.Second
 	if interval <= 0 {
@@ -128,10 +128,10 @@ func runDeviceLogin(cmd *cobra.Command, flags *RootFlags, label, agent string) e
 		}
 		switch poll.Status {
 		case "authorization_pending":
-			fmt.Fprint(cmd.OutOrStderr(), ".")
+			_, _ = fmt.Fprint(cmd.OutOrStderr(), ".")
 			continue
 		case "complete":
-			fmt.Fprintln(cmd.OutOrStderr(), "")
+			_, _ = fmt.Fprintln(cmd.OutOrStderr(), "")
 			path, err := auth.Save(poll.Token)
 			if err != nil {
 				return err

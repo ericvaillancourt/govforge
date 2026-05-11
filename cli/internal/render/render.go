@@ -85,11 +85,11 @@ func (o Output) Heading(title string) {
 		return
 	}
 	if o.NoColor {
-		fmt.Fprintln(o.W, title)
+		_, _ = fmt.Fprintln(o.W, title)
 		return
 	}
 	style := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("12"))
-	fmt.Fprintln(o.W, style.Render(title))
+	_, _ = fmt.Fprintln(o.W, style.Render(title))
 }
 
 // Detail prints a key: value line.
@@ -98,11 +98,11 @@ func (o Output) Detail(key, value string) {
 		return
 	}
 	if o.NoColor {
-		fmt.Fprintf(o.W, "%s: %s\n", key, value)
+		_, _ = fmt.Fprintf(o.W, "%s: %s\n", key, value)
 		return
 	}
 	keyStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
-	fmt.Fprintf(o.W, "%s %s\n", keyStyle.Render(key+":"), value)
+	_, _ = fmt.Fprintf(o.W, "%s %s\n", keyStyle.Render(key+":"), value)
 }
 
 // Status returns a styled status string (e.g. "approved", "blocked").
