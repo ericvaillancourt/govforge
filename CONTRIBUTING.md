@@ -26,9 +26,12 @@ This is a monorepo. Each top-level folder has its own README:
 - [`backend/`](backend/) — Python (FastMCP + FastAPI + SQLAlchemy)
 - [`cli/`](cli/) — Go (Cobra + Viper + resty + lipgloss)
 - [`ui/`](ui/) — Next.js cockpit
-- [`site/`](site/) — Next.js marketing site at govforge.dev
 - [`docs/`](docs/) — architecture, data model, threat model
 - [`infra/`](infra/) — Caddy + Podman quadlets + sudoers
+- [`brand/`](brand/) — SVG wordmark + marks
+
+The marketing site at govforge.dev lives in a separate **private** repo; PRs
+that touch product code don't need to coordinate with it.
 
 ## Local setup
 

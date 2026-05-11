@@ -27,7 +27,7 @@ not a literal calque.
 
 ## Logo
 
-Three asset variants live in [`site/public/brand/`](../site/public/brand/):
+Three asset variants live in [`brand/`](../brand/):
 
 | File              | When to use                                                      |
 |-------------------|------------------------------------------------------------------|
@@ -71,8 +71,8 @@ grayscale — this is intentional, and matches the "infrastructure" tone.
 | Danger       | `hsl(0 84% 60%)`   (both modes)                            |
 
 These tokens are wired into both the cockpit (`ui/src/app/globals.css`)
-and the marketing site (`site/src/app/globals.css`). Don't introduce a
-second accent without updating both.
+and the marketing site (separate repo). Don't introduce a second accent
+without updating both.
 
 ## Typography
 
@@ -113,11 +113,13 @@ second accent without updating both.
 
 - [x] Mark (stroked + filled variants)
 - [x] Wordmark
-- [x] Favicon (`site/src/app/icon.tsx`, generated at build)
-- [x] OG image (`site/src/app/opengraph-image.tsx`, 1200×630)
+- [x] Favicon (marketing site, generated at build)
+- [x] OG image (marketing site, 1200×630)
 - [ ] Apple touch icon — uses the favicon for now; raster export
       pending.
 - [ ] Animated demo GIF/MP4 for the README hero — Workstream M.
 
-When you ship a new asset, drop it in `site/public/brand/` and link it
-here. Don't sprinkle one-off logos around the codebase.
+When you ship a new asset, drop it in [`brand/`](../brand/) and link it
+here. Don't sprinkle one-off logos around the codebase. (Marketing-site
+assets that aren't reused elsewhere can live in the site repo's
+`public/brand/`.)

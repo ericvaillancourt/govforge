@@ -181,17 +181,18 @@ asciinema upload quickstart.tight.cast
 podman run --rm -v "$PWD:/data:Z" asciinema/asciicast2gif \
   /data/quickstart.tight.cast /data/quickstart.gif
 
-# 3. Drop the .cast and .gif into site/public/quickstart/ (create the dir
-#    on first run; the deploy rsync picks it up automatically).
-mkdir -p site/public/quickstart
-mv quickstart.tight.cast quickstart.gif site/public/quickstart/
+# 3. Drop the .cast and .gif into the marketing site repo at
+#    public/quickstart/ (create the dir on first run; the deploy rsync
+#    picks it up automatically). The site lives in a separate private repo.
+mkdir -p ~/AgentMCP-site/public/quickstart
+mv quickstart.tight.cast quickstart.gif ~/AgentMCP-site/public/quickstart/
 ```
 
 The README hero embeds:
 
 ```html
 <a href="https://asciinema.org/a/<id>" target="_blank">
-  <img src="site/public/quickstart/quickstart.gif"
+  <img src="https://govforge.dev/quickstart/quickstart.gif"
        alt="GovForge quickstart cast" width="800">
 </a>
 ```

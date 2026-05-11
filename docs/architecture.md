@@ -85,10 +85,11 @@ Next.js 16 App Router. Reads from the FastAPI HTTP API; mutates via
 `localStorage` so refreshes keep context. Hydration-safe via
 `useCurrentProject`.
 
-### 4. Marketing site (`site/`)
+### 4. Marketing site (separate private repo)
 
-Static export, separate codebase, deployed to `govforge.dev`. Out of scope
-for this document — see `site/README.md`.
+Static export, separate codebase, deployed to `govforge.dev`. Lives in a
+private repo so brand/copy can iterate without OSS ceremony. Out of scope
+for this document.
 
 ## Service layer
 

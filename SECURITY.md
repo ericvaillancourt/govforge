@@ -54,8 +54,9 @@ the `main` branch. After 1.0:
 
 In scope:
 
-- Anything in `backend/`, `cli/`, `ui/`, `site/`, or `infra/` shipped
-  from this repo.
+- Anything in `backend/`, `cli/`, `ui/`, or `infra/` shipped
+  from this repo. (The marketing site at govforge.dev is in a separate
+  private repo; report site issues directly to the security contact.)
 - The MCP server contract: tool input validation, output sanitisation,
   read-only Git enforcement, path traversal refusal.
 - The HTTP API: authentication assumptions (loopback only), CORS scope,

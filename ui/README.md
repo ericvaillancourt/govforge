@@ -4,8 +4,9 @@ Local UI cockpit for viewing decisions, timelines, policies, reviews, and approv
 Spawned by `gf ui serve` (or `npm run dev` during development).
 
 > **Scope** — this is the **local cockpit** that runs on a developer's machine
-> alongside the GovForge backend. The **public marketing site** is in `../site/`.
-> Different apps, different audiences, different builds.
+> alongside the GovForge backend. The **public marketing site** at govforge.dev
+> lives in a separate private repo. Different apps, different audiences,
+> different builds.
 
 ## Stack
 
@@ -17,9 +18,9 @@ Spawned by `gf ui serve` (or `npm run dev` during development).
 - `next-themes` — light/dark (declared, not yet wired into a toggle)
 
 > **Note** — the Phase 1 cockpit uses plain Tailwind utility classes with a
-> small `cn()` helper rather than full `shadcn/ui`. The marketing site under
-> `../site/` does use shadcn; the cockpit deliberately stays leaner so the
-> binary is faster to build and easier to skin.
+> small `cn()` helper rather than full `shadcn/ui`. The marketing site
+> (separate repo) does use shadcn; the cockpit deliberately stays leaner so
+> the binary is faster to build and easier to skin.
 
 ## Setup
 

@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="site/public/brand/wordmark.svg" alt="GovForge" width="280" />
+<img src="brand/wordmark.svg" alt="GovForge" width="280" />
 
 **Govern AI coding agents before they govern your codebase.**
 
@@ -154,10 +154,14 @@ Adding a policy is one Python class — see
 | [`backend/`](./backend/) | Python: FastMCP + FastAPI + SQLAlchemy services | ✅ feature-complete (97 tests, 90 % coverage) |
 | [`cli/`](./cli/) | Go: `gf` binary | ✅ feature-complete (75–100 % per package) |
 | [`ui/`](./ui/) | Next.js: local cockpit (`gf ui serve`) | ✅ feature-complete |
-| [`site/`](./site/) | Next.js: marketing site at govforge.dev | ✅ deployed (EN/FR) |
+| [`brand/`](./brand/) | Brand assets (SVG wordmark + marks) | ✅ |
 | [`docs/`](./docs/) | Architecture, data model, MCP integration, threat model, workflow | ✅ |
 | [`infra/`](./infra/) | Caddy + Podman quadlet + sudoers | ✅ deployed |
 | [`.github/workflows/`](./.github/workflows/) | CI: backend / cli / ui / release | ✅ |
+
+> The **marketing site** at <https://govforge.dev> lives in a separate
+> private repo so brand and copy can iterate without OSS ceremony. The
+> product (this repo) stays Apache 2.0.
 
 ## Documentation
 

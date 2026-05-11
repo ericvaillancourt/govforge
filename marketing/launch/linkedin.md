@@ -88,8 +88,9 @@ If you'd rather skip the post: pipx install govforge && gf init.
 | 4   | "Three guarantees pinned by tests"                | The three security invariants with the test name underneath.         |
 | 5   | "Try it in 30 seconds"                            | The three install commands + repo URL.                               |
 
-Build the carousel from the OG image template (`site/src/app/opengraph-image.tsx`)
-— same charcoal background + the brand mark in the corner of every slide.
+Build the carousel from the OG image template (in the marketing site
+repo at `src/app/opengraph-image.tsx`) — same charcoal background + the
+brand mark in the corner of every slide.
 
 ## What not to do
 

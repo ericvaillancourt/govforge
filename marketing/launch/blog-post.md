@@ -32,9 +32,9 @@ Medium: `Open Source`, `Software Engineering`, `AI`, `Audit`, `MCP`
 
 ## Hero image
 
-Use the OG image from `site/src/app/opengraph-image.tsx` — same
-charcoal canvas, brand mark + tagline. dev.to needs a 1000×420
-horizontal crop.
+Use the OG image from the marketing site repo's
+`src/app/opengraph-image.tsx` — same charcoal canvas, brand mark +
+tagline. dev.to needs a 1000×420 horizontal crop.
 
 ---
 
