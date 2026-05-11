@@ -564,7 +564,6 @@ class TestOAuth:
         assert loc.startswith("https://github.com/login/oauth/authorize")
         assert "client_id=test_client_id" in loc
         assert "state=" in loc
-        # The state cookie is also set so callback can verify CSRF.
         cookie = r.headers.get("set-cookie", "")
         assert "govforge_oauth_state=" in cookie
 
@@ -572,7 +571,6 @@ class TestOAuth:
         self, fresh_app: tuple[TestClient, object], with_github_creds: None
     ) -> None:
         c, _ = fresh_app
-        # No state cookie set on the client → callback should reject.
         r = c.get(
             "/auth/github/callback",
             params={"code": "x", "state": "wrong"},
@@ -612,8 +610,6 @@ class TestOAuth:
 
         # Logout revokes the session.
         assert c.post("/auth/logout").status_code == 204
-        # Subsequent /auth/session reads should fail — the cookie still carries
-        # the (now-revoked) session id, but resolve_session rejects revoked rows.
         c.cookies.set("govforge_session", cookie_value)
         assert c.get("/auth/session").status_code == 401
 
@@ -623,8 +619,133 @@ class TestOAuth:
         with_github_creds: None,
     ) -> None:
         c, _ = fresh_app
-        # Forged cookie — random uuid with a made-up signature.
         c.cookies.set(
             "govforge_session", "00000000-0000-0000-0000-000000000000.deadbeef"
         )
         assert c.get("/auth/session").status_code == 401
+
+
+# ---------------------------------------------------------------------------
+# Device-code flow (`gf auth login --device`)
+# ---------------------------------------------------------------------------
+
+
+class TestDeviceCode:
+    """Full device-code lifecycle: start → pending → approve → poll → token."""
+
+    @pytest.fixture()
+    def fresh_app(self, tmp_path: Path) -> Generator[tuple[TestClient, object]]:
+        db = tmp_path / "device.db"
+        engine = make_engine(f"sqlite:///{db}")
+        Base.metadata.create_all(engine)
+        factory = make_session_factory(engine)
+        app = create_app(factory)
+        with TestClient(app) as c:
+            yield c, factory
+        engine.dispose()
+
+    @pytest.fixture()
+    def with_cookie_secret(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> Generator[None]:
+        monkeypatch.setenv("GOVFORGE_COOKIE_SECRET", "x" * 48)
+        yield
+
+    def _seed_logged_in_user(
+        self, factory: object
+    ) -> tuple[str, UUID]:
+        """Create a User + Session and return (cookie_value, user_id)."""
+        from govforge.api.auth import create_session_row, encode_session_cookie  # noqa: PLC0415
+
+        with factory() as s:  # type: ignore[operator]
+            user = User(email="dev-cli@local", display_name="CLI Tester")
+            s.add(user)
+            s.flush()
+            session_row = create_session_row(s, user_id=user.id)
+            s.flush()
+            sid = session_row.id
+            uid = user.id
+            s.commit()
+        cookie = encode_session_cookie(sid)
+        assert cookie is not None
+        return cookie, uid
+
+    def test_start_returns_codes(
+        self, fresh_app: tuple[TestClient, object], with_cookie_secret: None
+    ) -> None:
+        c, _ = fresh_app
+        r = c.post("/auth/device/code", json={"label": "test-cli", "agent_type": "claude"})
+        assert r.status_code == 200
+        body = r.json()
+        assert "device_code" in body and len(body["device_code"]) >= 30
+        # user_code is "AAAA-BBBB"
+        assert len(body["user_code"]) == 9 and body["user_code"][4] == "-"
+        assert body["interval"] == 5
+        assert body["expires_in"] == 600
+        assert body["verification_uri"].endswith("/device/")
+
+    def test_poll_pending_then_complete(
+        self,
+        fresh_app: tuple[TestClient, object],
+        with_cookie_secret: None,
+    ) -> None:
+        c, factory = fresh_app
+        cookie, _ = self._seed_logged_in_user(factory)
+
+        # 1. Start
+        start = c.post("/auth/device/code", json={"label": "cli", "agent_type": "claude"}).json()
+        device_code = start["device_code"]
+        user_code = start["user_code"]
+
+        # 2. Poll before approval → pending
+        r = c.post("/auth/device/poll", json={"device_code": device_code})
+        assert r.status_code == 200
+        assert r.json()["status"] == "authorization_pending"
+
+        # 3. Approve via cookie
+        c.cookies.set("govforge_session", cookie)
+        r = c.post("/auth/device/approve", json={"user_code": user_code})
+        assert r.status_code == 200, r.text
+        assert r.json()["status"] == "approved"
+        c.cookies.delete("govforge_session")
+
+        # 4. Poll again → complete with token
+        r = c.post("/auth/device/poll", json={"device_code": device_code})
+        body = r.json()
+        assert body["status"] == "complete"
+        assert body["token"].startswith("gfp_")
+        assert body["token_id"]
+
+        # 5. Polling a second time after consumption → denied (one-shot)
+        r = c.post("/auth/device/poll", json={"device_code": device_code})
+        assert r.json()["status"] == "denied"
+
+    def test_approve_requires_signed_in_user(
+        self,
+        fresh_app: tuple[TestClient, object],
+        with_cookie_secret: None,
+    ) -> None:
+        c, _ = fresh_app
+        start = c.post("/auth/device/code", json={}).json()
+        r = c.post("/auth/device/approve", json={"user_code": start["user_code"]})
+        assert r.status_code == 401
+
+    def test_poll_unknown_code_is_denied(
+        self,
+        fresh_app: tuple[TestClient, object],
+        with_cookie_secret: None,
+    ) -> None:
+        c, _ = fresh_app
+        r = c.post("/auth/device/poll", json={"device_code": "fake-secret"})
+        assert r.json()["status"] == "denied"
+
+    def test_approve_rejects_malformed_code(
+        self,
+        fresh_app: tuple[TestClient, object],
+        with_cookie_secret: None,
+    ) -> None:
+        c, factory = fresh_app
+        cookie, _ = self._seed_logged_in_user(factory)
+        c.cookies.set("govforge_session", cookie)
+        r = c.post("/auth/device/approve", json={"user_code": "ABC"})
+        assert r.status_code == 400

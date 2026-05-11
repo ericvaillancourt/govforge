@@ -594,6 +594,71 @@ class ApiToken(Base):
         return not self.is_revoked and not self.is_expired
 
 
+class DeviceCode(Base):
+    """Pending OAuth-style device authorization for `gf auth login --device`.
+
+    The CLI requests a device code, prints the user_code + URL to the
+    terminal, and polls until the user opens the URL in a browser and
+    approves. Approval creates an `ApiToken` and links it here; the
+    next poll returns the token's plaintext secret.
+
+    Storage model: only `device_code_hash` (sha256 of the high-entropy
+    secret the CLI holds) is stored; the user_code is stored in clear
+    because it's a short low-entropy string typed by a human and only
+    valid for ~10 minutes against an expiring row.
+    """
+
+    __tablename__ = "device_codes"
+    __table_args__ = (
+        UniqueConstraint("user_code", name="uq_device_codes_user_code"),
+        Index("ix_device_codes_device_code_hash", "device_code_hash"),
+        Index("ix_device_codes_expires_at", "expires_at"),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
+    # SHA-256 hex digest of the secret the CLI polls with.
+    device_code_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    # 8-char human-typable code, e.g. "ABCD-EFGH". Stored uppercase, no padding.
+    user_code: Mapped[str] = mapped_column(String(16), nullable=False)
+    # Free-form label + agent_type the CLI requested for the eventual token.
+    requested_label: Mapped[str] = mapped_column(String(255), nullable=False)
+    requested_agent_type: Mapped[AgentType] = mapped_column(
+        Enum(AgentType, native_enum=False, length=32), nullable=False
+    )
+    # Approver: set when a logged-in user POSTs /auth/device/approve.
+    user_id: Mapped[UUID | None] = mapped_column(
+        Uuid, ForeignKey("users.id"), nullable=True
+    )
+    # The ApiToken issued at approval time; null until approved.
+    token_id: Mapped[UUID | None] = mapped_column(
+        Uuid, ForeignKey("api_tokens.id"), nullable=True
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False
+    )
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    approved_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    revoked_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    @property
+    def is_expired(self) -> bool:
+        exp = self.expires_at
+        if exp.tzinfo is None:
+            exp = exp.replace(tzinfo=UTC)
+        return exp <= _now()
+
+    @property
+    def is_approved(self) -> bool:
+        return self.approved_at is not None and self.token_id is not None
+
+
 __all__ = [
     "Account",
     "Agent",
@@ -601,6 +666,7 @@ __all__ = [
     "Approval",
     "Base",
     "Decision",
+    "DeviceCode",
     "Disagreement",
     "Event",
     "Finding",

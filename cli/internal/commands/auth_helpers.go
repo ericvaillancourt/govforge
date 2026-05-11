@@ -2,10 +2,18 @@ package commands
 
 import (
 	"errors"
+	"os"
 	"path/filepath"
 
 	"github.com/ericvaillancourt/govforge/cli/internal/render"
 )
+
+// osHostname returns os.Hostname() with the error swallowed (we don't care
+// about the failure mode; an empty hostname falls back to "workstation").
+func osHostname() (string, error) {
+	h, err := os.Hostname()
+	return h, err
+}
 
 // flagsRender mirrors what Resolve() builds, but for commands that don't need
 // to talk to the API at all (login/logout, before the token exists).

@@ -421,24 +421,54 @@ Unavailable` until `RESEND_API_KEY` is provisioned. CLI `gf auth
 login --device` (device-code flow) is deferred — users currently
 paste the `gfp_…` token from the `/account` page.
 
-### 8.7 Schema migrations — interim policy
+### 8.7 Schema migrations — Alembic (live since 2026-05-11)
 
-Until Alembic lands, schema changes that touch existing tables must
-be applied manually. `create_all` only creates **missing** tables; it
-does not run `ALTER TABLE` on existing ones. The Stage B
-`users.avatar_url` column was added in-place on prod on 2026-05-10
-because Stage A's `users` table already existed. Pattern :
+Migrations live at `backend/src/govforge/db/migrations/`. The baseline
+revision `21c163745df5` captures the schema as of 2026-05-11 (after
+the in-place `users.avatar_url` patch from Stage B). All future
+schema changes ship as new Alembic revisions; **do not run
+ALTER TABLE directly on prod again.**
+
+#### Adding a migration (developer)
+
+```bash
+cd backend
+# Edit src/govforge/core/models.py (add/change columns, tables, indexes)
+GOVFORGE_DATABASE_URL=sqlite:///tmp_alembic.db alembic upgrade head   # bring tmp DB to current head
+alembic revision --autogenerate -m "describe change"                  # generates a new revision file
+# Inspect the generated file under src/govforge/db/migrations/versions/
+# Adjust if autogenerate guessed wrong (renames, server defaults, etc.).
+.venv/bin/python -m pytest tests/unit/test_alembic.py                 # `check` confirms model matches head
+git add . && git commit -m "feat(db): add foo column"
+```
+
+#### Applying to prod (operator)
 
 ```bash
 ssh eric@192.168.2.5
-podman exec govforge-backend bash -c 'GOVFORGE_DATABASE_URL="$GOVFORGE_DB" python -c "
-from govforge.db.session import make_engine
-from sqlalchemy import text, inspect
-eng = make_engine()
-with eng.begin() as c:
-    c.execute(text(\"ALTER TABLE <table> ADD COLUMN IF NOT EXISTS <col> <type>\"))
-print(inspect(eng).get_columns(\"<table>\"))
-"'
+# Pull new image with the migration packaged inside the wheel
+podman pull ghcr.io/ericvaillancourt/govforge-backend:latest
+systemctl --user restart govforge-backend.service
+# Apply migrations
+podman exec govforge-backend bash -c \
+  'GOVFORGE_DATABASE_URL="$GOVFORGE_DB" python -m govforge.scripts.migrate upgrade head'
+# Verify
+podman exec govforge-backend bash -c \
+  'GOVFORGE_DATABASE_URL="$GOVFORGE_DB" python -m govforge.scripts.migrate current'
+systemctl --user restart govforge-caddy.service                       # only if 502 after restart
 ```
 
-This is a stop-gap. Before the next schema change, introduce Alembic.
+#### Bootstrap for pre-existing DBs (one-time, 2026-05-11)
+
+The prod DB already had every table at the time of the baseline (it
+was created via `create_all` during Stage A/B). The right onboarding
+is `stamp`, not `upgrade` — this records the baseline revision in the
+`alembic_version` table without running any DDL:
+
+```bash
+podman exec govforge-backend bash -c \
+  'GOVFORGE_DATABASE_URL="$GOVFORGE_DB" python -m govforge.scripts.migrate stamp head'
+```
+
+After this one-time stamp, future migrations apply normally via
+`upgrade head`.

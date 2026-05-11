@@ -212,6 +212,23 @@
     "alreadySignedIn": "Vous êtes déjà connecté.",
     "goToAccount": "Aller à mon compte →"
   },
+  "device": {
+    "metaTitle": "Autoriser un appareil",
+    "metaDescription": "Approuvez une session CLI GovForge en saisissant le code affiché dans votre terminal.",
+    "heading": "Autoriser un appareil",
+    "subheading": "Saisissez le code affiché dans votre terminal pour autoriser la CLI à utiliser ce compte.",
+    "codeLabel": "Code utilisateur",
+    "codePlaceholder": "ABCD-EFGH",
+    "approveBtn": "Autoriser",
+    "approving": "Autorisation…",
+    "successHeading": "Appareil autorisé",
+    "successBody": "Vous pouvez fermer cet onglet et retourner à votre terminal — la CLI récupérera le nouveau jeton automatiquement.",
+    "errorUnknown": "Aucune autorisation en attente trouvée pour ce code. Relancez la commande CLI pour en démarrer une nouvelle.",
+    "errorExpired": "Cette autorisation a expiré. Relancez la commande CLI et utilisez le nouveau code dans les 10 minutes.",
+    "errorGeneric": "Une erreur est survenue. Réessayez ou relancez la commande CLI.",
+    "signInPrompt": "Vous devez vous connecter avant d'autoriser un appareil.",
+    "signInCta": "Connexion →"
+  },
   "account": {
     "metaTitle": "Compte",
     "metaDescription": "Gérez votre compte GovForge et vos jetons API.",

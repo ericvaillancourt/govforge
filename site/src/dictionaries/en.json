@@ -212,6 +212,23 @@
     "alreadySignedIn": "You're already signed in.",
     "goToAccount": "Go to my account →"
   },
+  "device": {
+    "metaTitle": "Authorize a device",
+    "metaDescription": "Approve a GovForge CLI session by entering the code shown in your terminal.",
+    "heading": "Authorize a device",
+    "subheading": "Enter the code shown in your terminal to authorize the CLI for this account.",
+    "codeLabel": "User code",
+    "codePlaceholder": "ABCD-EFGH",
+    "approveBtn": "Authorize",
+    "approving": "Authorizing…",
+    "successHeading": "Device authorized",
+    "successBody": "You can close this tab and return to your terminal — the CLI will pick up the new token automatically.",
+    "errorUnknown": "We couldn't find a pending authorization for that code. Re-run the CLI command to start a fresh one.",
+    "errorExpired": "That authorization has expired. Re-run the CLI command and use the new code within 10 minutes.",
+    "errorGeneric": "Something went wrong. Try again or re-run the CLI command.",
+    "signInPrompt": "You need to sign in before you can authorize a device.",
+    "signInCta": "Sign in →"
+  },
   "account": {
     "metaTitle": "Account",
     "metaDescription": "Manage your GovForge account and API tokens.",
