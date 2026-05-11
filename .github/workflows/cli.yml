@@ -41,8 +41,10 @@ jobs:
         run: go test -race -coverprofile=coverage.out ./...
 
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v8
         with:
-          version: latest
+          # v2.x required for Go 1.25 (v1.x is built with Go 1.24).
+          # Pinned to a specific release so CI doesn't drift on each run.
+          version: v2.12.2
           working-directory: cli
           args: --timeout=5m
