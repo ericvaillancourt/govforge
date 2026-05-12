@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed — `/decisions/{id}/approve` and `/reject` now require `approvals:write` (2026-05-12)
+
+- `POST /decisions/{id}/approve` and `POST /decisions/{id}/reject` HTTP
+  routes now gate on `TokenScope.APPROVALS_WRITE` instead of
+  `DECISIONS_WRITE`. This finishes the Stage C item A role-separation
+  work — at the HTTP surface, a token that can author decisions no
+  longer auto-grants approval power. Aligns the HTTP scope with the
+  MCP `TOOL_SCOPES` mapping (`approve_decision → approvals:write`).
+- **Back-compat** : tokens with the `admin` scope keep approving
+  unchanged (`TokenScope.ADMIN` short-circuits the scope check), so
+  the default token from `gf init` is unaffected. Non-admin tokens
+  that were issued with `decisions:write` and used to approve will
+  start getting 403s — reissue them with `approvals:write` (or
+  rotate via the account page UI, which preserves scopes).
+
 ### Added — Disagreement HTTP routes + `gf disagreement` CLI (2026-05-12)
 
 - New endpoints `POST /disagreements` (scope `reviews:write`) and
@@ -76,8 +91,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   E2E test).
 - `TokenScope` gains `approvals:read` / `approvals:write` so the approver
   role is materially distinct from the author role at the MCP surface.
-  The HTTP API still gates `/approve` on `decisions:write`; tightening
-  that to `approvals:write` is a follow-up.
+  The HTTP API alignment (`/approve` and `/reject` → `approvals:write`)
+  followed in a later commit — see the "Changed" entry above.
 - Three back-compat slots: no token configured → every tool (preserves
   pre-Stage-C-A behavior for unauth'd self-hosted use) ; `admin` scope
   → every tool ; invalid/revoked token → zero tools (fail-closed).

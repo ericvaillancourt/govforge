@@ -142,7 +142,7 @@ def attach_git(
     "/{decision_id}/approve",
     response_model=ApprovalOut,
     status_code=201,
-    dependencies=[Depends(RequireToken(scope=TokenScope.DECISIONS_WRITE))],
+    dependencies=[Depends(RequireToken(scope=TokenScope.APPROVALS_WRITE))],
 )
 def approve_decision(
     decision_id: str,
@@ -163,7 +163,7 @@ def approve_decision(
     "/{decision_id}/reject",
     response_model=ApprovalOut,
     status_code=201,
-    dependencies=[Depends(RequireToken(scope=TokenScope.DECISIONS_WRITE))],
+    dependencies=[Depends(RequireToken(scope=TokenScope.APPROVALS_WRITE))],
 )
 def reject_decision(
     decision_id: str,

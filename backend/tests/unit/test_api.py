@@ -428,6 +428,106 @@ class TestDisagreements:
         engine.dispose()
 
 
+class TestApprovalScope:
+    """Stage C item A follow-up: POST /decisions/{id}/{approve,reject} now
+    gates on `approvals:write` instead of `decisions:write`. This is what
+    makes author-vs-approver role separation real at the HTTP surface —
+    a token that can author decisions no longer auto-grants approval power.
+
+    Admin tokens are unaffected (TokenScope.ADMIN short-circuits the check),
+    so the default `gf init` bootstrap continues to work unchanged."""
+
+    def _seed_token(
+        self,
+        factory: object,
+        *,
+        scopes: list[TokenScope],
+        email: str,
+    ) -> str:
+        secret = generate_token_secret()
+        with factory() as s:  # type: ignore[operator]
+            u = User(email=email, display_name=email.split("@")[0])
+            s.add(u)
+            s.flush()
+            t = ApiToken(
+                user_id=u.id,
+                label="scoped",
+                agent_type=AgentType.HUMAN,
+                prefix=extract_prefix(secret),
+                hashed_secret=hash_token_secret(secret),
+            )
+            t.scopes = scopes
+            s.add(t)
+            s.commit()
+        return secret
+
+    def _setup_decision(self, client: TestClient, git_repo: Path) -> str:
+        r = client.post(
+            "/projects",
+            json={"name": "p-app", "root_path": str(git_repo)},
+        )
+        assert r.status_code == 201
+        t = client.post(
+            "/tasks",
+            json={"title": "x", "actor_agent": "claude", "project_path": str(git_repo)},
+        )
+        d = client.post(
+            "/decisions",
+            json={
+                "task_id": t.json()["display_id"],
+                "author_agent": "claude",
+                "title": "T",
+                "risk_level": "low",
+            },
+        )
+        return d.json()["display_id"]
+
+    def test_decisions_write_alone_cannot_approve(
+        self, client: TestClient, git_repo: Path, tmp_path: Path
+    ) -> None:
+        dec_id = self._setup_decision(client, git_repo)
+        # Build a second app + token reusing the same DB so the decision
+        # we just created is visible to the scoped client.
+        factory = client.app.state.session_factory  # type: ignore[attr-defined]
+        secret = self._seed_token(
+            factory, scopes=[TokenScope.DECISIONS_WRITE], email="author@local"
+        )
+        scoped = TestClient(client.app, headers={"Authorization": f"Bearer {secret}"})  # type: ignore[arg-type]
+        r = scoped.post(
+            f"/decisions/{dec_id}/approve",
+            json={"approver": "eric"},
+        )
+        assert r.status_code == 403, r.text
+
+    def test_approvals_write_alone_can_approve(
+        self, client: TestClient, git_repo: Path
+    ) -> None:
+        dec_id = self._setup_decision(client, git_repo)
+        factory = client.app.state.session_factory  # type: ignore[attr-defined]
+        secret = self._seed_token(
+            factory, scopes=[TokenScope.APPROVALS_WRITE], email="approver@local"
+        )
+        scoped = TestClient(client.app, headers={"Authorization": f"Bearer {secret}"})  # type: ignore[arg-type]
+        r = scoped.post(
+            f"/decisions/{dec_id}/approve",
+            json={"approver": "eric"},
+        )
+        assert r.status_code == 201, r.text
+        assert r.json()["status"] == "approved"
+
+    def test_admin_scope_still_approves(
+        self, client: TestClient, git_repo: Path
+    ) -> None:
+        """The default admin token MUST continue to approve — no regression
+        for the gf init bootstrap path."""
+        dec_id = self._setup_decision(client, git_repo)
+        r = client.post(
+            f"/decisions/{dec_id}/approve",
+            json={"approver": "eric"},
+        )
+        assert r.status_code == 201
+
+
 class TestErrors:
     def test_attach_git_unknown_decision(self, client: TestClient) -> None:
         r = client.post(
