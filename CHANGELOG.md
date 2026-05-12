@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — Manual smoke-test workflow for every distribution channel (2026-05-12)
+
+- `.github/workflows/smoke.yml` is a `workflow_dispatch`-only job set that
+  installs GovForge through every published channel on a fresh runner
+  and verifies `gf --version` matches the tag plus a minimum-viable
+  workflow (`gf init`, module import for the Python-bearing channels).
+- Channels covered:
+  - **GitHub Release binary** on `ubuntu-latest` (linux_x86_64) and
+    `macos-latest` (darwin_arm64).
+  - **Homebrew Cask** on `macos-latest` (Cask is darwin-only by design).
+  - **PyPI wheel** on both runners (`pip install govforge==X.Y.Z` +
+    module import smoke).
+  - **npm wrapper** `@govforge/cli` on both runners (postinstall hook
+    downloads the right binary, then `gf --version` + `gf init`).
+  - **Docker** image `ghcr.io/ericvaillancourt/govforge-backend:X.Y.Z`
+    on Linux only (macOS runners can't natively run Linux images;
+    Docker on macOS dev machines is the documented path).
+- `fail-fast: false` everywhere — one broken channel doesn't hide the
+  others. Manual trigger only — macOS runners are ~10x Linux minutes,
+  so this runs after a release, not on every push.
+
 ### Changed — `/decisions/{id}/approve` and `/reject` now require `approvals:write` (2026-05-12)
 
 - `POST /decisions/{id}/approve` and `POST /decisions/{id}/reject` HTTP

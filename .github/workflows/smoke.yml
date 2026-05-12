@@ -1,0 +1,222 @@
+name: smoke
+
+# Manual smoke test of every published distribution channel against a real
+# OS. Each job installs through one channel and runs `gf --version` plus a
+# minimum-viable workflow to confirm the published artifacts are not just
+# uploaded but actually executable.
+#
+# Trigger: workflow_dispatch only. macOS runners cost ~10x Linux minutes,
+# so we don't run this on every push — call it manually after a release.
+#
+# Failure isolation: `fail-fast: false` per matrix + each channel in its
+# own job. One broken channel can't hide the others.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Tag to smoke-test (e.g. v0.1.1). Empty = latest release."
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+env:
+  # Lets every job pin to one Node.js for the npm postinstall script.
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+jobs:
+  # ---------------------------------------------------------------------
+  # 1. GitHub Release binary archive (signed by cosign + syft SBOM)
+  # ---------------------------------------------------------------------
+  github-release:
+    name: gh-release / ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            asset_arch: linux_x86_64
+          - os: macos-latest
+            asset_arch: darwin_arm64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Resolve version
+        id: ver
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          v="${{ inputs.version }}"
+          if [ -z "$v" ]; then
+            v=$(gh release view --repo ericvaillancourt/govforge --json tagName -q .tagName)
+          fi
+          # Strip leading "v" for the archive name (gf_0.1.1_linux_x86_64.tar.gz)
+          vnum="${v#v}"
+          echo "tag=$v"     >> "$GITHUB_OUTPUT"
+          echo "num=$vnum"  >> "$GITHUB_OUTPUT"
+
+      - name: Download archive
+        run: |
+          asset="gf_${{ steps.ver.outputs.num }}_${{ matrix.asset_arch }}.tar.gz"
+          url="https://github.com/ericvaillancourt/govforge/releases/download/${{ steps.ver.outputs.tag }}/$asset"
+          echo "Fetching $url"
+          curl -fsSL "$url" -o "$asset"
+          tar -xzf "$asset"
+          ls -la gf
+
+      - name: Verify version
+        run: |
+          ./gf --version | tee /tmp/gf-version.txt
+          grep -q "${{ steps.ver.outputs.num }}" /tmp/gf-version.txt
+
+      - name: Init + task smoke
+        run: |
+          # gf init is autonomous (no backend). It must succeed standalone.
+          mkdir -p /tmp/smoke && cd /tmp/smoke
+          ${{ github.workspace }}/gf init --force
+          test -f .govforge/govforge.db
+
+  # ---------------------------------------------------------------------
+  # 2. Homebrew Cask (macOS-only by design — cask references the darwin binary)
+  # ---------------------------------------------------------------------
+  homebrew:
+    name: homebrew / macos
+    runs-on: macos-latest
+    steps:
+      - name: Resolve version
+        id: ver
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          v="${{ inputs.version }}"
+          if [ -z "$v" ]; then
+            v=$(gh release view --repo ericvaillancourt/govforge --json tagName -q .tagName)
+          fi
+          echo "num=${v#v}" >> "$GITHUB_OUTPUT"
+
+      - name: brew install
+        run: brew install ericvaillancourt/tap/govforge
+
+      - name: Verify version
+        run: gf --version | grep -q "${{ steps.ver.outputs.num }}"
+
+      - name: Init smoke
+        run: |
+          mkdir -p /tmp/smoke && cd /tmp/smoke
+          gf init --force
+          test -f .govforge/govforge.db
+
+  # ---------------------------------------------------------------------
+  # 3. PyPI wheel (backend: FastAPI + MCP + services). No `gf` binary here —
+  #    the package exposes Python entry points used by the CLI's spawners.
+  # ---------------------------------------------------------------------
+  pypi:
+    name: pypi / ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Resolve version
+        id: ver
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          v="${{ inputs.version }}"
+          if [ -z "$v" ]; then
+            v=$(gh release view --repo ericvaillancourt/govforge --json tagName -q .tagName)
+          fi
+          echo "num=${v#v}" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: pip install
+        run: |
+          python -m pip install --upgrade pip
+          pip install "govforge==${{ steps.ver.outputs.num }}"
+
+      - name: Import + version check
+        run: |
+          python -c "import govforge; print(govforge.__version__)"
+          python -c "import govforge; assert govforge.__version__ == '${{ steps.ver.outputs.num }}', govforge.__version__"
+
+      - name: MCP server module imports
+        run: |
+          # Module-level import smoke — catches broken __init__ or missing deps
+          python -c "from govforge.mcp.server import build_server"
+          python -c "from govforge.api.app import create_app"
+
+  # ---------------------------------------------------------------------
+  # 4. npm wrapper @govforge/cli — postinstall downloads the signed `gf`
+  #    binary for the host platform. Tests both the package metadata and
+  #    the postinstall hook.
+  # ---------------------------------------------------------------------
+  npm:
+    name: npm / ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Resolve version
+        id: ver
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          v="${{ inputs.version }}"
+          if [ -z "$v" ]; then
+            v=$(gh release view --repo ericvaillancourt/govforge --json tagName -q .tagName)
+          fi
+          echo "num=${v#v}" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: npm install -g
+        run: npm install -g "@govforge/cli@${{ steps.ver.outputs.num }}"
+
+      - name: Verify version
+        run: gf --version | grep -q "${{ steps.ver.outputs.num }}"
+
+      - name: Init smoke
+        run: |
+          mkdir -p /tmp/smoke-npm && cd /tmp/smoke-npm
+          gf init --force
+          test -f .govforge/govforge.db
+
+  # ---------------------------------------------------------------------
+  # 5. Docker container (ghcr.io). Linux-only — macOS runners have Docker
+  #    Desktop quirks and run amd64 images under emulation, which is slow
+  #    and not how users actually deploy.
+  # ---------------------------------------------------------------------
+  docker:
+    name: docker / linux
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve version
+        id: ver
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          v="${{ inputs.version }}"
+          if [ -z "$v" ]; then
+            v=$(gh release view --repo ericvaillancourt/govforge --json tagName -q .tagName)
+          fi
+          # docker.yml pushes tags WITHOUT the leading 'v' (0.1.1, not v0.1.1)
+          echo "num=${v#v}" >> "$GITHUB_OUTPUT"
+
+      - name: docker pull
+        run: docker pull "ghcr.io/ericvaillancourt/govforge-backend:${{ steps.ver.outputs.num }}"
+
+      - name: Container imports the backend
+        run: |
+          docker run --rm \
+            "ghcr.io/ericvaillancourt/govforge-backend:${{ steps.ver.outputs.num }}" \
+            python -c "import govforge; from govforge.mcp.server import build_server; from govforge.api.app import create_app; print(govforge.__version__)"
