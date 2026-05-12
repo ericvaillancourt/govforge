@@ -1,6 +1,6 @@
 {
   "name": "@govforge/cli",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "GovForge CLI — governance for AI coding agents. Wraps the gf binary so MCP-aware tooling can install it via npx.",
   "license": "Apache-2.0",
   "repository": {

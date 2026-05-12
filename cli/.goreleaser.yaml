@@ -124,24 +124,35 @@ release:
       checksums.txt
     ```
 
-# Homebrew tap. Requires the HOMEBREW_TAP_GITHUB_TOKEN repo secret —
-# a fine-grained PAT scoped to ericvaillancourt/homebrew-tap with
-# `Contents: read+write`. The tap repo must exist before the first run
-# (formula commits go to its `main` branch).
-brews:
+# Homebrew tap (Cask). Requires the HOMEBREW_TAP_GITHUB_TOKEN repo
+# secret — a fine-grained PAT scoped to ericvaillancourt/homebrew-tap
+# with `Contents: read+write`. The tap repo must exist before the
+# first run (cask commits go to its `main` branch under `Casks/`).
+#
+# Migrated from `brews:` (deprecated in GoReleaser, Homebrew prefers
+# Casks for pre-built binaries — see
+# https://goreleaser.com/deprecations#brews).
+homebrew_casks:
   - name: govforge
+    binaries: [gf]
     repository:
       owner: ericvaillancourt
       name: homebrew-tap
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
     homepage: https://govforge.dev
     description: GovForge CLI — governance for AI coding agents
-    license: Apache-2.0
-    install: |
-      bin.install "gf"
-    test: |
-      system "#{bin}/gf", "version"
+    # Strip the macOS quarantine attribute on `brew install` so users
+    # don't get a Gatekeeper warning on first run. The binary is signed
+    # by cosign (keyless) but not Apple-notarized — Gatekeeper still
+    # quarantines downloads regardless. brew_install is the same hook
+    # the official Homebrew Casks use for unsigned third-party CLIs.
+    hooks:
+      post:
+        install: |
+          if OS.mac? && Hardware::CPU.arm?
+            system "xattr", "-d", "com.apple.quarantine", "#{staged_path}/gf"
+          end
     commit_author:
       name: govforge-bot
       email: bot@govforge.dev
-    commit_msg_template: "brew: bump govforge to {{ .Tag }}"
+    commit_msg_template: "cask: bump govforge to {{ .Tag }}"

@@ -9,6 +9,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Nothing yet.
 
+## [0.1.1] - 2026-05-12
+
+Maintenance release. No user-facing CLI / backend / API behaviour change ;
+ships identical binaries to v0.1.0. Migrates the Homebrew distribution from
+the deprecated GoReleaser `brews:` (formula) to `homebrew_casks:` (cask),
+which is the recommended path for pre-built CLI binaries since Homebrew 4.x.
+
+### Changed — Homebrew distribution migrated to Cask
+
+- `cli/.goreleaser.yaml`: replace `brews:` block with `homebrew_casks:`.
+  GoReleaser was emitting `brews is being phased out in favor of
+  homebrew_casks` on every release run ; Cask is the semantically correct
+  channel for binaries that are downloaded as-is rather than built from
+  source.
+- Generated artifact moves from `homebrew-tap/govforge.rb` (root) to
+  `homebrew-tap/Casks/govforge.rb` (Cask subdirectory). The user-facing
+  command stays `brew install ericvaillancourt/tap/govforge` — Homebrew
+  auto-detects formula-vs-cask in modern versions.
+- Adds a `postflight` hook that strips the `com.apple.quarantine`
+  extended attribute on Apple-silicon Macs. Without this, the first
+  `gf` invocation triggers a Gatekeeper warning ("cannot verify the
+  developer of …") because the binary is cosign-signed (keyless OIDC)
+  but not Apple-notarized. The hook is a no-op on Linux and Intel Macs.
+- Uses the new `binaries: [gf]` (plural) field that replaced the
+  deprecated singular `binary:` field at GoReleaser v2.12.6.
+
+### Notes
+
+- `pip install govforge==0.1.1` / `npx @govforge/cli@0.1.1` /
+  `docker pull ghcr.io/ericvaillancourt/govforge-backend:v0.1.1` are
+  byte-identical to their `0.1.0` counterparts — the version bump
+  keeps the four channels aligned with the GoReleaser-driven tag.
+- `goreleaser/goreleaser-action@v6` and the rest of the CI Node 20
+  actions stay on Node 20 ; the deadline (2026-06-02) and the migration
+  to Node 24 are tracked in TODO and will land before then.
+
 ## [0.1.0] - 2026-05-12
 
 First public release. Phase 1 (local-first MVP) + Phase 2 (launch
@@ -420,5 +456,6 @@ Docker on GHCR).
 
 ---
 
-[Unreleased]: https://github.com/ericvaillancourt/govforge/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/ericvaillancourt/govforge/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/ericvaillancourt/govforge/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/ericvaillancourt/govforge/releases/tag/v0.1.0
