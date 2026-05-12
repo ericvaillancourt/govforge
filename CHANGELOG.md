@@ -13,9 +13,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   SVG via a client-side renderer; the ~600 KB library is dynamic-imported
   on `/docs/[slug]/` only so the marketing pages stay light. Previously
   Mermaid blocks shipped to the browser as `<pre><code>`, displaying raw
-  source. Three ASCII diagrams in `docs/architecture.md` /
-  `docs/threat-model.md` / `docs/data-model.md` are now Mermaid (or a
-  Markdown table where Mermaid would be cluttered). Theme-toggle awareness
+  source. Four ASCII diagrams converted: `docs/architecture.md` system
+  overview (graph TD) + service-layer signatures (Markdown table where
+  Mermaid would be cluttered), `docs/threat-model.md` trust boundary
+  (graph TB), `docs/data-model.md` Decision status transitions
+  (stateDiagram-v2). Redundant ASCII entity tree in `data-model.md`
+  deleted — the erDiagram below it covers the same content. The
+  remaining ASCII blocks in `docs/quickstart.md` and
+  `docs/workflow-example.md` are intentional `gf policy run` / `gf
+  timeline` CLI captures and stay as-is. Theme-toggle awareness
   (re-render on light/dark flip) is deferred.
 
 ### Changed — CI runners opt into Node.js 24 (2026-05-12)
