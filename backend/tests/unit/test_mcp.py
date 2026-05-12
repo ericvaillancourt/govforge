@@ -437,3 +437,159 @@ class TestPrompts:
         text = _run(go())
         assert "DEC-001" in text
         assert "submit_review" in text
+
+
+# ---------------------------------------------------------------------------
+# Scoped tool registration (Phase 3.0 Stage C item A)
+# ---------------------------------------------------------------------------
+#
+# When the MCP server is started with a scoped API token, `tools/list` must
+# only expose tools whose required scope is in the token's scope list. This
+# is what makes role-separated agents possible: a reviewer token literally
+# cannot see the author tools.
+
+
+def _list_tool_names(server: FastMCP) -> set[str]:
+    async def go() -> set[str]:
+        async with Client(server) as c:
+            tools = await c.list_tools()
+            return {t.name for t in tools}
+
+    return _run(go())
+
+
+class TestScopedToolRegistration:
+    def test_scopes_none_exposes_every_tool(self, factory: sessionmaker) -> None:
+        """No token configured → back-compat: every tool registered."""
+        server = build_server(factory, scopes=None)
+        assert len(_list_tool_names(server)) == 11
+
+    def test_admin_scope_exposes_every_tool(self, factory: sessionmaker) -> None:
+        from govforge.core.enums import TokenScope
+
+        server = build_server(factory, scopes={TokenScope.ADMIN})
+        assert len(_list_tool_names(server)) == 11
+
+    def test_reviewer_scopes_expose_only_review_tools(
+        self, factory: sessionmaker
+    ) -> None:
+        from govforge.core.enums import TokenScope
+
+        server = build_server(
+            factory,
+            scopes={
+                TokenScope.REVIEWS_WRITE,
+                TokenScope.REVIEWS_READ,
+                TokenScope.DECISIONS_READ,
+            },
+        )
+        assert _list_tool_names(server) == {
+            "request_review",
+            "submit_review",
+            "record_disagreement",
+            "list_open_reviews",
+            "get_decision_context",
+        }
+
+    def test_author_scopes_expose_only_author_tools(
+        self, factory: sessionmaker
+    ) -> None:
+        from govforge.core.enums import TokenScope
+
+        server = build_server(
+            factory,
+            scopes={
+                TokenScope.TASKS_WRITE,
+                TokenScope.DECISIONS_WRITE,
+                TokenScope.DECISIONS_READ,
+            },
+        )
+        assert _list_tool_names(server) == {
+            "create_task",
+            "record_decision",
+            "attach_git_diff",
+            "run_policy_checks",
+            "get_decision_context",
+        }
+
+    def test_approver_scopes_expose_only_approver_tools(
+        self, factory: sessionmaker
+    ) -> None:
+        from govforge.core.enums import TokenScope
+
+        server = build_server(
+            factory,
+            scopes={
+                TokenScope.APPROVALS_WRITE,
+                TokenScope.APPROVALS_READ,
+                TokenScope.DECISIONS_READ,
+            },
+        )
+        assert _list_tool_names(server) == {
+            "approve_decision",
+            "list_pending_approvals",
+            "get_decision_context",
+        }
+
+    def test_empty_scopes_expose_no_tools(self, factory: sessionmaker) -> None:
+        """Invalid/revoked token → empty set → no tools registered."""
+        server = build_server(factory, scopes=set())
+        assert _list_tool_names(server) == set()
+
+
+class TestResolveScopes:
+    """End-to-end check of `resolve_scopes`: env token → DB lookup → scope set."""
+
+    def test_no_env_returns_none(
+        self, factory: sessionmaker, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        from govforge.mcp.server import resolve_scopes
+
+        monkeypatch.delenv("GOVFORGE_API_TOKEN", raising=False)
+        monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path))  # empty config dir
+        assert resolve_scopes(factory) is None
+
+    def test_invalid_token_returns_empty(
+        self, factory: sessionmaker, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        from govforge.mcp.server import resolve_scopes
+
+        monkeypatch.setenv("GOVFORGE_API_TOKEN", "gfp_doesnotexist00000000000000000")
+        monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path))
+        assert resolve_scopes(factory) == set()
+
+    def test_valid_token_returns_its_scopes(
+        self, factory: sessionmaker, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        from govforge.api.auth import (
+            extract_prefix,
+            generate_token_secret,
+            hash_token_secret,
+        )
+        from govforge.core.enums import AgentType, TokenScope
+        from govforge.core.models import ApiToken, User
+        from govforge.mcp.server import resolve_scopes
+
+        secret = generate_token_secret()
+        s = factory()
+        user = User(email="reviewer@example.com", display_name="Reviewer")
+        s.add(user)
+        s.flush()
+        token = ApiToken(
+            user_id=user.id,
+            label="codex-reviewer",
+            agent_type=AgentType.CODEX,
+            prefix=extract_prefix(secret),
+            hashed_secret=hash_token_secret(secret),
+            scopes_csv=f"{TokenScope.REVIEWS_WRITE.value},{TokenScope.DECISIONS_READ.value}",
+        )
+        s.add(token)
+        s.commit()
+        s.close()
+
+        monkeypatch.setenv("GOVFORGE_API_TOKEN", secret)
+        monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path))
+        assert resolve_scopes(factory) == {
+            TokenScope.REVIEWS_WRITE,
+            TokenScope.DECISIONS_READ,
+        }

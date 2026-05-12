@@ -104,6 +104,8 @@ class TokenScope(StrEnum):
     REVIEWS_WRITE = "reviews:write"
     POLICIES_READ = "policies:read"
     POLICIES_WRITE = "policies:write"
+    APPROVALS_READ = "approvals:read"
+    APPROVALS_WRITE = "approvals:write"
     EVENTS_READ = "events:read"
     TOKENS_READ = "tokens:read"
     TOKENS_WRITE = "tokens:write"

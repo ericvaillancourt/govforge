@@ -13,6 +13,9 @@ Tools never run shell commands or write to Git (devis.md §10.1).
 
 from __future__ import annotations
 
+from collections.abc import Callable
+from typing import TypeVar
+
 from fastmcp import FastMCP
 
 from govforge.core.enums import (
@@ -22,6 +25,7 @@ from govforge.core.enums import (
     PolicyResultStatus,
     ReviewStatus,
     RiskLevel,
+    TokenScope,
 )
 from govforge.core.services import (
     ApprovalService,
@@ -58,14 +62,52 @@ from govforge.mcp.schemas import (
     SubmitReviewOutput,
 )
 
+# Each MCP tool maps to a single `TokenScope`. When `register_tools` is called
+# with a `scopes=` set, tools whose required scope is missing are skipped at
+# registration time — so `tools/list` only ever returns what the caller can
+# actually invoke. `TokenScope.ADMIN` short-circuits the filter. `scopes=None`
+# (the default) registers everything (current pre-Stage-C-A behavior, kept for
+# back-compat when no token is configured).
+TOOL_SCOPES: dict[str, TokenScope] = {
+    "create_task": TokenScope.TASKS_WRITE,
+    "record_decision": TokenScope.DECISIONS_WRITE,
+    "attach_git_diff": TokenScope.DECISIONS_WRITE,
+    "run_policy_checks": TokenScope.DECISIONS_WRITE,
+    "request_review": TokenScope.REVIEWS_WRITE,
+    "submit_review": TokenScope.REVIEWS_WRITE,
+    "record_disagreement": TokenScope.REVIEWS_WRITE,
+    "approve_decision": TokenScope.APPROVALS_WRITE,
+    "get_decision_context": TokenScope.DECISIONS_READ,
+    "list_open_reviews": TokenScope.REVIEWS_READ,
+    "list_pending_approvals": TokenScope.APPROVALS_READ,
+}
 
-def register_tools(server: FastMCP, ctx: ServerContext) -> None:
-    """Attach every tool handler to the given FastMCP instance."""
+
+def register_tools(
+    server: FastMCP,
+    ctx: ServerContext,
+    *,
+    scopes: set[TokenScope] | None = None,
+) -> None:
+    """Attach tool handlers to a FastMCP instance, optionally filtered by scope.
+
+    `scopes=None` registers every tool (legacy behavior — used when no API
+    token is configured, so MCP keeps working for unauth'd self-hosted use).
+    `scopes={TokenScope.ADMIN, ...}` also registers every tool. Otherwise only
+    the tools whose `TOOL_SCOPES[name]` is present in `scopes` are registered.
+    """
+
+    F = TypeVar("F", bound=Callable[..., object])
+
+    def _maybe_register(name: str) -> Callable[[F], F]:
+        if scopes is None or TokenScope.ADMIN in scopes or TOOL_SCOPES.get(name) in scopes:
+            return server.tool(name=name)
+        return lambda fn: fn
 
     # ------------------------------------------------------------------
     # create_task
     # ------------------------------------------------------------------
-    @server.tool(name="create_task")
+    @_maybe_register("create_task")
     def create_task(
         project_path: str,
         title: str,
@@ -89,7 +131,7 @@ def register_tools(server: FastMCP, ctx: ServerContext) -> None:
     # ------------------------------------------------------------------
     # record_decision
     # ------------------------------------------------------------------
-    @server.tool(name="record_decision")
+    @_maybe_register("record_decision")
     def record_decision(
         task_id: str,
         author_agent: str,
@@ -121,7 +163,7 @@ def register_tools(server: FastMCP, ctx: ServerContext) -> None:
     # ------------------------------------------------------------------
     # attach_git_diff
     # ------------------------------------------------------------------
-    @server.tool(name="attach_git_diff")
+    @_maybe_register("attach_git_diff")
     def attach_git_diff(
         decision_id: str,
         repo_path: str,
@@ -149,7 +191,7 @@ def register_tools(server: FastMCP, ctx: ServerContext) -> None:
     # ------------------------------------------------------------------
     # run_policy_checks
     # ------------------------------------------------------------------
-    @server.tool(name="run_policy_checks")
+    @_maybe_register("run_policy_checks")
     def run_policy_checks(
         decision_id: str,
         config_path: str | None = None,
@@ -197,7 +239,7 @@ def register_tools(server: FastMCP, ctx: ServerContext) -> None:
     # ------------------------------------------------------------------
     # request_review
     # ------------------------------------------------------------------
-    @server.tool(name="request_review")
+    @_maybe_register("request_review")
     def request_review(
         decision_id: str,
         reviewer_agent: str,
@@ -223,7 +265,7 @@ def register_tools(server: FastMCP, ctx: ServerContext) -> None:
     # ------------------------------------------------------------------
     # submit_review
     # ------------------------------------------------------------------
-    @server.tool(name="submit_review")
+    @_maybe_register("submit_review")
     def submit_review(
         decision_id: str,
         reviewer_agent: str,
@@ -264,7 +306,7 @@ def register_tools(server: FastMCP, ctx: ServerContext) -> None:
     # ------------------------------------------------------------------
     # record_disagreement
     # ------------------------------------------------------------------
-    @server.tool(name="record_disagreement")
+    @_maybe_register("record_disagreement")
     def record_disagreement(
         decision_id: str,
         topic: str,
@@ -296,7 +338,7 @@ def register_tools(server: FastMCP, ctx: ServerContext) -> None:
     # ------------------------------------------------------------------
     # approve_decision
     # ------------------------------------------------------------------
-    @server.tool(name="approve_decision")
+    @_maybe_register("approve_decision")
     def approve_decision(
         decision_id: str,
         approver: str,
@@ -336,7 +378,7 @@ def register_tools(server: FastMCP, ctx: ServerContext) -> None:
     # ------------------------------------------------------------------
     # get_decision_context
     # ------------------------------------------------------------------
-    @server.tool(name="get_decision_context")
+    @_maybe_register("get_decision_context")
     def get_decision_context(decision_id: str) -> GetDecisionContextOutput:
         """Return the full context (decision + git + reviews + policies + events)."""
         with ctx.session() as session:
@@ -419,7 +461,7 @@ def register_tools(server: FastMCP, ctx: ServerContext) -> None:
     # ------------------------------------------------------------------
     # list_open_reviews
     # ------------------------------------------------------------------
-    @server.tool(name="list_open_reviews")
+    @_maybe_register("list_open_reviews")
     def list_open_reviews(project_path: str) -> ListOpenReviewsOutput:
         """List reviews on decisions still in REVIEW_REQUIRED state."""
         with ctx.session() as session:
@@ -446,7 +488,7 @@ def register_tools(server: FastMCP, ctx: ServerContext) -> None:
     # ------------------------------------------------------------------
     # list_pending_approvals
     # ------------------------------------------------------------------
-    @server.tool(name="list_pending_approvals")
+    @_maybe_register("list_pending_approvals")
     def list_pending_approvals(project_path: str) -> ListPendingApprovalsOutput:
         """List decisions awaiting human approval."""
         with ctx.session() as session:
