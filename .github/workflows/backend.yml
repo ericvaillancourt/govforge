@@ -12,6 +12,12 @@ on:
       - ".github/workflows/backend.yml"
   workflow_dispatch:
 
+env:
+  # Opt into Node.js 24 for all JS-based actions before the 2026-06-02
+  # deprecation deadline. The runner default flips on that date — we
+  # set this now so we run identically before and after.
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 defaults:
   run:
     working-directory: backend

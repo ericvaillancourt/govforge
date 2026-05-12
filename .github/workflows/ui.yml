@@ -12,6 +12,11 @@ on:
       - ".github/workflows/ui.yml"
   workflow_dispatch:
 
+env:
+  # Opt into Node.js 24 for all JS-based actions before the 2026-06-02
+  # deprecation deadline. See .github/workflows/backend.yml for context.
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 defaults:
   run:
     working-directory: ui

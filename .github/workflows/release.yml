@@ -11,6 +11,11 @@ permissions:
   contents: write
   id-token: write
 
+env:
+  # Opt into Node.js 24 for all JS-based actions before the 2026-06-02
+  # deprecation deadline. See .github/workflows/backend.yml for context.
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 jobs:
   goreleaser:
     runs-on: ubuntu-latest
