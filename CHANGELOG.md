@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed — Account page can rotate tokens in one click (2026-05-12)
+
+- `govforge.dev/{en,fr}/account/` now shows a "Rotate" button next to each
+  active token. One click re-creates the token with the same label,
+  agent_type, scopes and remaining expiration, surfaces the new secret in
+  the existing success panel (with its Copy button), and revokes the old
+  one. Replaces the previous six-click recovery path
+  (Revoke → re-type label / agent / scopes → Create) that users hit when
+  they navigated away without saving the freshly-shown secret.
+- The "shown once" guarantee is preserved: the DB still only stores the
+  hash, and the new secret crosses the wire and the screen exactly once
+  per rotation. Order is create-then-revoke, so a failed create never
+  leaves the user tokenless.
+
 ### Added — Enum values exposed in MCP tool schemas (2026-05-12)
 
 - The MCP server now advertises valid enum values to agents in two ways:
