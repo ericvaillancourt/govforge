@@ -138,6 +138,85 @@ Quick reference. Full Pydantic schemas live in `backend/src/govforge/mcp/schemas
 - Policies are **idempotent**. Re-running `run_policy_checks` produces a
   new set of `PolicyResult` rows; old ones aren't deleted.
 
+## Role-scoped tokens (recommended)
+
+By default the MCP server exposes all 11 tools to whatever agent connects.
+That's fine for solo use, but in a multi-agent flow you usually want each
+agent confined to its role — a reviewer should not see `approve_decision`,
+an approver should not see `create_task`. **Pass a scoped API token via
+`GOVFORGE_API_TOKEN` and the server filters `tools/list` at registration
+time** so role discipline doesn't have to come from the prompt.
+
+### How to use
+
+1. Create a scoped token from your laptop:
+
+   ```bash
+   gf token create --label codex-reviewer --agent codex \
+     --scopes reviews:write,reviews:read,decisions:read
+   # → secret (shown once): gfp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+   ```
+
+2. Put the token in the agent's MCP config:
+
+   ```toml
+   # ~/.codex/config.toml
+   [[mcp_servers]]
+   name = "govforge"
+   command = "python"
+   args = ["-m", "govforge.mcp.server"]
+
+   [mcp_servers.env]
+   GOVFORGE_DB        = "/absolute/path/to/.govforge/govforge.db"
+   GOVFORGE_API_TOKEN = "gfp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+   ```
+
+3. Restart the agent. `tools/list` now returns five tools instead of eleven:
+   `request_review`, `submit_review`, `record_disagreement`,
+   `list_open_reviews`, `get_decision_context`. The author / approver
+   tools simply do not exist for this agent — no prompt needed to keep it
+   in role.
+
+### Scope → tool mapping
+
+| Scope                  | Tools registered                                                              |
+|------------------------|-------------------------------------------------------------------------------|
+| `tasks:write`          | `create_task`                                                                 |
+| `decisions:write`      | `record_decision`, `attach_git_diff`, `run_policy_checks`                     |
+| `decisions:read`       | `get_decision_context`                                                        |
+| `reviews:write`        | `request_review`, `submit_review`, `record_disagreement`                      |
+| `reviews:read`         | `list_open_reviews`                                                           |
+| `approvals:write`      | `approve_decision`                                                            |
+| `approvals:read`       | `list_pending_approvals`                                                      |
+| `admin`                | every tool (back-compat for the default admin token created by `gf init`)     |
+
+A token holds an explicit list of scopes; `admin` short-circuits the check.
+Tools whose required scope is missing aren't registered at all, so they
+never appear in `tools/list` and can't be invoked.
+
+### Sensible role profiles
+
+- **Author** (e.g. Claude doing implementation work):
+  `tasks:write,decisions:write,decisions:read`
+- **Reviewer** (e.g. Codex reading and critiquing):
+  `reviews:write,reviews:read,decisions:read`
+- **Approver** (a human cockpit, or a sign-off agent):
+  `approvals:write,approvals:read,decisions:read`
+
+### Resolution order
+
+The MCP server resolves the token in this order, first hit wins:
+
+1. `GOVFORGE_API_TOKEN` environment variable.
+2. `~/.config/govforge/auth.toml` (the file `gf init` provisions with the
+   default admin token, so backwards-compat is automatic).
+3. If neither is set, **every tool is registered** — the same behavior
+   as before Stage C item A. This keeps unauth'd self-hosted setups
+   working unchanged.
+
+If a token is configured but invalid, revoked, or expired, the server
+registers **no tools** — fail-closed.
+
 ## Prompts
 
 Use the prompts when you want the agent to produce structured output.

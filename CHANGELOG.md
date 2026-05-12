@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — MCP tools filtered by API-token scope (2026-05-12)
+
+- The MCP server now exposes only the tools the configured API token has
+  scopes for. When `GOVFORGE_API_TOKEN` (or the token in
+  `~/.config/govforge/auth.toml`) resolves to e.g. a reviewer-scoped token
+  (`reviews:write,reviews:read,decisions:read`), `tools/list` returns five
+  tools — `request_review`, `submit_review`, `record_disagreement`,
+  `list_open_reviews`, `get_decision_context` — instead of all eleven.
+  The author and approver tools simply do not exist on that connection,
+  so role discipline no longer has to come from a thirty-line
+  "INTERDICTIONS STRICTES" prompt (the top finding from the 2026-05-11
+  E2E test).
+- `TokenScope` gains `approvals:read` / `approvals:write` so the approver
+  role is materially distinct from the author role at the MCP surface.
+  The HTTP API still gates `/approve` on `decisions:write`; tightening
+  that to `approvals:write` is a follow-up.
+- Three back-compat slots: no token configured → every tool (preserves
+  pre-Stage-C-A behavior for unauth'd self-hosted use) ; `admin` scope
+  → every tool ; invalid/revoked token → zero tools (fail-closed).
+- Docs: `docs/mcp-integration.md` gains a "Role-scoped tokens" section
+  with the scope → tool mapping and three suggested profiles
+  (author / reviewer / approver).
+
 ### Changed — Docs site renders Mermaid + responsive tables (2026-05-12)
 
 - `govforge.dev/docs` now hydrates ```mermaid fenced blocks into inline
