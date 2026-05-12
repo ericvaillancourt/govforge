@@ -239,6 +239,42 @@ func TestSubmitReview(t *testing.T) {
 	}
 }
 
+func TestRecordDisagreement(t *testing.T) {
+	srv, rec := recordingServer(t, func(_ *requestRecorder, w http.ResponseWriter) {
+		writeJSON(w, 201, Disagreement{
+			ID: "00000000-0000-0000-0000-000000000001", Topic: "HS256 vs RS256",
+			DecisionID: "DEC-001", RequiresHumanDecision: true,
+		})
+	})
+	out, err := New(srv.URL).RecordDisagreement(DisagreementRecordInput{
+		DecisionID: "DEC-001", Topic: "HS256 vs RS256", RequiresHumanDecision: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out.Topic != "HS256 vs RS256" {
+		t.Fatalf("topic = %q", out.Topic)
+	}
+	if rec.URL != "/disagreements" || rec.Method != "POST" {
+		t.Fatalf("wire: %s %s", rec.Method, rec.URL)
+	}
+	if !strings.Contains(string(rec.Body), `"topic":"HS256 vs RS256"`) {
+		t.Fatalf("topic missing from body: %s", rec.Body)
+	}
+}
+
+func TestListDisagreements(t *testing.T) {
+	srv, rec := recordingServer(t, func(_ *requestRecorder, w http.ResponseWriter) {
+		writeJSON(w, 200, []Disagreement{})
+	})
+	if _, err := New(srv.URL).ListDisagreements("DEC-001"); err != nil {
+		t.Fatal(err)
+	}
+	if rec.URL != "/disagreements?decision_id=DEC-001" {
+		t.Fatalf("query wire: %s", rec.URL)
+	}
+}
+
 func TestListReviewsOpenOnly(t *testing.T) {
 	srv, rec := recordingServer(t, func(_ *requestRecorder, w http.ResponseWriter) {
 		writeJSON(w, 200, []Review{})

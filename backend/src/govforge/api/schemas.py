@@ -217,6 +217,35 @@ class ReviewOut(_ORM):
 
 
 # ---------------------------------------------------------------------------
+# Disagreements
+# ---------------------------------------------------------------------------
+
+
+class DisagreementRecordIn(_Strict):
+    decision_id: str
+    topic: str
+    author_position: str | None = None
+    reviewer_position: str | None = None
+    risk_summary: str | None = None
+    requires_human_decision: bool = True
+    actor_agent: str | None = None
+
+
+class DisagreementOut(_ORM):
+    id: UUID
+    decision_id: UUID
+    topic: str
+    author_position: str | None
+    reviewer_position: str | None
+    risk_summary: str | None
+    requires_human_decision: bool
+    resolution: str | None
+    resolved_by_agent_id: UUID | None
+    resolved_at: datetime | None
+    created_at: datetime
+
+
+# ---------------------------------------------------------------------------
 # Policies
 # ---------------------------------------------------------------------------
 
@@ -272,6 +301,8 @@ __all__ = [
     "AttachGitIn",
     "DecisionIn",
     "DecisionOut",
+    "DisagreementOut",
+    "DisagreementRecordIn",
     "EventOut",
     "FindingIn",
     "FindingOut",

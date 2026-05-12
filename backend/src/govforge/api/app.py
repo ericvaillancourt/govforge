@@ -19,6 +19,7 @@ from govforge.api.errors import install_exception_handlers
 from govforge.api.routers import (
     auth,
     decisions,
+    disagreements,
     events,
     health,
     policies,
@@ -65,6 +66,7 @@ def create_app(session_factory: sessionmaker[Session]) -> FastAPI:
     app.include_router(tasks.router)
     app.include_router(decisions.router)
     app.include_router(reviews.router)
+    app.include_router(disagreements.router)
     app.include_router(policies.router)
     app.include_router(events.router)
     app.include_router(tokens.router)

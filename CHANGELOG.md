@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — Disagreement HTTP routes + `gf disagreement` CLI (2026-05-12)
+
+- New endpoints `POST /disagreements` (scope `reviews:write`) and
+  `GET /disagreements?decision_id=DEC-NNN` (scope `reviews:read`).
+  Mirror the existing MCP `record_disagreement` tool so non-agent
+  callers — CI, demos, devs without an MCP client — can record
+  structured disagreements through the HTTP surface.
+- `gf disagreement record --decision DEC-NNN --topic "…"` (+ optional
+  positions, risk-summary, requires-human, actor) and `gf disagreement
+  list --decision DEC-NNN` wrap the new routes. Both share the backend
+  `DisagreementService` with the MCP tool — no logic duplication.
+- 4 backend tests (record + list happy path, 404 on unknown decision,
+  403 without `reviews:write` scope) and 2 CLI client tests cover the
+  wire shape. 137/137 backend, all Go suites green.
+
 ### Added — `gf review submit` CLI command (2026-05-12)
 
 - `gf review submit DEC-NNN --reviewer NAME --status STATUS` records a

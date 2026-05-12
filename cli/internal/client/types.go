@@ -134,3 +134,18 @@ type FindingInput struct {
 	Message        string  `json:"message"`
 	Recommendation *string `json:"recommendation,omitempty"`
 }
+
+// Disagreement mirrors backend DisagreementOut.
+type Disagreement struct {
+	ID                    string  `json:"id"`
+	DecisionID            string  `json:"decision_id"`
+	Topic                 string  `json:"topic"`
+	AuthorPosition        *string `json:"author_position"`
+	ReviewerPosition      *string `json:"reviewer_position"`
+	RiskSummary           *string `json:"risk_summary"`
+	RequiresHumanDecision bool    `json:"requires_human_decision"`
+	Resolution            *string `json:"resolution"`
+	ResolvedByAgentID     *string `json:"resolved_by_agent_id"`
+	ResolvedAt            *Time   `json:"resolved_at"`
+	CreatedAt             Time    `json:"created_at"`
+}

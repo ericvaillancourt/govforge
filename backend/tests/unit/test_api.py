@@ -332,6 +332,102 @@ class TestFullWorkflow:
 # ---------------------------------------------------------------------------
 
 
+class TestDisagreements:
+    """Stage C item C follow-up: HTTP routes that match the MCP
+    `record_disagreement` tool so the `gf disagreement record` CLI has
+    a backend to call."""
+
+    def _create_decision(self, client: TestClient, git_repo: Path) -> str:
+        r = client.post(
+            "/projects",
+            json={"name": "p-dis", "root_path": str(git_repo)},
+        )
+        assert r.status_code == 201
+        t = client.post(
+            "/tasks",
+            json={"title": "build auth", "actor_agent": "claude", "project_path": str(git_repo)},
+        )
+        task_id = t.json()["display_id"]
+        d = client.post(
+            "/decisions",
+            json={
+                "task_id": task_id,
+                "author_agent": "claude",
+                "title": "Add JWT",
+                "summary": "Use HS256",
+                "risk_level": "medium",
+            },
+        )
+        return d.json()["display_id"]
+
+    def test_record_and_list(self, client: TestClient, git_repo: Path) -> None:
+        dec_id = self._create_decision(client, git_repo)
+        r = client.post(
+            "/disagreements",
+            json={
+                "decision_id": dec_id,
+                "topic": "HS256 vs RS256",
+                "author_position": "HS256 is simpler",
+                "reviewer_position": "RS256 enables key rotation",
+                "risk_summary": "Key compromise = full leak with HS256",
+                "requires_human_decision": True,
+                "actor_agent": "codex",
+            },
+        )
+        assert r.status_code == 201, r.text
+        body = r.json()
+        assert body["topic"] == "HS256 vs RS256"
+        assert body["requires_human_decision"] is True
+        assert body["resolved_at"] is None
+
+        listed = client.get("/disagreements", params={"decision_id": dec_id})
+        assert listed.status_code == 200
+        rows = listed.json()
+        assert len(rows) == 1
+        assert rows[0]["topic"] == "HS256 vs RS256"
+
+    def test_record_unknown_decision_returns_404(self, client: TestClient) -> None:
+        r = client.post(
+            "/disagreements",
+            json={"decision_id": "DEC-999", "topic": "test"},
+        )
+        assert r.status_code == 404
+
+    def test_list_unknown_decision_returns_404(self, client: TestClient) -> None:
+        r = client.get("/disagreements", params={"decision_id": "DEC-999"})
+        assert r.status_code == 404
+
+    def test_record_requires_reviews_write_scope(self, tmp_path: Path, git_repo: Path) -> None:
+        """A token without REVIEWS_WRITE cannot POST /disagreements."""
+        db = tmp_path / "scoped.db"
+        engine = make_engine(f"sqlite:///{db}")
+        Base.metadata.create_all(engine)
+        factory = make_session_factory(engine)
+        secret = generate_token_secret()
+        with factory() as s:
+            u = User(email="reader@local", display_name="Reader")
+            s.add(u)
+            s.flush()
+            t = ApiToken(
+                user_id=u.id,
+                label="read-only",
+                agent_type=AgentType.HUMAN,
+                prefix=extract_prefix(secret),
+                hashed_secret=hash_token_secret(secret),
+            )
+            t.scopes = [TokenScope.REVIEWS_READ]
+            s.add(t)
+            s.commit()
+        app = create_app(factory)
+        with TestClient(app, headers={"Authorization": f"Bearer {secret}"}) as scoped:
+            r = scoped.post(
+                "/disagreements",
+                json={"decision_id": "DEC-001", "topic": "x"},
+            )
+            assert r.status_code == 403
+        engine.dispose()
+
+
 class TestErrors:
     def test_attach_git_unknown_decision(self, client: TestClient) -> None:
         r = client.post(

@@ -264,6 +264,42 @@ recommendation).
 
 ---
 
+## `gf disagreement`
+
+Wraps the disagreement HTTP API (`POST /disagreements`,
+`GET /disagreements?decision_id=DEC-NNN`) so a non-agent caller can
+record a structured disagreement. Agents still use the equivalent
+MCP `record_disagreement` tool — both share the backend service layer.
+
+### `gf disagreement record`
+
+| Flag                  | Description                                                |
+|-----------------------|------------------------------------------------------------|
+| `--decision`          | Decision display ID **(required)**                         |
+| `--topic`             | One-line topic **(required)**                              |
+| `--author-position`   | Author's position                                          |
+| `--reviewer-position` | Reviewer's position                                        |
+| `--risk-summary`      | One-line risk summary                                      |
+| `--requires-human`    | Whether a human is needed to break the tie (default `true`)|
+| `--actor`             | Actor agent name for the audit log                         |
+
+```bash
+gf disagreement record \
+  --decision DEC-001 \
+  --topic "HS256 vs RS256 for JWT signing" \
+  --author-position "HS256 keeps the code simple" \
+  --reviewer-position "RS256 enables key rotation" \
+  --risk-summary "Key compromise = full leak with HS256" \
+  --actor codex
+```
+
+### `gf disagreement list --decision DEC-NNN`
+
+Lists all disagreements recorded on a decision, with a Status column
+(`open` / `resolved`) and a Needs-Human column.
+
+---
+
 ## `gf approve` / `gf reject`
 
 ```bash
@@ -350,6 +386,8 @@ gf review request --decision --reviewer --focus
 gf review submit DEC-NNN --reviewer --status [--summary --finding --findings-file]
 gf review list [--open]
 gf review show REV-NNN
+gf disagreement record --decision --topic [--author-position --reviewer-position --risk-summary --requires-human --actor]
+gf disagreement list --decision
 gf approve DEC-NNN [--approver --comment]
 gf reject DEC-NNN [--approver --comment]
 gf mcp serve

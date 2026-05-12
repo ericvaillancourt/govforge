@@ -422,6 +422,47 @@ func (c *Client) GetReview(id string) (*Review, error) {
 }
 
 // ----------------------------------------------------------------------------
+// Disagreements
+// ----------------------------------------------------------------------------
+
+// DisagreementRecordInput is the body for POST /disagreements.
+type DisagreementRecordInput struct {
+	DecisionID            string  `json:"decision_id"`
+	Topic                 string  `json:"topic"`
+	AuthorPosition        *string `json:"author_position,omitempty"`
+	ReviewerPosition      *string `json:"reviewer_position,omitempty"`
+	RiskSummary           *string `json:"risk_summary,omitempty"`
+	RequiresHumanDecision bool    `json:"requires_human_decision"`
+	ActorAgent            *string `json:"actor_agent,omitempty"`
+}
+
+// RecordDisagreement calls POST /disagreements.
+func (c *Client) RecordDisagreement(in DisagreementRecordInput) (*Disagreement, error) {
+	var out Disagreement
+	resp, err := c.r.R().SetBody(in).SetResult(&out).Post("/disagreements")
+	if err != nil {
+		return nil, err
+	}
+	if e := errorFromResponse(resp); e != nil {
+		return nil, e
+	}
+	return &out, nil
+}
+
+// ListDisagreements calls GET /disagreements?decision_id=DEC-NNN.
+func (c *Client) ListDisagreements(decisionID string) ([]Disagreement, error) {
+	var out []Disagreement
+	resp, err := c.r.R().SetQueryParam("decision_id", decisionID).SetResult(&out).Get("/disagreements")
+	if err != nil {
+		return nil, err
+	}
+	if e := errorFromResponse(resp); e != nil {
+		return nil, e
+	}
+	return out, nil
+}
+
+// ----------------------------------------------------------------------------
 // Policies
 // ----------------------------------------------------------------------------
 

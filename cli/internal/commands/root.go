@@ -51,6 +51,7 @@ func NewRoot(version string) *cobra.Command {
 		NewGitCmd(flags),
 		NewPolicyCmd(flags),
 		NewReviewCmd(flags),
+		NewDisagreementCmd(flags),
 		NewApproveCmd(flags),
 		NewRejectCmd(flags),
 		NewAuthCmd(flags),
