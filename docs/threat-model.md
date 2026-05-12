@@ -10,21 +10,27 @@ GovForge Phase 1 runs **entirely on a developer's machine**. There is no
 SaaS component, no remote ingestion, no telemetry. Trust boundary is the
 local OS user account.
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  developer machine                                              │
-│                                                                 │
-│   AI agent ◀─stdio─▶ FastMCP server ──▶ services ──▶ SQLite    │
-│                              │                          │       │
-│   gf CLI ◀─HTTP─▶ FastAPI ◀──┘                          │       │
-│                                                         │       │
-│   UI ◀────HTTP────────────────▶                         │       │
-│                                                         │       │
-│                              (read-only) Git ───────────┘       │
-└─────────────────────────────────────────────────────────────────┘
-                       │ (no network egress in Phase 1)
-                       ▼
-                    nothing
+```mermaid
+graph TB
+    subgraph Local["Developer machine — trust boundary"]
+        Agent[AI agent — Claude / Codex / ...]
+        MCP[FastMCP server]
+        CLI[gf CLI]
+        API[FastAPI]
+        UI[UI cockpit]
+        Svc[Services]
+        DB[(SQLite)]
+        Agent <-- stdio --> MCP
+        CLI <-- HTTP --> API
+        UI <-- HTTP --> API
+        MCP --> Svc
+        API --> Svc
+        Svc --> DB
+    end
+    Git[(Local Git repo)]
+    Cloud[Cloud / external network]
+    Svc -. read-only .-> Git
+    Local -. blocked — no network egress .- Cloud
 ```
 
 ## Principles (devis §20.1)

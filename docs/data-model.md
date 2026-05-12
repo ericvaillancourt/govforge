@@ -5,24 +5,10 @@ modern style with `Mapped[...]` + `DeclarativeBase`).
 
 ## Entity overview
 
-```
-Project ─┬─< Task
-         ├─< Decision ─┬─< GitChange
-         │             ├─< Review ──< Finding
-         │             ├─< PolicyResult >── Policy
-         │             ├─< Disagreement
-         │             └─< Approval
-         └─< Event (audit log, append-only)
-
-Agent (cross-cutting; referenced by author/reviewer/approver/actor on every
-       mutating entity)
-```
-
 The relations are **strict trees**: a Decision's children cascade-delete
 when the Decision is deleted. Events are exempt — they survive their
-subjects so the audit log stays whole.
-
-## Mermaid diagram
+subjects so the audit log stays whole. `Agent` is cross-cutting and is
+referenced by author/reviewer/approver/actor on every mutating entity.
 
 ```mermaid
 erDiagram

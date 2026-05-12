@@ -9,40 +9,26 @@ GovForge is a four-component system. Three of them run on a developer's
 machine; the fourth (the marketing site) runs in production at
 `govforge.dev`.
 
-```
-┌──────────────────────────────────────────────────────────────────┐
-│  agents (Claude Code, Codex, Cursor, Cline, Aider, …)            │
-│             │                                                    │
-│             │ stdio                                              │
-│             ▼                                                    │
-│   ┌─────────────────────────┐                                    │
-│   │   FastMCP server        │ ──┐                                │
-│   │   (govforge.mcp)        │   │                                │
-│   └─────────────────────────┘   │                                │
-│                                 │     in-process                 │
-│   ┌──────┐  HTTP   ┌────────────▼──────────────┐                 │
-│   │ gf   │ ──────▶ │   FastAPI HTTP API        │                 │
-│   │ CLI  │ :8787   │   (govforge.api)          │                 │
-│   └──────┘         │                           │                 │
-│                    │   ┌───────────────────┐   │                 │
-│   ┌──────┐  HTTP   │   │  Service layer    │   │                 │
-│   │ UI   │ ──────▶ │   │  (govforge.core   │   │                 │
-│   │ :8788│         │   │   .services)      │   │                 │
-│   └──────┘         │   └─────────┬─────────┘   │                 │
-│                    │             │             │                 │
-│                    │   ┌─────────▼─────────┐   │                 │
-│                    │   │  Models + audit   │   │                 │
-│                    │   │  (SQLAlchemy 2)   │   │                 │
-│                    │   └─────────┬─────────┘   │                 │
-│                    └─────────────┼─────────────┘                 │
-│                                  ▼                               │
-│                           ┌─────────────┐                        │
-│                           │  SQLite DB  │  .govforge/govforge.db │
-│                           └─────────────┘                        │
-└──────────────────────────────────────────────────────────────────┘
-                                  │
-                                  ▼
-                       (read-only) Git repo on disk
+```mermaid
+graph TD
+    A[Agents — Claude Code · Codex · Cursor · Cline · Aider]
+    CLI[gf CLI]
+    UI[UI cockpit :8788]
+    M[FastMCP server<br/>govforge.mcp]
+    H[FastAPI HTTP API<br/>127.0.0.1:8787]
+    S[Service layer<br/>govforge.core.services]
+    Mod[Models + audit<br/>SQLAlchemy 2]
+    DB[(SQLite DB<br/>.govforge/govforge.db)]
+    G[(Git repo on disk<br/>read-only)]
+
+    A -- stdio --> M
+    CLI -- HTTP --> H
+    UI -- HTTP --> H
+    M -- in-process --> H
+    H --> S
+    S --> Mod
+    Mod --> DB
+    S -. read-only .-> G
 ```
 
 The four components are intentionally **all running locally**: no SaaS, no
@@ -96,32 +82,24 @@ for this document.
 The service layer is the single source of mutating logic. Every mutating
 service emits an `Event` row so the audit log is complete by construction.
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│  govforge.core.services                                      │
-│                                                              │
-│  ProjectService     ─ create / get_or_create                 │
-│  TaskService        ─ create + display_id (TASK-NNN)         │
-│  DecisionService    ─ create + attach_git + update_status    │
-│  PolicyService      ─ run_for_decision (sync registry)       │
-│  ReviewService      ─ request + submit (with findings)       │
-│  DisagreementService─ record + resolve                       │
-│  ApprovalService    ─ approve / reject / needs_changes       │
-│  TimelineService    ─ for_decision / for_task                │
-│  EventService       ─ log + list_for_entity / project        │
-└──────────────────────────────────────────────────────────────┘
-                          │
-                          ▼ uses
-┌──────────────────────────────────────────────────────────────┐
-│  govforge.core.policies     │  govforge.core.git              │
-│                             │                                 │
-│  Policy ABC                 │  open_repo / resolve_commit     │
-│  PolicyContext + Verdict    │  list_changed_files             │
-│  5 default policies         │  count_changes                  │
-│  TOML loader                │  get_diff_text                  │
-│  Runner (pure)              │  assert_path_in_repo            │
-└─────────────────────────────┴─────────────────────────────────┘
-```
+`govforge.core.services`:
+
+| Service | Methods |
+|---|---|
+| `ProjectService` | `create` / `get_or_create` |
+| `TaskService` | `create` + `display_id` (`TASK-NNN`) |
+| `DecisionService` | `create` + `attach_git` + `update_status` |
+| `PolicyService` | `run_for_decision` (sync registry) |
+| `ReviewService` | `request` + `submit` (with findings) |
+| `DisagreementService` | `record` + `resolve` |
+| `ApprovalService` | `approve` / `reject` / `needs_changes` |
+| `TimelineService` | `for_decision` / `for_task` |
+| `EventService` | `log` + `list_for_entity` / `project` |
+
+Uses `govforge.core.policies` (Policy ABC, PolicyContext + Verdict, 5 default
+policies, TOML loader, pure runner) and `govforge.core.git` (`open_repo`,
+`resolve_commit`, `list_changed_files`, `count_changes`, `get_diff_text`,
+`assert_path_in_repo`).
 
 ## Sequence — full Claude → Codex → human approval
 
