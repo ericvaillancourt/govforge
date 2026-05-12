@@ -100,15 +100,23 @@ The unit of governance. Everything else hangs off a decision.
 
 Status transitions:
 
+```mermaid
+stateDiagram-v2
+    [*] --> DRAFT
+    DRAFT --> REVIEW_REQUIRED : run_policy_checks (BLOCKED)
+    DRAFT --> REVIEW_REQUIRED : request_review
+    REVIEW_REQUIRED --> CHANGES_REQUESTED : submit_review (changes)
+    REVIEW_REQUIRED --> REJECTED : submit_review (rejected)
+    REVIEW_REQUIRED --> APPROVED : approve
+    CHANGES_REQUESTED --> APPROVED : approve
+    CHANGES_REQUESTED --> REJECTED : reject
+    CHANGES_REQUESTED --> CHANGES_REQUESTED : needs_changes
+    APPROVED --> [*]
+    REJECTED --> [*]
 ```
-DRAFT ──run_policy_checks (BLOCKED)──▶ REVIEW_REQUIRED
-DRAFT ──request_review───────────────▶ REVIEW_REQUIRED
-REVIEW_REQUIRED ──submit_review (changes)──▶ CHANGES_REQUESTED
-REVIEW_REQUIRED ──submit_review (rejected)─▶ REJECTED
-* ──approve──▶ APPROVED       (final)
-* ──reject──▶ REJECTED        (final)
-* ──needs_changes──▶ CHANGES_REQUESTED
-```
+
+Approve / reject / needs_changes can be issued from any non-terminal
+state; `APPROVED` and `REJECTED` are final.
 
 ### GitChange
 
