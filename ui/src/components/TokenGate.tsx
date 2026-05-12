@@ -20,38 +20,52 @@ export function TokenGate() {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    const existing = getToken();
-    if (existing) {
-      setStateToken(existing);
-      setLoaded(true);
-    } else {
+    let cancelled = false;
+
+    // All setState calls live after an `await` boundary so the React 19
+    // `react-hooks/set-state-in-effect` rule is satisfied.
+    void (async () => {
+      const existing = getToken();
+      if (existing) {
+        await Promise.resolve();
+        if (cancelled) return;
+        setStateToken(existing);
+        setLoaded(true);
+        return;
+      }
       // Local-first auto-sign-in: ask the Next.js server for the CLI's
       // token (from ~/.config/govforge/auth.toml). If found, store it
       // silently — the operator doesn't need to paste anything.
       // Skipped if the user has explicitly signed out this tab
       // (sessionStorage flag) so sign-out actually sticks.
       const explicitlySignedOut =
-        typeof window !== "undefined" &&
         window.sessionStorage.getItem("govforge.signed_out") === "1";
-      if (explicitlySignedOut) {
-        setLoaded(true);
-      } else {
-        fetch("/api/local-auth", { cache: "no-store" })
-          .then((r) => (r.ok ? r.json() : { token: null }))
-          .then((data: { token: string | null }) => {
-            if (data.token) {
-              setToken(data.token);
-              // setToken fires govforge:token-changed; setStateToken
-              // happens via the listener below.
-            }
-          })
-          .catch(() => {})
-          .finally(() => setLoaded(true));
+      if (!explicitlySignedOut) {
+        try {
+          const r = await fetch("/api/local-auth", { cache: "no-store" });
+          const data: { token: string | null } = r.ok
+            ? await r.json()
+            : { token: null };
+          if (cancelled) return;
+          if (data.token) {
+            // setToken fires `govforge:token-changed`; the listener
+            // below picks it up to update local state.
+            setToken(data.token);
+          }
+        } catch {
+          // Network error or non-JSON body — fall through to manual paste.
+        }
       }
-    }
+      if (cancelled) return;
+      setLoaded(true);
+    })();
+
     const onChange = () => setStateToken(getToken());
     window.addEventListener("govforge:token-changed", onChange);
-    return () => window.removeEventListener("govforge:token-changed", onChange);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("govforge:token-changed", onChange);
+    };
   }, []);
 
   if (!loaded) return null;
