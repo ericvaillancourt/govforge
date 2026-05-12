@@ -7,22 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed — Docs site renders Mermaid diagrams (2026-05-12)
+### Changed — Docs site renders Mermaid + responsive tables (2026-05-12)
 
 - `govforge.dev/docs` now hydrates ```mermaid fenced blocks into inline
   SVG via a client-side renderer; the ~600 KB library is dynamic-imported
   on `/docs/[slug]/` only so the marketing pages stay light. Previously
   Mermaid blocks shipped to the browser as `<pre><code>`, displaying raw
-  source. Four ASCII diagrams converted: `docs/architecture.md` system
-  overview (graph TD) + service-layer signatures (Markdown table where
-  Mermaid would be cluttered), `docs/threat-model.md` trust boundary
-  (graph TB), `docs/data-model.md` Decision status transitions
-  (stateDiagram-v2). Redundant ASCII entity tree in `data-model.md`
-  deleted — the erDiagram below it covers the same content. The
-  remaining ASCII blocks in `docs/quickstart.md` and
-  `docs/workflow-example.md` are intentional `gf policy run` / `gf
-  timeline` CLI captures and stay as-is. Theme-toggle awareness
-  (re-render on light/dark flip) is deferred.
+  source. Site-side: `MermaidRenderer` client component + HTML
+  post-processor in `src/lib/docs.ts`. Theme-toggle awareness (re-render
+  on light/dark flip) is deferred.
+- Audited all 13 docs rendered on the site and replaced every ASCII
+  diagram / box-drawing block:
+  - **→ Mermaid** : `architecture.md` system overview (`graph TD`),
+    `threat-model.md` trust boundary (`graph TB` with subgraph),
+    `data-model.md` Decision status machine (`stateDiagram-v2`).
+  - **→ Markdown table** (Mermaid would be cluttered or it's CLI output
+    that overflows on mobile) : `architecture.md` service-layer
+    signatures, `quickstart.md` `gf decision timeline` capture,
+    `workflow-example.md` `gf policy check` + `gf decision timeline`
+    captures.
+  - **Deleted** : redundant ASCII entity tree in `data-model.md` — the
+    `erDiagram` below it already covers the same content.
+- Result: zero Unicode box-drawing characters left in any rendered doc
+  page on `govforge.dev`.
+
+### Added — Footer "Powered by Talsom AI" credit (2026-05-12)
+
+- Footer now shows a per-locale Talsom AI logo linking to the relevant
+  Talsom services page (EN → `/en/services/artificial-intelligence-and-
+  data-analytics/`, FR → `/services/intelligence-artificielle-analytique-
+  de-donnees/`). Four logo variants ship in `public/talsom/` (EN/FR ×
+  light/dark); Tailwind `dark:` variant swaps light/inverted on theme
+  toggle.
 
 ### Changed — CI runners opt into Node.js 24 (2026-05-12)
 
