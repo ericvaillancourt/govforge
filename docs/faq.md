@@ -136,9 +136,14 @@ The strategic roadmap is internal (it contains commercial
 positioning + dates that change). The public-facing TL;DR:
 
 - **Phase 1** — MVP local. Done.
-- **Phase 2** — public launch + distribution channels (PyPI / Homebrew /
-  pre-built binaries) + a video walkthrough + Show HN.
+- **Phase 2** — public launch + distribution channels (PyPI / Homebrew
+  Cask / npm wrapper / Docker / pre-built binaries via `install.sh`).
+  Done as of v0.1.0 (2026-05-12). Video walkthrough + Show HN are
+  deferred pending more E2E testing and a couple of UX fixes.
 - **Phase 3** — SaaS / multi-user / RBAC / SSO / signed approvals.
+  Stages A & B (Bearer + scoped tokens + OAuth GitHub/Google) shipped
+  2026-05-10/11 ; Stage C (agent role enforcement via MCP scope
+  filtering) tracked for an upcoming minor.
 - **Phase 4+** — formal compliance reporting (SOC 2, EU AI Act, Loi 25
   Quebec), enterprise packaging, ecosystem (custom policy marketplace).
 

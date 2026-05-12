@@ -7,7 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Nothing yet.
+### Changed — CI runners opt into Node.js 24 (2026-05-12)
+
+- All seven workflows (`backend`, `cli`, `ui`, `docker`, `npm`, `pypi`,
+  `release`) now set `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"` at
+  the top-level `env:` block. GitHub will force Node 24 on 2026-06-02
+  and remove Node 20 entirely 2026-09-16 — we run on Node 24 today
+  so the cutover is a no-op. Verified by re-running backend / cli /
+  ui / docker workflows ; the deprecation warning flips from
+  "may not work as expected" to "being forced to run on Node.js 24"
+  (expected). The three tag-triggered workflows (`npm`, `pypi`,
+  `release`) will pick the flag up at the next tag.
+
+### Changed — Docs reflect v0.1.1 reality (2026-05-12)
+
+- `docs/release.md` : Homebrew step describes the Cask path
+  (`Casks/govforge.rb` after GoReleaser commits), the release-table
+  outcome row mentions the Cask too.
+- `docs/faq.md` : Phase 1/2/3 roadmap updated to past tense for what
+  shipped (MVP local, distribution channels, Phase 3.0 Stage A/B
+  auth) and clarifies what's still pending (HN/Show, Stage C agent
+  role enforcement).
 
 ## [0.1.1] - 2026-05-12
 

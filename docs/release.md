@@ -38,8 +38,8 @@ backend), npm (`@govforge/cli` wrapper), and GHCR (backend container).
 ### 3. Homebrew tap
 
 1. Create `https://github.com/ericvaillancourt/homebrew-tap` (an empty
-   public repo is enough — GoReleaser commits the formula to its `main`
-   branch on each release).
+   public repo is enough — GoReleaser commits the cask to
+   `Casks/govforge.rb` on its `main` branch on each release).
 2. Generate a fine-grained PAT scoped to that single repo with
    **Contents: read & write**.
 3. Add it to GovForge repo secrets as `HOMEBREW_TAP_GITHUB_TOKEN`.
@@ -85,7 +85,7 @@ The push of the tag triggers four workflows simultaneously:
 
 | Workflow                | Outcome                                                  |
 |-------------------------|----------------------------------------------------------|
-| `release.yml`           | GoReleaser → 5 Go binary archives + checksums + cosign signature + Homebrew formula. Posted as a GitHub Release. |
+| `release.yml`           | GoReleaser → 5 Go binary archives + checksums + cosign signature + Homebrew Cask (pushed to `ericvaillancourt/homebrew-tap` `Casks/govforge.rb`). Posted as a GitHub Release. |
 | `pypi.yml`              | `python -m build` → sdist + wheel → PyPI via Trusted Publishing |
 | `npm.yml`               | `npm publish --provenance` → `@govforge/cli` on the public registry |
 | `docker.yml`            | Multi-arch (`linux/amd64`, `linux/arm64`) backend image to `ghcr.io/ericvaillancourt/govforge-backend:<version>` + `:latest` + provenance attestation |
