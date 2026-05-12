@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — `gf review submit` CLI command (2026-05-12)
+
+- `gf review submit DEC-NNN --reviewer NAME --status STATUS` records a
+  structured Review without needing an MCP client. Findings are passed
+  via repeatable `--finding 'severity=...;category=...;message=...'`
+  flags (semicolon-separated so messages can include commas) or via
+  `--findings-file path/to/findings.json` for complex input. Plugs the
+  Stage C item C gap: agents still use MCP `submit_review`, but CI
+  pipelines, demos and humans without a wired-up MCP client now have
+  a first-class path. `gf disagreement record` is deferred — needs a
+  backend HTTP route first (only the MCP tool exists today).
+
 ### Changed — Account page can rotate tokens in one click (2026-05-12)
 
 - `govforge.dev/{en,fr}/account/` now shows a "Rotate" button next to each

@@ -213,6 +213,46 @@ gf policy check --decision DEC-001
 Marks a decision as `review_required` and emits `review.requested` for
 the reviewer to pick up.
 
+### `gf review submit DEC-NNN`
+
+| Flag              | Description                                                       |
+|-------------------|-------------------------------------------------------------------|
+| `--reviewer`      | Reviewer agent name **(required)**                                |
+| `--status`        | `approved` \| `changes_requested` \| `commented` \| `rejected` **(required)** |
+| `--summary`       | One-line summary                                                  |
+| `--finding`       | Finding spec — `';'`-separated `key=value`. Repeatable.           |
+| `--findings-file` | Path to a JSON array of findings (escape hatch for complex input) |
+
+Each `--finding` requires `severity` + `category` + `message` ;
+optional keys: `file` (or `file_path`), `line_start`, `line_end`,
+`recommendation`. The separator inside one `--finding` is `';'` (not
+`,`) so commas in messages need no quoting.
+
+```bash
+gf review submit DEC-001 \
+  --reviewer codex \
+  --status changes_requested \
+  --summary "Migration safe but missing rollback test" \
+  --finding 'severity=high;category=tests;file=migrations/0042.sql;message=add a down migration test'
+```
+
+For multiple findings or messages with mixed punctuation, use a JSON file:
+
+```bash
+cat > /tmp/findings.json <<JSON
+[
+  {"severity": "high", "category": "security", "message": "...", "file_path": "auth.py"},
+  {"severity": "low",  "category": "docs",     "message": "..."}
+]
+JSON
+gf review submit DEC-001 --reviewer codex --status changes_requested \
+  --findings-file /tmp/findings.json
+```
+
+Agents typically submit through the MCP `submit_review` tool instead;
+this CLI command exists for CI pipelines, demos, and devs who want to
+record a review without wiring up an MCP client.
+
 ### `gf review list [--open]`
 
 `--open` filters to reviews on decisions still in `review_required`.
@@ -221,10 +261,6 @@ the reviewer to pick up.
 
 Show a review with its findings (severity, category, file, message,
 recommendation).
-
-> **Submitting** a structured review is intentionally **not** a CLI
-> command — agents do this through the MCP `submit_review` tool.
-> Humans submitting findings by hand belong in the cockpit UI.
 
 ---
 
@@ -311,6 +347,7 @@ gf git diff --decision
 gf policy list
 gf policy check --decision
 gf review request --decision --reviewer --focus
+gf review submit DEC-NNN --reviewer --status [--summary --finding --findings-file]
 gf review list [--open]
 gf review show REV-NNN
 gf approve DEC-NNN [--approver --comment]
