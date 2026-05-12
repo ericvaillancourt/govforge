@@ -135,21 +135,27 @@ sudo systemctl reload ssh
 
 ### Restore drill (monthly)
 
+One-liner with the companion script:
+
 ```bash
-# 1. List snapshots
-restic snapshots
+~/govforge/scripts/restore.sh --verify --cleanup
+# exit 0 = Caddyfile + ≥13 docs restored cleanly; exit !=0 = investigate
+```
 
-# 2. Restore latest to a scratch dir (NOT to live paths)
-mkdir -p /tmp/restore-test
-restic restore latest --target /tmp/restore-test
+For an interactive look (keep the restored tree around):
 
-# 3. Smoke test: spot-check Caddyfile + a few site assets
-diff /tmp/restore-test/govforge/caddy/Caddyfile ~/govforge/caddy/Caddyfile
-ls /tmp/restore-test/govforge/site/out/en/docs/ | wc -l  # ≥ 13
-
-# 4. Cleanup
+```bash
+~/govforge/scripts/restore.sh --target /tmp/restore-test --verify
+ls /tmp/restore-test
+# poke around, diff, etc. — when done:
 rm -rf /tmp/restore-test
 ```
+
+The script wraps `restic restore` + invariant checks (non-empty Caddyfile,
+≥13 `en/docs/*/index.html` pages, caddy volume tarballs present). It's
+exercised end-to-end by `.github/workflows/backups-smoke.yml` on every
+push that touches `infra/scripts/backup.sh` or `restore.sh`, so a broken
+script can't reach prod silently.
 
 Document the date + outcome at the bottom of this file under "Restore drills".
 

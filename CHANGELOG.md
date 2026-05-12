@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — `infra/scripts/restore.sh` + CI roundtrip (2026-05-12)
+
+- New companion `infra/scripts/restore.sh` to the existing weekly
+  `backup.sh`. One-liner monthly drill: `restore.sh --verify --cleanup`
+  restores the latest snapshot to a temp dir, asserts a non-empty
+  Caddyfile + ≥13 `en/docs/*/index.html` pages + caddy-volume tarballs
+  are present, and rm-rfs the temp dir. Exits non-zero on any missing
+  invariant — wrap it in a cron when you're ready.
+- `.github/workflows/backups-smoke.yml` runs a full backup → restore →
+  verify roundtrip against a local restic repo (no R2 needed) on every
+  push that touches `infra/scripts/{backup,restore}.sh` or the workflow
+  itself. Includes a negative test: after wiping the source, the same
+  `--verify` must exit non-zero, so we catch a "silently restores empty"
+  regression.
+- `backup.sh` gains a small refactor: the ops env file is optional when
+  `RESTIC_REPOSITORY` is already in the environment. Lets the CI point
+  at a local repo without spoofing R2 secrets; prod behavior unchanged
+  (no env file + no preset repo still fails loudly).
+- `infra/RUNBOOK.md` §3 updated to reference the new restore drill
+  one-liner.
+
 ### Added — Manual smoke-test workflow for every distribution channel (2026-05-12)
 
 - `.github/workflows/smoke.yml` is a `workflow_dispatch`-only job set that

@@ -1,0 +1,93 @@
+name: backups-smoke
+
+# Roundtrip backup → restore against a local restic repo. Catches
+# regressions in infra/scripts/{backup,restore}.sh without needing
+# R2 credentials. Runs on every push that touches the scripts or this
+# workflow, plus on demand.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "infra/scripts/backup.sh"
+      - "infra/scripts/restore.sh"
+      - ".github/workflows/backups-smoke.yml"
+  pull_request:
+    paths:
+      - "infra/scripts/backup.sh"
+      - "infra/scripts/restore.sh"
+      - ".github/workflows/backups-smoke.yml"
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+jobs:
+  roundtrip:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install restic
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq restic
+          restic version
+
+      - name: Synthesise the prod paths backup.sh expects
+        run: |
+          mkdir -p "$HOME/govforge/caddy"
+          cat > "$HOME/govforge/caddy/Caddyfile" <<'EOF'
+          # synthetic Caddyfile for the backup smoke test
+          :80 { respond "ok" }
+          EOF
+          mkdir -p "$HOME/govforge/site/out/en/docs"
+          # 14 doc pages matches what the live site ships post-Mermaid audit
+          # so the restore.sh --verify check (>=13) has slack.
+          for slug in quickstart architecture data-model configuration cli-reference \
+                      mcp-integration mcp-reference policy-authoring threat-model \
+                      workflow-example faq brand release smoke; do
+              mkdir -p "$HOME/govforge/site/out/en/docs/$slug"
+              echo "<!doctype html><title>$slug</title>" \
+                  > "$HOME/govforge/site/out/en/docs/$slug/index.html"
+          done
+
+      - name: Init local restic repo
+        run: |
+          mkdir -p /tmp/restic-repo
+          export RESTIC_REPOSITORY="/tmp/restic-repo"
+          export RESTIC_PASSWORD="smoke-not-secret-this-repo-is-throwaway"
+          restic init
+          echo "RESTIC_REPOSITORY=$RESTIC_REPOSITORY" >> "$GITHUB_ENV"
+          echo "RESTIC_PASSWORD=$RESTIC_PASSWORD"     >> "$GITHUB_ENV"
+
+      - name: Run backup.sh
+        run: bash infra/scripts/backup.sh
+
+      - name: Snapshot was created
+        run: |
+          count=$(restic snapshots --json | python3 -c "import json,sys; print(len(json.load(sys.stdin)))")
+          echo "snapshots: $count"
+          test "$count" -ge 1
+
+      - name: Run restore.sh with --verify
+        run: bash infra/scripts/restore.sh --target /tmp/restore-test --verify
+
+      - name: restore.sh --verify catches missing data (negative test)
+        run: |
+          # Wipe the source Caddyfile, take a NEW snapshot, restore that one,
+          # and confirm --verify exits non-zero. Guards against the case
+          # where restore.sh would silently accept an empty restore.
+          rm -f "$HOME/govforge/caddy/Caddyfile"
+          rm -rf "$HOME/govforge/site/out"
+          bash infra/scripts/backup.sh
+          rm -rf /tmp/restore-empty
+          if bash infra/scripts/restore.sh --target /tmp/restore-empty --verify; then
+              echo "negative test FAILED: --verify accepted an empty restore" >&2
+              exit 1
+          else
+              echo "negative test ok: --verify rejected the empty restore"
+          fi

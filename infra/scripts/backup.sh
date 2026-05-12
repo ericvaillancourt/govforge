@@ -19,24 +19,32 @@
 
 set -Eeuo pipefail
 
+# Load the ops env file if present. We tolerate it missing ONLY when the
+# caller has already set `RESTIC_REPOSITORY` themselves — useful for the
+# CI roundtrip smoke (`.github/workflows/backups-smoke.yml`) which points
+# at a local restic repo instead of R2. In prod, the env file IS required;
+# the fail-fast path keeps the same loudness as before.
 ENV_FILE="${HOME}/.config/govforge-ops/.env"
-if [[ ! -r "$ENV_FILE" ]]; then
-    echo "FATAL: $ENV_FILE not readable. See infra/RUNBOOK.md §3." >&2
+if [[ -r "$ENV_FILE" ]]; then
+    # shellcheck disable=SC1090
+    set -a; source "$ENV_FILE"; set +a
+elif [[ -z "${RESTIC_REPOSITORY:-}" ]]; then
+    echo "FATAL: $ENV_FILE not readable and \$RESTIC_REPOSITORY not preset. See infra/RUNBOOK.md §3." >&2
     exit 1
 fi
 
-# shellcheck disable=SC1090
-set -a; source "$ENV_FILE"; set +a
+# Derive the R2 repo URL ONLY if the caller hasn't pinned one already.
+if [[ -z "${RESTIC_REPOSITORY:-}" ]]; then
+    : "${R2_ACCOUNT_ID:?required}"
+    : "${R2_ACCESS_KEY_ID:?required}"
+    : "${R2_SECRET_ACCESS_KEY:?required}"
+    : "${R2_BUCKET:?required}"
+    export RESTIC_REPOSITORY="s3:https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${R2_BUCKET}"
+    export AWS_ACCESS_KEY_ID="$R2_ACCESS_KEY_ID"
+    export AWS_SECRET_ACCESS_KEY="$R2_SECRET_ACCESS_KEY"
+fi
 
-: "${R2_ACCOUNT_ID:?required}"
-: "${R2_ACCESS_KEY_ID:?required}"
-: "${R2_SECRET_ACCESS_KEY:?required}"
-: "${R2_BUCKET:?required}"
 : "${RESTIC_PASSWORD:?required}"
-
-export RESTIC_REPOSITORY="s3:https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${R2_BUCKET}"
-export AWS_ACCESS_KEY_ID="$R2_ACCESS_KEY_ID"
-export AWS_SECRET_ACCESS_KEY="$R2_SECRET_ACCESS_KEY"
 
 WORK_DIR="$(mktemp -d -t govforge-backup-XXXXXX)"
 trap 'rm -rf "$WORK_DIR"' EXIT
