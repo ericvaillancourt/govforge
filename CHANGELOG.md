@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed — Docs site renders Mermaid diagrams (2026-05-12)
+
+- `govforge.dev/docs` now hydrates ```mermaid fenced blocks into inline
+  SVG via a client-side renderer; the ~600 KB library is dynamic-imported
+  on `/docs/[slug]/` only so the marketing pages stay light. Previously
+  Mermaid blocks shipped to the browser as `<pre><code>`, displaying raw
+  source. Three ASCII diagrams in `docs/architecture.md` /
+  `docs/threat-model.md` / `docs/data-model.md` are now Mermaid (or a
+  Markdown table where Mermaid would be cluttered). Theme-toggle awareness
+  (re-render on light/dark flip) is deferred.
+
 ### Changed — CI runners opt into Node.js 24 (2026-05-12)
 
 - All seven workflows (`backend`, `cli`, `ui`, `docker`, `npm`, `pypi`,
