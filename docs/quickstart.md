@@ -117,18 +117,14 @@ gf decision timeline DEC-001
 
 The final timeline shows every step the agents and the human took:
 
-```text
-╭─────────────────────┬──────────┬───────────────────────────╮
-│ AT                  │ ENTITY   │ EVENT                     │
-├─────────────────────┼──────────┼───────────────────────────┤
-│ 2026-05-10 14:02:11 │ decision │ decision.created          │
-│ 2026-05-10 14:03:45 │ decision │ decision.git_attached     │
-│ 2026-05-10 14:03:46 │ decision │ decision.policy_evaluated │
-│ 2026-05-10 14:03:46 │ decision │ decision.status_changed   │
-│ 2026-05-10 14:05:12 │ decision │ review.requested          │
-│ 2026-05-10 14:18:55 │ decision │ decision.approved         │
-╰─────────────────────┴──────────┴───────────────────────────╯
-```
+| At | Entity | Event |
+|---|---|---|
+| 2026-05-10 14:02:11 | decision | `decision.created` |
+| 2026-05-10 14:03:45 | decision | `decision.git_attached` |
+| 2026-05-10 14:03:46 | decision | `decision.policy_evaluated` |
+| 2026-05-10 14:03:46 | decision | `decision.status_changed` |
+| 2026-05-10 14:05:12 | decision | `review.requested` |
+| 2026-05-10 14:18:55 | decision | `decision.approved` |
 
 ## 6. Open the cockpit
 

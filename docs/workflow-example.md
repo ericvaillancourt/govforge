@@ -147,17 +147,14 @@ gf policy check --decision DEC-001
 ```
 
 Output:
-```
-╭──────────────────────────────────────┬─────────┬─────────────────────────────────────────────────────╮
-│ POLICY                               │ STATUS  │ MESSAGE                                             │
-├──────────────────────────────────────┼─────────┼─────────────────────────────────────────────────────┤
-│ auth_change_requires_review          │ blocked │ 1 auth-adjacent file(s) modified — review required. │
-│ secret_pattern_detection             │ passed  │ No secret patterns detected.                        │
-│ test_required_for_high_risk          │ passed  │ 1 test file(s) modified.                            │
-│ migration_requires_review            │ passed  │ No migration files touched.                         │
-│ large_diff_requires_human_approval   │ passed  │ Diff size 115 within threshold (500).               │
-╰──────────────────────────────────────┴─────────┴─────────────────────────────────────────────────────╯
-```
+
+| Policy | Status | Message |
+|---|---|---|
+| `auth_change_requires_review` | blocked | 1 auth-adjacent file(s) modified — review required. |
+| `secret_pattern_detection` | passed | No secret patterns detected. |
+| `test_required_for_high_risk` | passed | 1 test file(s) modified. |
+| `migration_requires_review` | passed | No migration files touched. |
+| `large_diff_requires_human_approval` | passed | Diff size 115 within threshold (500). |
 
 Because at least one policy returned `blocked`, `PolicyService` bumped
 the decision status to `review_required`.
@@ -258,22 +255,19 @@ gf decision timeline DEC-001
 ```
 
 Output:
-```
-╭─────────────────────┬──────────┬───────────────────────────╮
-│ AT                  │ ENTITY   │ EVENT                     │
-├─────────────────────┼──────────┼───────────────────────────┤
-│ 2026-05-10 14:02:11 │ decision │ decision.created          │
-│ 2026-05-10 14:03:45 │ decision │ decision.git_attached     │
-│ 2026-05-10 14:03:46 │ decision │ decision.policy_evaluated │
-│ 2026-05-10 14:03:46 │ decision │ decision.status_changed   │
-│ 2026-05-10 14:05:12 │ decision │ review.requested          │
-│ 2026-05-10 14:08:33 │ decision │ review.submitted          │
-│ 2026-05-10 14:08:33 │ decision │ decision.status_changed   │
-│ 2026-05-10 14:14:02 │ decision │ decision.git_attached     │
-│ 2026-05-10 14:14:02 │ decision │ decision.policy_evaluated │
-│ 2026-05-10 14:18:55 │ decision │ decision.approved         │
-╰─────────────────────┴──────────┴───────────────────────────╯
-```
+
+| At | Entity | Event |
+|---|---|---|
+| 2026-05-10 14:02:11 | decision | `decision.created` |
+| 2026-05-10 14:03:45 | decision | `decision.git_attached` |
+| 2026-05-10 14:03:46 | decision | `decision.policy_evaluated` |
+| 2026-05-10 14:03:46 | decision | `decision.status_changed` |
+| 2026-05-10 14:05:12 | decision | `review.requested` |
+| 2026-05-10 14:08:33 | decision | `review.submitted` |
+| 2026-05-10 14:08:33 | decision | `decision.status_changed` |
+| 2026-05-10 14:14:02 | decision | `decision.git_attached` |
+| 2026-05-10 14:14:02 | decision | `decision.policy_evaluated` |
+| 2026-05-10 14:18:55 | decision | `decision.approved` |
 
 The same view is available in the cockpit at
 `http://localhost:8788/decisions/DEC-001` — with the Git change panel,
