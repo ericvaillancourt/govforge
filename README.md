@@ -4,12 +4,15 @@
 
 **Govern AI coding agents before they govern your codebase.**
 
+[![Release](https://img.shields.io/github/v/release/ericvaillancourt/govforge?label=release)](https://github.com/ericvaillancourt/govforge/releases/latest)
+[![PyPI](https://img.shields.io/pypi/v/govforge?label=pypi)](https://pypi.org/project/govforge/)
+[![npm](https://img.shields.io/npm/v/@govforge/cli?label=%40govforge%2Fcli)](https://www.npmjs.com/package/@govforge/cli)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE)
 [![Backend CI](https://github.com/ericvaillancourt/govforge/actions/workflows/backend.yml/badge.svg)](https://github.com/ericvaillancourt/govforge/actions/workflows/backend.yml)
 [![CLI CI](https://github.com/ericvaillancourt/govforge/actions/workflows/cli.yml/badge.svg)](https://github.com/ericvaillancourt/govforge/actions/workflows/cli.yml)
 [![UI CI](https://github.com/ericvaillancourt/govforge/actions/workflows/ui.yml/badge.svg)](https://github.com/ericvaillancourt/govforge/actions/workflows/ui.yml)
 [![Python](https://img.shields.io/badge/python-3.12+-3776ab)](backend/pyproject.toml)
-[![Go](https://img.shields.io/badge/go-1.22+-00add8)](cli/go.mod)
+[![Go](https://img.shields.io/badge/go-1.25+-00add8)](cli/go.mod)
 [![MCP-native](https://img.shields.io/badge/MCP-native-7c3aed)](docs/mcp-integration.md)
 
 [Website](https://govforge.dev) · [Docs](https://docs.govforge.dev) · [MCP integration](https://docs.govforge.dev/mcp-integration) · [Workflow example](https://docs.govforge.dev/workflow-example) · [Threat model](https://docs.govforge.dev/threat-model) · [API](https://api.govforge.dev/docs)
@@ -77,12 +80,16 @@ The full Claude → Codex → human-approval walkthrough lives in
 
 ## Install
 
-| Platform        | Method                                         | Status                        |
-|-----------------|------------------------------------------------|-------------------------------|
-| Source (any OS) | `git clone` + `go build` + `pip install -e .` | ✅ today                      |
-| Homebrew tap    | `brew install ericvaillancourt/tap/govforge`   | 🚧 Phase 2 release pipeline   |
-| `pipx`          | `pipx install govforge`                        | 🚧 Phase 2 (PyPI)             |
-| Pre-built binary| GoReleaser (linux/darwin/windows × amd64/arm64)| 🚧 Phase 2 (first tag)        |
+Pick whichever fits your stack — every channel ships the same `v0.1.0` `gf` binary, all signed with cosign.
+
+| Platform                        | Method                                                                       | Status   |
+|---------------------------------|------------------------------------------------------------------------------|----------|
+| Pre-built binary (curl one-liner) | `curl -fsSL https://govforge.dev/install.sh \| sh`                          | ✅ today |
+| Homebrew tap (macOS / Linux)    | `brew install ericvaillancourt/tap/govforge`                                 | ✅ today |
+| `pipx` / `pip` (backend wheel)  | `pipx install govforge` *(or `pip install govforge` for the FastMCP server + HTTP API)* | ✅ today |
+| `npx` wrapper (no Go/Python)    | `npx -y @govforge/cli@latest --version` *(postinstall downloads the signed `gf` binary)* | ✅ today |
+| Docker (backend container)      | `docker pull ghcr.io/ericvaillancourt/govforge-backend:v0.1.0`               | ✅ today |
+| Source (any OS)                 | `git clone` + `go build` + `pip install -e .`                                | ✅ today |
 
 ## How it works
 
