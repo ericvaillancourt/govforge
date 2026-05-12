@@ -115,7 +115,10 @@ def register_tools(
         risk_level: RiskLevel = RiskLevel.MEDIUM,
         actor_agent: str | None = None,
     ) -> CreateTaskOutput:
-        """Create a Task on the project at `project_path`."""
+        """Create a Task on the project at `project_path`.
+
+        `risk_level` must be one of: low, medium, high, critical.
+        """
         with ctx.session() as session:
             project = resolve_project(session, project_path)
             actor = get_or_create_agent(session, actor_agent) if actor_agent else None
@@ -141,7 +144,10 @@ def register_tools(
         risk_level: RiskLevel = RiskLevel.MEDIUM,
         human_approval_required: bool = False,
     ) -> RecordDecisionOutput:
-        """Create a Decision linked to a Task. The Task's project is inherited."""
+        """Create a Decision linked to a Task. The Task's project is inherited.
+
+        `risk_level` must be one of: low, medium, high, critical.
+        """
         with ctx.session() as session:
             task = resolve_task(session, display_id=task_id)
             author = get_or_create_agent(session, author_agent)
@@ -273,7 +279,17 @@ def register_tools(
         summary: str | None = None,
         findings: list[SubmitReviewFinding] | None = None,
     ) -> SubmitReviewOutput:
-        """Record a Review with structured findings; updates decision status if needed."""
+        """Record a Review with structured findings; updates decision status if needed.
+
+        `status` must be one of: approved, changes_requested, commented, rejected.
+
+        Each entry in `findings` requires:
+          - `severity` — info, low, medium, high, critical
+          - `category` — security, performance, architecture, bug,
+            maintainability, tests, docs, accessibility
+          - `message` — required free-form description
+          - `file_path`, `line_start`, `line_end`, `recommendation` — optional
+        """
         with ctx.session() as session:
             decision = resolve_decision(session, display_id=decision_id)
             reviewer = get_or_create_agent(session, reviewer_agent)
@@ -345,7 +361,10 @@ def register_tools(
         status: ApprovalStatus,
         comment: str | None = None,
     ) -> ApproveDecisionOutput:
-        """Record a human approval/rejection/needs_changes verdict on a decision."""
+        """Record a human approval/rejection/needs_changes verdict on a decision.
+
+        `status` must be one of: approved, rejected, needs_changes.
+        """
         with ctx.session() as session:
             decision = resolve_decision(session, display_id=decision_id)
             approver_agent = get_or_create_agent(session, approver)

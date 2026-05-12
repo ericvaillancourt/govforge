@@ -54,6 +54,8 @@ class FindingCategory(StrEnum):
     BUG = "bug"
     MAINTAINABILITY = "maintainability"
     TESTS = "tests"
+    DOCS = "docs"
+    ACCESSIBILITY = "accessibility"
 
 
 class PolicyResultStatus(StrEnum):

@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — Enum values exposed in MCP tool schemas (2026-05-12)
+
+- The MCP server now advertises valid enum values to agents in two ways:
+  (1) Pydantic-generated JSON schema with explicit `enum: [...]` constraints
+  (already present, surfaced via `tools/list`), and (2) prose hints in each
+  tool's docstring + `Field(description=...)` listing the values in clear
+  text. The earlier failure mode (Codex guessing `category: "docs"` on
+  `submit_review` and hitting a Pydantic 422 → retry → wasted tokens) is
+  fixed: agents can read the valid set up-front.
+- `FindingCategory` enum extended with `docs` and `accessibility` — the
+  two values the E2E test surfaced as missing. Backward-compatible: existing
+  rows keep their `security`/`performance`/etc. values; the new variants
+  are additive.
+
 ### Added — MCP tools filtered by API-token scope (2026-05-12)
 
 - The MCP server now exposes only the tools the configured API token has

@@ -124,8 +124,17 @@ class RequestReviewOutput(_Strict):
 
 
 class SubmitReviewFinding(_Strict):
-    severity: FindingSeverity
-    category: FindingCategory
+    severity: FindingSeverity = Field(
+        description=(
+            "Severity of the finding. One of: info, low, medium, high, critical."
+        ),
+    )
+    category: FindingCategory = Field(
+        description=(
+            "Category of the finding. One of: security, performance, architecture, "
+            "bug, maintainability, tests, docs, accessibility."
+        ),
+    )
     file_path: str | None = None
     line_start: int | None = None
     line_end: int | None = None

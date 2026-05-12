@@ -537,6 +537,58 @@ class TestScopedToolRegistration:
         assert _list_tool_names(server) == set()
 
 
+class TestEnumDiscoverability:
+    """Stage C item D — agents must be able to discover valid enum values from
+    the tool schema/description, not by trial-and-error on a Pydantic error."""
+
+    def test_submit_review_advertises_finding_category_values(
+        self, server: FastMCP
+    ) -> None:
+        async def go() -> tuple[str | None, dict]:
+            async with Client(server) as c:
+                for t in await c.list_tools():
+                    if t.name == "submit_review":
+                        return t.description, t.inputSchema
+                return None, {}
+
+        desc, schema = _run(go())
+        assert desc is not None
+        # tool-level docstring lists the categories in prose
+        for value in ("security", "performance", "docs", "accessibility"):
+            assert value in desc, f"{value!r} should appear in submit_review description"
+        # nested schema lists them as an enum constraint
+        finding_props = schema["properties"]["findings"]["anyOf"][0]["items"]["properties"]
+        assert set(finding_props["category"]["enum"]) == {
+            "security",
+            "performance",
+            "architecture",
+            "bug",
+            "maintainability",
+            "tests",
+            "docs",
+            "accessibility",
+        }
+        assert "docs" in finding_props["category"]["description"]
+
+    def test_approve_decision_advertises_status_values(self, server: FastMCP) -> None:
+        async def go() -> tuple[str | None, dict]:
+            async with Client(server) as c:
+                for t in await c.list_tools():
+                    if t.name == "approve_decision":
+                        return t.description, t.inputSchema
+                return None, {}
+
+        desc, schema = _run(go())
+        assert desc is not None
+        for value in ("approved", "rejected", "needs_changes"):
+            assert value in desc
+        assert set(schema["properties"]["status"]["enum"]) == {
+            "approved",
+            "rejected",
+            "needs_changes",
+        }
+
+
 class TestResolveScopes:
     """End-to-end check of `resolve_scopes`: env token → DB lookup → scope set."""
 
