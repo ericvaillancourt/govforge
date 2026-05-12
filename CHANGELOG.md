@@ -7,8 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-The first release will be `0.1.0` and will mark Phase 1 feature-complete.
-Everything below is on `main` but unreleased.
+Nothing yet.
+
+## [0.1.0] - 2026-05-12
+
+First public release. Phase 1 (local-first MVP) + Phase 2 (launch
+infrastructure) shipped together. Hosted API + marketing site live
+at `api.govforge.dev` / `govforge.dev` since 2026-05-10 ; this tag
+unblocks the distribution channels (PyPI, Homebrew tap, npm wrapper,
+Docker on GHCR).
 
 ### Fixed — Cockpit auth gap closed (2026-05-11)
 
@@ -413,4 +420,5 @@ Everything below is on `main` but unreleased.
 
 ---
 
-[Unreleased]: https://github.com/ericvaillancourt/govforge/commits/main
+[Unreleased]: https://github.com/ericvaillancourt/govforge/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/ericvaillancourt/govforge/releases/tag/v0.1.0
