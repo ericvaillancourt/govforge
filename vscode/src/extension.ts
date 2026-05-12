@@ -1,6 +1,8 @@
 import * as vscode from "vscode";
 import { GovForgeClient } from "./api/client";
+import { BackendStatusBar } from "./backend-status-bar";
 import { initializeSignedInContext, registerAuthCommands } from "./commands/auth";
+import { registerBackendCommands } from "./commands/backend";
 import { StatusBar } from "./status-bar";
 import { DecisionsTreeProvider } from "./views/decisions-tree";
 import { ReviewsTreeProvider } from "./views/reviews-tree";
@@ -15,24 +17,28 @@ export async function activate(
     const decisionsTree = new DecisionsTreeProvider(client);
     const reviewsTree = new ReviewsTreeProvider(client);
     const statusBar = new StatusBar(client);
+    const backendStatusBar = new BackendStatusBar();
 
     context.subscriptions.push(
         vscode.window.registerTreeDataProvider("govforge.tasks", tasksTree),
         vscode.window.registerTreeDataProvider("govforge.decisions", decisionsTree),
         vscode.window.registerTreeDataProvider("govforge.reviews", reviewsTree),
         statusBar,
+        backendStatusBar,
     );
 
     const refreshAll = async () => {
         tasksTree.refresh();
         decisionsTree.refresh();
         reviewsTree.refresh();
+        backendStatusBar.refresh();
         await statusBar.refresh();
     };
 
     registerAuthCommands(context, client, async () => {
         await refreshAll();
     });
+    registerBackendCommands(context);
 
     context.subscriptions.push(
         vscode.commands.registerCommand("govforge.refresh", refreshAll),
@@ -55,6 +61,7 @@ export async function activate(
 
     await initializeSignedInContext(client);
     statusBar.show();
+    backendStatusBar.show();
     await refreshAll();
 }
 

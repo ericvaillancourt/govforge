@@ -62,7 +62,7 @@
     "viewsWelcome": [
       {
         "view": "govforge.tasks",
-        "contents": "No tasks yet.\n[Sign in](command:govforge.signIn)\n[Refresh](command:govforge.refresh)",
+        "contents": "Choose where to connect first, then sign in.\n[Switch backend](command:govforge.switchBackend)\n[Sign in](command:govforge.signIn)\n[Refresh](command:govforge.refresh)",
         "when": "!govforge.signedIn"
       }
     ],
@@ -81,6 +81,11 @@
         "command": "govforge.refresh",
         "title": "GovForge: Refresh",
         "icon": "$(refresh)"
+      },
+      {
+        "command": "govforge.switchBackend",
+        "title": "GovForge: Switch Backend",
+        "icon": "$(plug)"
       },
       {
         "command": "govforge.registerProject",

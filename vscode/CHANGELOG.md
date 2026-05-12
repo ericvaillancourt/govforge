@@ -23,3 +23,11 @@ Phase 1 of the VS Code cockpit plan: read-only sidebar, auth, status bar.
 - `govforge.apiUrl` setting (default `http://127.0.0.1:8787`); live-reloads
   the trees + status bar when changed.
 - 401 on any read after sign-in re-prompts for a fresh token.
+- **Backend chooser** — `GovForge: Switch Backend` command (palette +
+  welcome view + dedicated right-status-bar item showing
+  `$(plug) GovForge: local` / `$(globe) GovForge: hosted`). QuickPick
+  with three options: Local (`http://127.0.0.1:8787`), Hosted
+  (`https://api.govforge.dev`), or Custom URL. When a workspace is
+  open, a second QuickPick asks whether to apply Globally (User
+  Settings) or to this workspace only — same scoping vocabulary as
+  every other VS Code setting.
