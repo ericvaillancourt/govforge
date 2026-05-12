@@ -6,6 +6,8 @@
  * (`not found`) from other failures.
  */
 
+import { getToken } from "./token";
+
 export const API_BASE =
   process.env.NEXT_PUBLIC_GOVFORGE_API ?? "http://127.0.0.1:8787";
 
@@ -23,13 +25,16 @@ async function request<T>(
   path: string,
   init: RequestInit = {},
 ): Promise<T> {
+  const token = getToken();
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+    ...(init.headers as Record<string, string> | undefined),
+  };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
   const r = await fetch(`${API_BASE}${path}`, {
     ...init,
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-      ...(init.headers ?? {}),
-    },
+    headers,
     cache: "no-store",
   });
   if (!r.ok) {

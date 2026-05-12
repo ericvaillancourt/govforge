@@ -10,6 +10,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 The first release will be `0.1.0` and will mark Phase 1 feature-complete.
 Everything below is on `main` but unreleased.
 
+### Fixed — Cockpit auth gap closed (2026-05-11)
+
+> Discovered during the same-day E2E test : opening
+> `http://localhost:8788/decisions/DEC-001` in a browser returned
+> Internal Server Error because the cockpit's `fetch()` wrapper sent
+> no `Authorization` header, but Phase 3.0 Stage A (live 2026-05-10)
+> requires Bearer auth on every route.
+
+- `ui/src/lib/api.ts` — `request()` now reads the token from
+  `localStorage` (via `lib/token.ts`) and injects `Authorization:
+  Bearer <token>` when present.
+- New `ui/src/lib/token.ts` — small storage helper
+  (`getToken`/`setToken`/`clearToken`) backed by `localStorage` key
+  `govforge.token`, with a `govforge:token-changed` event so the
+  `TokenGate` re-renders when the token changes from elsewhere.
+- New `ui/src/components/TokenGate.tsx` — header widget rendered in
+  `Nav.tsx`. Two states : (1) no token → input + Sign in button,
+  (2) token present → masked prefix + Sign out. On sign in/out it
+  invalidates every React Query cache so the cockpit refetches with
+  fresh auth.
+- New `ui/src/app/api/local-auth/route.ts` — Next.js server route
+  that reads `~/.config/govforge/auth.toml` (the same file written
+  by `gf auth login`) and returns the token to the client on boot.
+  Local-first auto-sign-in : if the operator has already signed in
+  via the CLI, the cockpit picks up the same token automatically,
+  no manual paste required. A `sessionStorage` flag suppresses the
+  auto-feed for the rest of the tab after an explicit Sign out so
+  the gesture sticks until refresh.
+- Self-hosted threat model : single-user / single-machine, token in
+  `localStorage` is reachable only by same-origin scripts and the
+  cockpit doesn't load 3rd-party code. Threat surface ≈ direct file
+  access (`auth.toml` is `chmod 600`). Hosted cockpit
+  (`app.govforge.dev`, Phase 3) will replace this path with OAuth
+  session cookies which `RequirePrincipal` already accepts.
+
 ### Fixed — CI hygiene + legacy-name cleanup (2026-05-11)
 
 > Restoring all three validation pipelines (`backend`, `cli`, `ui`) to

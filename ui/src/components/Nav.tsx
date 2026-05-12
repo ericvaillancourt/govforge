@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/cn";
 
 import { ProjectSwitcher } from "./ProjectSwitcher";
+import { TokenGate } from "./TokenGate";
 
 /**
  * Top navigation bar. Three concerns:
@@ -56,7 +57,10 @@ export function Nav() {
             })}
           </nav>
         </div>
-        <ProjectSwitcher />
+        <div className="flex items-center gap-4">
+          <ProjectSwitcher />
+          <TokenGate />
+        </div>
       </div>
     </header>
   );
