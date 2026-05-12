@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — VS Code extension scaffold (Phase 1) (2026-05-12)
+
+- New package `vscode/` at the repo root, parallel to `cli/`, `backend/`,
+  `ui/`, `npm/`. Greenfield TypeScript extension targeting VS Code 1.85+.
+- Read-only cockpit in the activity bar: Tasks / Decisions / Reviews tree
+  views for the active workspace's GovForge project, plus a status bar
+  summary (`$(shield) repo · N tasks · N dec · N reviews open`). Workspace
+  matched to a project by `root_path`.
+- Auth via VS Code SecretStorage — `GovForge: Sign In` accepts a `gfp_`
+  token, validates it against `GET /projects`, persists encrypted.
+  `GovForge: Sign Out` clears it. 401 on any read re-prompts.
+- `govforge.apiUrl` setting (default local backend); live-reloads on change.
+- Compiles to a 14 KB esbuild bundle, packages as a 17 KB `.vsix`. Not on
+  the Marketplace yet — sideload via `npx vsce package` + `code
+  --install-extension`. See `vscode/README.md`.
+- Phases 2-5 (decision detail webview, author/review/approval actions,
+  inline annotations, polish) tracked in the same plan; this is the
+  installable Phase 1 foundation.
+
 ### Added — `infra/scripts/restore.sh` + CI roundtrip (2026-05-12)
 
 - New companion `infra/scripts/restore.sh` to the existing weekly

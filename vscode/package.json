@@ -1,0 +1,125 @@
+{
+  "name": "govforge",
+  "displayName": "GovForge",
+  "description": "Local-first governance for AI coding agents — tasks, decisions, reviews, approvals in your sidebar.",
+  "version": "0.1.0",
+  "publisher": "ericvaillancourt",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ericvaillancourt/govforge.git",
+    "directory": "vscode"
+  },
+  "homepage": "https://govforge.dev",
+  "bugs": {
+    "url": "https://github.com/ericvaillancourt/govforge/issues"
+  },
+  "keywords": [
+    "ai-governance",
+    "mcp",
+    "claude-code",
+    "codex",
+    "audit-trail",
+    "review",
+    "cockpit"
+  ],
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "govforge",
+          "title": "GovForge",
+          "icon": "resources/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "govforge": [
+        {
+          "id": "govforge.tasks",
+          "name": "Tasks"
+        },
+        {
+          "id": "govforge.decisions",
+          "name": "Decisions"
+        },
+        {
+          "id": "govforge.reviews",
+          "name": "Reviews"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "govforge.tasks",
+        "contents": "No tasks yet.\n[Sign in](command:govforge.signIn)\n[Refresh](command:govforge.refresh)",
+        "when": "!govforge.signedIn"
+      }
+    ],
+    "commands": [
+      {
+        "command": "govforge.signIn",
+        "title": "GovForge: Sign In",
+        "icon": "$(sign-in)"
+      },
+      {
+        "command": "govforge.signOut",
+        "title": "GovForge: Sign Out",
+        "icon": "$(sign-out)"
+      },
+      {
+        "command": "govforge.refresh",
+        "title": "GovForge: Refresh",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "govforge.registerProject",
+        "title": "GovForge: Register Workspace as Project"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "govforge.refresh",
+          "when": "view == govforge.tasks || view == govforge.decisions || view == govforge.reviews",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "GovForge",
+      "properties": {
+        "govforge.apiUrl": {
+          "type": "string",
+          "default": "http://127.0.0.1:8787",
+          "description": "Base URL of the GovForge HTTP API. Use http://127.0.0.1:8787 for a local backend started with `gf api serve`, or https://api.govforge.dev for the hosted backend."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./ && esbuild src/extension.ts --bundle --platform=node --target=node20 --external:vscode --outfile=out/extension.js",
+    "watch": "tsc -p ./ --watch",
+    "lint": "tsc --noEmit",
+    "package": "vsce package",
+    "gen-types": "openapi-typescript http://127.0.0.1:8787/openapi.json -o src/api/types.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^3.0.0",
+    "esbuild": "^0.24.0",
+    "openapi-typescript": "^7.0.0",
+    "typescript": "^5.6.0"
+  }
+}
