@@ -10,6 +10,7 @@ import { registerProjectCommands } from "./commands/project";
 import { registerReviewCommands } from "./commands/reviews";
 import { registerTaskCommands } from "./commands/tasks";
 import { FindingsAnnotator } from "./findings-annotator";
+import { FormPanelHost } from "./forms/form-panel";
 import { ProjectSelection } from "./project-selection";
 import { StatusBar } from "./status-bar";
 import { DecisionDetailPanels } from "./views/decision-webview";
@@ -30,6 +31,7 @@ export async function activate(
     const backendStatusBar = new BackendStatusBar();
     const decisionPanels = new DecisionDetailPanels(client, selection);
     const annotator = new FindingsAnnotator(client, selection);
+    const formPanels = new FormPanelHost(context.extensionUri, client, () => refreshAll());
 
     context.subscriptions.push(
         vscode.window.registerTreeDataProvider("govforge.tasks", tasksTree),
@@ -39,6 +41,7 @@ export async function activate(
         backendStatusBar,
         decisionPanels,
         annotator,
+        formPanels,
         vscode.commands.registerCommand(
             "govforge.openDecision",
             async (displayId: string) => {
@@ -62,7 +65,7 @@ export async function activate(
     registerProjectCommands(context, client, selection);
     registerTaskCommands(context, client, selection, refreshAll);
     registerDecisionCommands(context, client, selection, refreshAll);
-    registerReviewCommands(context, client, selection, refreshAll);
+    registerReviewCommands(context, client, selection, refreshAll, formPanels);
     registerApprovalCommands(context, client, selection, refreshAll);
     registerDisagreementCommands(context, client, selection, refreshAll);
 

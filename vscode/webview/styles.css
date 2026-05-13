@@ -1,0 +1,257 @@
+:root {
+    color-scheme: light dark;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--vscode-font-family);
+    font-size: var(--vscode-font-size);
+    color: var(--vscode-foreground);
+    background: var(--vscode-editor-background);
+    margin: 0;
+    padding: 1.25rem 1.5rem 2rem;
+    line-height: 1.5;
+}
+
+#root {
+    max-width: 720px;
+    margin: 0 auto;
+}
+
+h1 {
+    font-size: 1.05rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--vscode-descriptionForeground);
+    margin: 0 0 0.5rem;
+    font-weight: 600;
+}
+
+.subject {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin: 0 0 1.5rem;
+}
+
+.field {
+    display: block;
+    margin-bottom: 1.1rem;
+}
+
+.field label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--vscode-foreground);
+    margin-bottom: 0.3rem;
+}
+
+.field .helper {
+    display: block;
+    font-size: 0.78rem;
+    color: var(--vscode-descriptionForeground);
+    margin-top: 0.25rem;
+}
+
+.field .error {
+    display: block;
+    font-size: 0.78rem;
+    color: var(--vscode-errorForeground);
+    margin-top: 0.25rem;
+}
+
+.field.error input,
+.field.error select,
+.field.error textarea {
+    border-color: var(--vscode-errorBorder, var(--vscode-errorForeground));
+}
+
+input[type="text"],
+input[type="number"],
+select,
+textarea {
+    width: 100%;
+    background: var(--vscode-input-background);
+    color: var(--vscode-input-foreground);
+    border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
+    border-radius: 3px;
+    padding: 0.45rem 0.6rem;
+    font-family: inherit;
+    font-size: inherit;
+}
+
+textarea {
+    min-height: 5em;
+    resize: vertical;
+    font-family: var(--vscode-editor-font-family);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    outline: 1px solid var(--vscode-focusBorder);
+    outline-offset: -1px;
+    border-color: var(--vscode-focusBorder);
+}
+
+.row {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+}
+
+.row > * {
+    flex: 1;
+}
+
+.checkbox-field {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1.1rem;
+    cursor: pointer;
+}
+
+.checkbox-field input {
+    width: auto;
+    margin: 0;
+}
+
+.buttons {
+    margin-top: 1.5rem;
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+button {
+    font-family: inherit;
+    font-size: inherit;
+    padding: 0.45rem 1rem;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+button.primary {
+    background: var(--vscode-button-background);
+    color: var(--vscode-button-foreground);
+}
+
+button.primary:hover {
+    background: var(--vscode-button-hoverBackground);
+}
+
+button.secondary {
+    background: transparent;
+    color: var(--vscode-foreground);
+    border-color: var(--vscode-panel-border);
+}
+
+button.secondary:hover {
+    background: var(--vscode-toolbar-hoverBackground, var(--vscode-list-hoverBackground));
+}
+
+button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 1.5rem 0 0.5rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--vscode-panel-border);
+}
+
+.section-header h2 {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--vscode-descriptionForeground);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.add-row {
+    background: transparent;
+    color: var(--vscode-textLink-foreground);
+    border: 1px dashed var(--vscode-panel-border);
+    padding: 0.35rem 0.7rem;
+    font-size: 0.85rem;
+}
+
+.add-row:hover {
+    border-style: solid;
+    background: var(--vscode-list-hoverBackground);
+}
+
+.finding-row {
+    border: 1px solid var(--vscode-panel-border);
+    border-radius: 4px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.75rem;
+    position: relative;
+}
+
+.finding-row .remove {
+    position: absolute;
+    top: 0.3rem;
+    right: 0.4rem;
+    background: transparent;
+    border: none;
+    color: var(--vscode-descriptionForeground);
+    cursor: pointer;
+    font-size: 0.95rem;
+    padding: 0.15rem 0.45rem;
+}
+
+.finding-row .remove:hover {
+    color: var(--vscode-errorForeground);
+}
+
+.finding-index {
+    font-size: 0.78rem;
+    color: var(--vscode-descriptionForeground);
+    margin-bottom: 0.5rem;
+}
+
+.banner {
+    padding: 0.6rem 0.8rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+.banner.success {
+    background: var(--vscode-inputValidation-infoBackground, rgba(60, 200, 80, 0.15));
+    border: 1px solid var(--vscode-inputValidation-infoBorder, rgba(60, 200, 80, 0.4));
+}
+
+.banner.error {
+    background: var(--vscode-inputValidation-errorBackground, rgba(248, 81, 73, 0.15));
+    border: 1px solid var(--vscode-inputValidation-errorBorder, rgba(248, 81, 73, 0.5));
+    color: var(--vscode-errorForeground);
+}
+
+.spinner {
+    display: inline-block;
+    width: 0.9em;
+    height: 0.9em;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    vertical-align: -0.15em;
+    margin-right: 0.4em;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}

@@ -245,14 +245,18 @@
     }
   },
   "scripts": {
-    "compile": "tsc -p ./ && esbuild src/extension.ts --bundle --platform=node --target=node20 --external:vscode --outfile=out/extension.js",
+    "compile": "tsc -p ./ && tsc -p ./tsconfig.webview.json && npm run bundle:extension && npm run bundle:webview",
+    "bundle:extension": "esbuild src/extension.ts --bundle --platform=node --target=node20 --external:vscode --outfile=out/extension.js",
+    "bundle:webview": "esbuild webview/index.tsx --bundle --platform=browser --target=es2022 --format=iife --minify --define:process.env.NODE_ENV='\"production\"' --outfile=out/webview.js",
     "watch": "esbuild src/extension.ts --bundle --platform=node --target=node20 --external:vscode --outfile=out/extension.js --watch=forever",
-    "lint": "tsc --noEmit",
+    "lint": "tsc --noEmit && tsc -p ./tsconfig.webview.json --noEmit",
     "package": "vsce package",
     "gen-types": "openapi-typescript http://127.0.0.1:8787/openapi.json -o src/api/types.ts"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
+    "@types/react": "^18.3.28",
+    "@types/react-dom": "^18.3.7",
     "@types/vscode": "^1.85.0",
     "@vscode/vsce": "^3.0.0",
     "esbuild": "^0.24.0",
@@ -260,6 +264,8 @@
     "typescript": "^5.6.0"
   },
   "dependencies": {
-    "marked": "^14.1.4"
+    "marked": "^14.1.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   }
 }

@@ -205,3 +205,63 @@ time it's read, then the legacy key is deleted. Existing users are
 not asked to sign in again.
 
 Bundle: 124 KB → 125 KB. .vsix: 70 KB → 72 KB gzipped.
+
+### Added — React webview infrastructure + Submit Review form (Phase A of v0.2 UI rewrite) (2026-05-12)
+
+The "wizard at the top of the screen" UX with QuickPick chains is
+gone for the worst offender — **Submit Review now opens a real form
+in a panel beside the editor**. All fields visible at once, dynamic
+findings list with [+ Add finding] / [× Remove], inline validation,
+submit button, theme-aware via `--vscode-*` CSS variables.
+
+**Infrastructure** (reusable for Phases B/C/D):
+
+- `vscode/src/forms/messages.ts` — discriminated unions for the
+  extension ↔ webview message bus. Type-safe on both sides, all
+  five planned forms declared (only `submitReview` implemented
+  this phase).
+- `vscode/src/forms/form-panel.ts` — `FormPanelHost`. Spawns a
+  `WebviewPanel` in `ViewColumn.Beside`, injects options via
+  `window.__GF_FORM__`, listens for one `submit` / `cancel`, calls
+  the right `GovForgeClient` method, posts `submitDone` /
+  `submitError` back, closes after 900 ms on success and triggers
+  `refreshAll()`.
+- `vscode/tsconfig.webview.json` — separate tsconfig for the
+  webview bundle (browser target, JSX, DOM lib).
+- `npm run bundle:webview` — esbuild → minified IIFE bundle
+  (`out/webview.js`, 144 KB) + CSS sibling (`out/webview.css`,
+  4 KB). Includes `process.env.NODE_ENV='"production"'` define so
+  React tree-shakes its dev warnings.
+
+**Webview React tree** (`vscode/webview/`):
+
+- `index.tsx` — entry, reads `window.__GF_FORM__.form` to route.
+- `api.ts` — wraps `acquireVsCodeApi()` + typed `postToExtension` /
+  `onExtensionMessage`.
+- `styles.css` — VS Code CSS-variable based, banners (success /
+  error), finding-row card layout, spinner animation, primary /
+  secondary buttons.
+- `components/Field.tsx`, `Select.tsx`, `Button.tsx` — generic
+  primitives.
+- `components/FindingRow.tsx` — one finding card with severity /
+  category selects, file_path, line_start / line_end, message,
+  recommendation, and a `×` remove button.
+- `forms/SubmitReviewForm.tsx` — reviewer input, verdict select,
+  summary textarea, dynamic findings list, Submit / Cancel. State
+  machine: idle → submitting → done / error.
+
+**Wiring**:
+
+- `commands/reviews.ts::submitReview` no longer does a 4–6 step
+  prompt chain. It resolves the target decision (right-click or
+  pick) then opens the form panel with `formPanels.openForm({
+  form: "submitReview", decisionId, decisionTitle, ... })`.
+- `commands/reviews.ts::requestReview` stays as a 2-step prompt
+  for now (Phase C will convert it).
+
+**Bundle**: extension 127 KB (unchanged), webview 144 KB minified,
+CSS 4 KB. `.vsix` total **131 KB** (was 72 KB — +59 KB for React).
+
+Phases B/C/D will add the four other forms (Create Task, Record
+Decision, Request Review, Record Disagreement) on top of this
+infra at low marginal cost.
