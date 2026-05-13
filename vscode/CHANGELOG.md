@@ -102,3 +102,46 @@ plugin from an automation script.
 Tree items now expose the underlying `TaskOut` / `DecisionOut` via
 public readonly fields so command handlers can read them on
 right-click without an extra fetch. Bundle: 97 KB → 107 KB.
+
+### Added — Review, approval and disagreement actions (Phase 4) (2026-05-12)
+
+Five new commands. The plugin now drives the **full** author →
+reviewer → approver workflow without leaving VS Code.
+
+- **GovForge: Request Review** — right-click any Decision (or palette
+  → pick). Prompts for reviewer agent name + optional focus areas
+  (comma-separated). `POST /reviews/request` flips the decision to
+  REVIEW_REQUIRED.
+- **GovForge: Submit Review** — right-click an open Review row in
+  the Reviews tree (or palette → pick decision). Multi-step prompt:
+  reviewer agent (defaults to `govforge.agent`), verdict
+  (approved / changes_requested / commented / rejected), optional
+  summary, then a findings loop ("Add a finding" / "Submit now").
+  Each finding prompts severity, category, message, optional
+  file_path, optional line range (N or N-M), optional recommendation.
+  `POST /reviews` with the findings array.
+- **GovForge: Approve Decision** / **Reject Decision** — right-click
+  a Decision (or palette → pick). Prompts for an optional comment,
+  then a modal confirmation ("This is a final state — a follow-up
+  needs a new decision."), then `POST /decisions/{id}/approve` or
+  `/reject`. A 403 surfaces a hint that the token needs
+  `approvals:write` scope (Stage C A follow-up — `decisions:write`
+  alone no longer covers approve/reject on the HTTP API).
+- **GovForge: Record Disagreement** — right-click a Decision (or
+  palette → pick). Prompts for topic (required), author position,
+  reviewer position, risk summary, and whether the disagreement
+  needs a human tiebreaker. `POST /disagreements`.
+
+Context menu layout per Decision row:
+
+  1_actions  : attach git, run policy
+  2_review   : request review, record disagreement
+  3_approve  : approve, reject
+
+Each group is separated by a divider so destructive verbs sit
+visually apart from day-to-day actions.
+
+Tree items now expose `ReviewOut` on `ReviewItem` so right-click
+handlers can identify the decision behind the review.
+
+Bundle: 107 KB → 121 KB. .vsix: 57 KB → 67 KB gzipped.

@@ -2,9 +2,12 @@ import * as vscode from "vscode";
 import { GovForgeClient } from "./api/client";
 import { BackendStatusBar } from "./backend-status-bar";
 import { initializeSignedInContext, registerAuthCommands } from "./commands/auth";
+import { registerApprovalCommands } from "./commands/approvals";
 import { registerBackendCommands } from "./commands/backend";
 import { registerDecisionCommands } from "./commands/decisions";
+import { registerDisagreementCommands } from "./commands/disagreements";
 import { registerProjectCommands } from "./commands/project";
+import { registerReviewCommands } from "./commands/reviews";
 import { registerTaskCommands } from "./commands/tasks";
 import { ProjectSelection } from "./project-selection";
 import { StatusBar } from "./status-bar";
@@ -56,6 +59,9 @@ export async function activate(
     registerProjectCommands(context, client, selection);
     registerTaskCommands(context, client, selection, refreshAll);
     registerDecisionCommands(context, client, selection, refreshAll);
+    registerReviewCommands(context, client, selection, refreshAll);
+    registerApprovalCommands(context, client, selection, refreshAll);
+    registerDisagreementCommands(context, client, selection, refreshAll);
 
     // Switching project re-fetches everything for the new project.
     context.subscriptions.push(

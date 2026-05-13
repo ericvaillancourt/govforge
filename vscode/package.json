@@ -134,6 +134,31 @@
         "command": "govforge.runPolicyChecks",
         "title": "GovForge: Run Policy Checks",
         "icon": "$(checklist)"
+      },
+      {
+        "command": "govforge.requestReview",
+        "title": "GovForge: Request Review",
+        "icon": "$(eye)"
+      },
+      {
+        "command": "govforge.submitReview",
+        "title": "GovForge: Submit Review",
+        "icon": "$(comment-discussion)"
+      },
+      {
+        "command": "govforge.approve",
+        "title": "GovForge: Approve Decision",
+        "icon": "$(check)"
+      },
+      {
+        "command": "govforge.reject",
+        "title": "GovForge: Reject Decision",
+        "icon": "$(x)"
+      },
+      {
+        "command": "govforge.recordDisagreement",
+        "title": "GovForge: Record Disagreement",
+        "icon": "$(warning)"
       }
     ],
     "menus": {
@@ -169,6 +194,31 @@
           "command": "govforge.runPolicyChecks",
           "when": "view == govforge.decisions && viewItem == govforge.decision",
           "group": "1_actions@2"
+        },
+        {
+          "command": "govforge.requestReview",
+          "when": "view == govforge.decisions && viewItem == govforge.decision",
+          "group": "2_review@1"
+        },
+        {
+          "command": "govforge.recordDisagreement",
+          "when": "view == govforge.decisions && viewItem == govforge.decision",
+          "group": "2_review@2"
+        },
+        {
+          "command": "govforge.approve",
+          "when": "view == govforge.decisions && viewItem == govforge.decision",
+          "group": "3_approve@1"
+        },
+        {
+          "command": "govforge.reject",
+          "when": "view == govforge.decisions && viewItem == govforge.decision",
+          "group": "3_approve@2"
+        },
+        {
+          "command": "govforge.submitReview",
+          "when": "view == govforge.reviews && viewItem == govforge.review",
+          "group": "1_actions@1"
         }
       ],
       "commandPalette": [

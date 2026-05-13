@@ -136,6 +136,41 @@ export class GovForgeClient {
         if (openOnly) q.set("open_only", "true");
         return this.fetch<ReviewOut[]>(`/reviews?${q}`);
     }
+
+    requestReview(input: RequestReviewInput): Promise<unknown> {
+        return this.fetch<unknown>("/reviews/request", {
+            method: "POST",
+            body: JSON.stringify(input),
+        });
+    }
+
+    submitReview(input: SubmitReviewInput): Promise<ReviewOut> {
+        return this.fetch<ReviewOut>("/reviews", {
+            method: "POST",
+            body: JSON.stringify(input),
+        });
+    }
+
+    approveDecision(displayId: string, input: ApprovalInput): Promise<unknown> {
+        return this.fetch<unknown>(`/decisions/${displayId}/approve`, {
+            method: "POST",
+            body: JSON.stringify(input),
+        });
+    }
+
+    rejectDecision(displayId: string, input: ApprovalInput): Promise<unknown> {
+        return this.fetch<unknown>(`/decisions/${displayId}/reject`, {
+            method: "POST",
+            body: JSON.stringify(input),
+        });
+    }
+
+    recordDisagreement(input: DisagreementInput): Promise<unknown> {
+        return this.fetch<unknown>("/disagreements", {
+            method: "POST",
+            body: JSON.stringify(input),
+        });
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -169,5 +204,57 @@ export interface AttachGitInput {
 export interface PolicyCheckInput {
     decision_id: string;
     config_path?: string;
+    actor_agent?: string;
+}
+
+export interface RequestReviewInput {
+    decision_id: string;
+    reviewer_agent: string;
+    focus?: string[];
+    actor_agent?: string;
+}
+
+export type ReviewVerdict = "approved" | "changes_requested" | "commented" | "rejected";
+export type Severity = "info" | "low" | "medium" | "high" | "critical";
+export type FindingCat =
+    | "security"
+    | "performance"
+    | "architecture"
+    | "bug"
+    | "maintainability"
+    | "tests"
+    | "docs"
+    | "accessibility";
+
+export interface FindingInput {
+    severity: Severity;
+    category: FindingCat;
+    file_path?: string;
+    line_start?: number;
+    line_end?: number;
+    message: string;
+    recommendation?: string;
+}
+
+export interface SubmitReviewInput {
+    decision_id: string;
+    reviewer_agent: string;
+    status: ReviewVerdict;
+    summary?: string;
+    findings: FindingInput[];
+}
+
+export interface ApprovalInput {
+    approver: string;
+    comment?: string;
+}
+
+export interface DisagreementInput {
+    decision_id: string;
+    topic: string;
+    author_position?: string;
+    reviewer_position?: string;
+    risk_summary?: string;
+    requires_human_decision?: boolean;
     actor_agent?: string;
 }

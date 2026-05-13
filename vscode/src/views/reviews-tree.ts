@@ -4,8 +4,8 @@ import type { ReviewOut } from "../api/types";
 import type { ProjectSelection } from "../project-selection";
 import { resolveActiveProject } from "../workspace";
 
-class ReviewItem extends vscode.TreeItem {
-    constructor(review: ReviewOut) {
+export class ReviewItem extends vscode.TreeItem {
+    constructor(public readonly review: ReviewOut) {
         super(
             `${review.display_id}`,
             vscode.TreeItemCollapsibleState.None,
