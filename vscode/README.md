@@ -38,6 +38,18 @@ code --install-extension govforge-0.1.0.vsix
 |---------------------|-------------------------------|----------------------------------------------------------------------------------------------|
 | `govforge.apiUrl`   | `http://127.0.0.1:8787`       | Backend base URL. Use the hosted endpoint `https://api.govforge.dev` if you don't run local. |
 
+## Development
+
+Open `vscode/` in VS Code, then press **F5** (Run > Start Debugging). This
+launches a second VS Code window labelled `[Extension Development Host]`
+with the extension loaded. Each F5 runs `npm run compile` first (~50 ms).
+
+For a hot-reload loop, run `npm run watch` in a terminal — esbuild rebuilds
+on every save. Reload the dev host with `Cmd/Ctrl+R` to pick up the change.
+
+Type-check the whole project at once with `npm run lint`. The compile
+script already does it; this is faster when you just want to verify types.
+
 ## Roadmap
 
 - **v0.1.0 (now)** — read sidebar + auth + status bar

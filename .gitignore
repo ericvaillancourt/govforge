@@ -9,7 +9,9 @@
 /architecture.md
 
 # ===== Editor / IDE =====
-.vscode/
+# Anchored so subprojects can ship a tracked `.vscode/` of dev configs
+# (see vscode/.vscode/launch.json for the extension dev host setup).
+/.vscode/
 .idea/
 *.swp
 *.swo

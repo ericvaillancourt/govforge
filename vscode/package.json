@@ -114,7 +114,7 @@
   },
   "scripts": {
     "compile": "tsc -p ./ && esbuild src/extension.ts --bundle --platform=node --target=node20 --external:vscode --outfile=out/extension.js",
-    "watch": "tsc -p ./ --watch",
+    "watch": "esbuild src/extension.ts --bundle --platform=node --target=node20 --external:vscode --outfile=out/extension.js --watch=forever",
     "lint": "tsc --noEmit",
     "package": "vsce package",
     "gen-types": "openapi-typescript http://127.0.0.1:8787/openapi.json -o src/api/types.ts"
