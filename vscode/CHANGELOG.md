@@ -145,3 +145,33 @@ Tree items now expose `ReviewOut` on `ReviewItem` so right-click
 handlers can identify the decision behind the review.
 
 Bundle: 107 KB → 121 KB. .vsix: 57 KB → 67 KB gzipped.
+
+### Added — Inline findings annotations (Phase 5) (2026-05-12)
+
+Review findings now surface as **native VS Code diagnostics** —
+squigglies in the editor, entries in the Problems panel
+(`Cmd/Ctrl+Shift+M`) under source `GovForge`, hover with the review
+id, category, message and recommendation.
+
+- Severity mapping: `critical` and `high` → Error (red), `medium` →
+  Warning (yellow), `low` → Information, `info` → Hint. Maps to the
+  standard `vscode.DiagnosticSeverity` so themes and color filters
+  work out of the box.
+- Diagnostic `code` is `REV-NNN/category` so the Problems panel
+  groups by review and clicking jumps to the file:line that the
+  reviewer pointed at.
+- Path resolution: `Finding.file_path` is relative to
+  `Project.root_path`, but that path may be from another machine
+  (very common on the hosted backend). The annotator tries the
+  project root first, then every open workspace folder root. Files
+  that don't exist on this machine are silently skipped — no noise.
+- Refreshed via the existing `refreshAll` pipeline, so any author
+  action that creates a new review (Submit Review) or changes
+  project (Switch Project) updates the diagnostics automatically.
+
+This is the most differentiating feature of the plugin: the reviewer
+agent's findings show up RIGHT WHERE THE PROBLEM LIVES, while you're
+editing the code. Closes the loop from review back to the editor
+without a context switch.
+
+Bundle: 121 KB → 124 KB. .vsix: 67 KB → 70 KB gzipped.

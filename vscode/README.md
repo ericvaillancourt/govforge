@@ -52,9 +52,8 @@ script already does it; this is faster when you just want to verify types.
 
 ## Roadmap
 
-- **v0.1.0 (current)** — full author → reviewer → approver cockpit: read sidebar, auth, backend chooser, project picker, decision detail webview, author actions (create task, record decision, attach git, run policy), review actions (request review, submit review with findings), approval actions (approve, reject), record disagreement
-- **v0.2.0** — inline gutter annotations from review findings (ESLint-style)
-- **v0.3.0** — Marketplace + Open VSX publish
+- **v0.1.0 (current)** — feature-complete cockpit: read sidebar, auth, backend chooser, project picker, decision detail webview, author actions (create task, record decision, attach git, run policy), review actions (request review, submit review with findings), approval actions (approve, reject), record disagreement, **inline diagnostics** from review findings (Problems panel + squigglies)
+- **v0.2.0** — Marketplace + Open VSX publish
 
 ## License
 
