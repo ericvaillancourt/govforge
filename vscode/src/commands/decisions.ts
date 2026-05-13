@@ -2,30 +2,25 @@ import * as vscode from "vscode";
 import { getAgentName } from "../agent";
 import { GovForgeClient } from "../api/client";
 import type { TaskOut } from "../api/types";
+import type { FormPanelHost } from "../forms/form-panel";
 import type { ProjectSelection } from "../project-selection";
 import { DecisionItem } from "../views/decisions-tree";
 import { TaskItem } from "../views/tasks-tree";
 import { resolveActiveProject } from "../workspace";
 
-const RISK_LEVELS: vscode.QuickPickItem[] = [
-    { label: "low" },
-    { label: "medium", picked: true },
-    { label: "high" },
-    { label: "critical" },
-];
-
-type Risk = "low" | "medium" | "high" | "critical";
+const RISK_LEVELS = ["low", "medium", "high", "critical"] as const;
 
 export function registerDecisionCommands(
     context: vscode.ExtensionContext,
     client: GovForgeClient,
     selection: ProjectSelection,
     onChanged: () => void | Promise<void>,
+    formPanels: FormPanelHost,
 ): void {
     context.subscriptions.push(
         vscode.commands.registerCommand(
             "govforge.recordDecision",
-            (taskItem?: TaskItem) => recordDecision(client, selection, onChanged, taskItem),
+            (taskItem?: TaskItem) => recordDecision(client, selection, formPanels, taskItem),
         ),
         vscode.commands.registerCommand(
             "govforge.attachGitDiff",
@@ -95,67 +90,18 @@ async function pickDecisionDisplayId(
 async function recordDecision(
     client: GovForgeClient,
     selection: ProjectSelection,
-    onChanged: () => void | Promise<void>,
+    formPanels: FormPanelHost,
     taskItem: TaskItem | undefined,
 ): Promise<void> {
     const task = taskItem?.task ?? (await pickTask(client, selection));
     if (!task) return;
-
-    const title = await vscode.window.showInputBox({
-        title: `GovForge: record decision under ${task.display_id}`,
-        prompt: "Decision title",
-        placeHolder: "e.g. Use RS256 for JWT signing",
-        ignoreFocusOut: true,
-        validateInput: (v) => (v.trim().length === 0 ? "Title is required" : null),
+    await formPanels.openForm({
+        form: "recordDecision",
+        taskId: task.display_id,
+        taskTitle: task.title,
+        defaultAuthor: getAgentName(),
+        riskLevels: [...RISK_LEVELS],
     });
-    if (!title) return;
-
-    const summary = await vscode.window.showInputBox({
-        title: "GovForge: decision summary (optional)",
-        placeHolder: "One-line outcome",
-        ignoreFocusOut: true,
-    });
-
-    const rationale = await vscode.window.showInputBox({
-        title: "GovForge: decision rationale (optional)",
-        placeHolder: "Why this choice over the alternatives?",
-        ignoreFocusOut: true,
-    });
-
-    const risk = await vscode.window.showQuickPick(RISK_LEVELS, {
-        title: "Risk level",
-        ignoreFocusOut: true,
-    });
-    if (!risk) return;
-
-    const humanApproval = await vscode.window.showQuickPick(
-        [
-            { label: "No — agent can self-approve", picked: true, value: false },
-            { label: "Yes — human approval required", value: true },
-        ],
-        { title: "Human approval required?", ignoreFocusOut: true },
-    );
-    if (humanApproval === undefined) return;
-
-    try {
-        const decision = await client.createDecision({
-            task_id: task.display_id,
-            author_agent: getAgentName(),
-            title: title.trim(),
-            summary: summary?.trim() || undefined,
-            rationale: rationale?.trim() || undefined,
-            risk_level: risk.label as Risk,
-            human_approval_required: humanApproval.value,
-        });
-        vscode.window.showInformationMessage(
-            `GovForge: ${decision.display_id} recorded.`,
-        );
-        await onChanged();
-    } catch (err) {
-        vscode.window.showErrorMessage(
-            `GovForge: record decision failed — ${err instanceof Error ? err.message : String(err)}`,
-        );
-    }
 }
 
 async function attachGitDiff(

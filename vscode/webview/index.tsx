@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import type { FormOptions } from "../src/forms/messages";
 import { onExtensionMessage } from "./api";
+import { CreateTaskForm } from "./forms/CreateTaskForm";
+import { RecordDecisionForm } from "./forms/RecordDecisionForm";
 import { SubmitReviewForm } from "./forms/SubmitReviewForm";
 import "./styles.css";
 
@@ -31,6 +33,24 @@ function App({ options }: { options: FormOptions }): JSX.Element {
     if (options.form === "submitReview") {
         return (
             <SubmitReviewForm
+                options={options}
+                state={state}
+                onSubmittingChange={onSubmittingChange}
+            />
+        );
+    }
+    if (options.form === "createTask") {
+        return (
+            <CreateTaskForm
+                options={options}
+                state={state}
+                onSubmittingChange={onSubmittingChange}
+            />
+        );
+    }
+    if (options.form === "recordDecision") {
+        return (
+            <RecordDecisionForm
                 options={options}
                 state={state}
                 onSubmittingChange={onSubmittingChange}

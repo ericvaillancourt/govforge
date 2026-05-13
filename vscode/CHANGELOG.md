@@ -265,3 +265,29 @@ CSS 4 KB. `.vsix` total **131 KB** (was 72 KB — +59 KB for React).
 Phases B/C/D will add the four other forms (Create Task, Record
 Decision, Request Review, Record Disagreement) on top of this
 infra at low marginal cost.
+
+### Added — CreateTaskForm + RecordDecisionForm (v0.2 Phase B) (2026-05-12)
+
+Two more wizard-chains converted to React webview forms.
+
+- **CreateTaskForm** — title input (autofocus, required), risk_level
+  select (medium pre-picked), description textarea (markdown OK,
+  optional). Replaces a 3-step prompt chain.
+- **RecordDecisionForm** — read-only header "under TASK-NNN — title"
+  to show context, title input, summary textarea, rationale
+  textarea, risk_level select, human_approval_required checkbox.
+  Replaces a 5-step prompt chain that was the most painful.
+
+Both forms inherit the Phase A infrastructure (Field / Select /
+Button components, state machine idle → submitting → done / error,
+banner + spinner, auto-close on success). The
+`commands/tasks.ts::createTask` and `commands/decisions.ts::recordDecision`
+handlers now resolve the project / task and just call
+`formPanels.openForm({...})` — every line of prompt-chain logic
+removed.
+
+`attachGitDiff` and `runPolicyChecks` stay native — single-prompt or
+prompt-less, the form panel would be overkill.
+
+Bundle: webview 144 KB → 148 KB (+4 KB for the two new forms).
+`.vsix`: 131 KB → 134 KB.

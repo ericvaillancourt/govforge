@@ -63,8 +63,8 @@ export async function activate(
     });
     registerBackendCommands(context, client);
     registerProjectCommands(context, client, selection);
-    registerTaskCommands(context, client, selection, refreshAll);
-    registerDecisionCommands(context, client, selection, refreshAll);
+    registerTaskCommands(context, client, selection, refreshAll, formPanels);
+    registerDecisionCommands(context, client, selection, refreshAll, formPanels);
     registerReviewCommands(context, client, selection, refreshAll, formPanels);
     registerApprovalCommands(context, client, selection, refreshAll);
     registerDisagreementCommands(context, client, selection, refreshAll);
