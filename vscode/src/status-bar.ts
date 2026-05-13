@@ -1,22 +1,28 @@
 import * as vscode from "vscode";
 import { GovForgeClient } from "./api/client";
+import type { ProjectSelection } from "./project-selection";
 import { resolveActiveProject } from "./workspace";
 
 /**
  * Left-side status bar item that shows the active GovForge project plus a
- * compact summary of pending work. Clicking it focuses the GovForge view
- * container. Refreshed on demand by the extension whenever data changes.
+ * compact summary of pending work. Clicking it opens the project picker —
+ * "switch project" is the most common follow-up action after looking at
+ * the summary, so the item targets that command rather than the static
+ * "open sidebar".
  */
 export class StatusBar implements vscode.Disposable {
     private readonly item: vscode.StatusBarItem;
 
-    constructor(private readonly client: GovForgeClient) {
+    constructor(
+        private readonly client: GovForgeClient,
+        private readonly selection: ProjectSelection,
+    ) {
         this.item = vscode.window.createStatusBarItem(
             vscode.StatusBarAlignment.Left,
             50,
         );
-        this.item.command = "workbench.view.extension.govforge";
-        this.item.tooltip = "Open GovForge sidebar";
+        this.item.command = "govforge.switchProject";
+        this.item.tooltip = "GovForge — click to switch project";
     }
 
     show(): void {
@@ -31,13 +37,16 @@ export class StatusBar implements vscode.Disposable {
         const token = await this.client.getToken();
         if (!token) {
             this.item.text = "$(shield) GovForge: signed out";
+            this.item.tooltip = "GovForge — click to switch project (sign in first)";
             return;
         }
-        const project = await resolveActiveProject(this.client);
+        const project = await resolveActiveProject(this.client, this.selection);
         if (!project) {
-            this.item.text = "$(shield) GovForge: no project";
+            this.item.text = "$(shield) GovForge: pick a project";
+            this.item.tooltip = "GovForge — click to choose which project to display";
             return;
         }
+        this.item.tooltip = `GovForge — project '${project.name}' (${project.root_path})\nClick to switch.`;
         try {
             const [tasks, decisions, reviews] = await Promise.all([
                 this.client.listTasks(project.root_path),

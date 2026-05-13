@@ -31,3 +31,12 @@ Phase 1 of the VS Code cockpit plan: read-only sidebar, auth, status bar.
   open, a second QuickPick asks whether to apply Globally (User
   Settings) or to this workspace only — same scoping vocabulary as
   every other VS Code setting.
+- **Project picker** — `GovForge: Switch Project` command (palette,
+  view title bar `$(folder)` icon, status bar click target,
+  welcome view button when signed in but no project resolves).
+  QuickPick lists every project on the current backend with name +
+  `root_path`. Picked project is stored in workspace state (per-repo
+  stickiness) and wins over the previous folder-path auto-detection.
+  Solves the common case where `Project.root_path` was captured on a
+  different machine than the one you're now on — the trees were
+  empty with no clear way out.

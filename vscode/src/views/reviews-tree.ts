@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { GovForgeClient } from "../api/client";
 import type { ReviewOut } from "../api/types";
+import type { ProjectSelection } from "../project-selection";
 import { resolveActiveProject } from "../workspace";
 
 class ReviewItem extends vscode.TreeItem {
@@ -37,7 +38,10 @@ export class ReviewsTreeProvider
     private readonly _onDidChange = new vscode.EventEmitter<void>();
     readonly onDidChangeTreeData = this._onDidChange.event;
 
-    constructor(private readonly client: GovForgeClient) {}
+    constructor(
+        private readonly client: GovForgeClient,
+        private readonly selection: ProjectSelection,
+    ) {}
 
     refresh(): void {
         this._onDidChange.fire();
@@ -48,7 +52,7 @@ export class ReviewsTreeProvider
     }
 
     async getChildren(): Promise<ReviewItem[]> {
-        const project = await resolveActiveProject(this.client);
+        const project = await resolveActiveProject(this.client, this.selection);
         if (!project) {
             return [];
         }

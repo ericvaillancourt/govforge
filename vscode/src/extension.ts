@@ -3,6 +3,8 @@ import { GovForgeClient } from "./api/client";
 import { BackendStatusBar } from "./backend-status-bar";
 import { initializeSignedInContext, registerAuthCommands } from "./commands/auth";
 import { registerBackendCommands } from "./commands/backend";
+import { registerProjectCommands } from "./commands/project";
+import { ProjectSelection } from "./project-selection";
 import { StatusBar } from "./status-bar";
 import { DecisionsTreeProvider } from "./views/decisions-tree";
 import { ReviewsTreeProvider } from "./views/reviews-tree";
@@ -12,11 +14,12 @@ export async function activate(
     context: vscode.ExtensionContext,
 ): Promise<void> {
     const client = new GovForgeClient(context.secrets);
+    const selection = new ProjectSelection(context);
 
-    const tasksTree = new TasksTreeProvider(client);
-    const decisionsTree = new DecisionsTreeProvider(client);
-    const reviewsTree = new ReviewsTreeProvider(client);
-    const statusBar = new StatusBar(client);
+    const tasksTree = new TasksTreeProvider(client, selection);
+    const decisionsTree = new DecisionsTreeProvider(client, selection);
+    const reviewsTree = new ReviewsTreeProvider(client, selection);
+    const statusBar = new StatusBar(client, selection);
     const backendStatusBar = new BackendStatusBar();
 
     context.subscriptions.push(
@@ -39,6 +42,14 @@ export async function activate(
         await refreshAll();
     });
     registerBackendCommands(context);
+    registerProjectCommands(context, client, selection);
+
+    // Switching project re-fetches everything for the new project.
+    context.subscriptions.push(
+        selection.onDidChange(() => {
+            void refreshAll();
+        }),
+    );
 
     context.subscriptions.push(
         vscode.commands.registerCommand("govforge.refresh", refreshAll),

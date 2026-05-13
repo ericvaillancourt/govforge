@@ -64,6 +64,21 @@
         "view": "govforge.tasks",
         "contents": "Choose where to connect first, then sign in.\n[Switch backend](command:govforge.switchBackend)\n[Sign in](command:govforge.signIn)\n[Refresh](command:govforge.refresh)",
         "when": "!govforge.signedIn"
+      },
+      {
+        "view": "govforge.tasks",
+        "contents": "No project selected. Pick one to populate the trees.\n[Switch project](command:govforge.switchProject)\n[Refresh](command:govforge.refresh)",
+        "when": "govforge.signedIn"
+      },
+      {
+        "view": "govforge.decisions",
+        "contents": "No project selected.\n[Switch project](command:govforge.switchProject)",
+        "when": "govforge.signedIn"
+      },
+      {
+        "view": "govforge.reviews",
+        "contents": "No project selected.\n[Switch project](command:govforge.switchProject)",
+        "when": "govforge.signedIn"
       }
     ],
     "commands": [
@@ -88,6 +103,11 @@
         "icon": "$(plug)"
       },
       {
+        "command": "govforge.switchProject",
+        "title": "GovForge: Switch Project",
+        "icon": "$(folder)"
+      },
+      {
         "command": "govforge.registerProject",
         "title": "GovForge: Register Workspace as Project"
       }
@@ -95,9 +115,14 @@
     "menus": {
       "view/title": [
         {
+          "command": "govforge.switchProject",
+          "when": "view == govforge.tasks || view == govforge.decisions || view == govforge.reviews",
+          "group": "navigation@1"
+        },
+        {
           "command": "govforge.refresh",
           "when": "view == govforge.tasks || view == govforge.decisions || view == govforge.reviews",
-          "group": "navigation"
+          "group": "navigation@2"
         }
       ]
     },
