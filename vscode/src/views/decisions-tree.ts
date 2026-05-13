@@ -14,6 +14,11 @@ class DecisionItem extends vscode.TreeItem {
         this.tooltip = decision.summary ?? decision.title;
         this.contextValue = "govforge.decision";
         this.iconPath = new vscode.ThemeIcon(iconForStatus(decision.status));
+        this.command = {
+            command: "govforge.openDecision",
+            title: "Open decision detail",
+            arguments: [decision.display_id],
+        };
     }
 }
 

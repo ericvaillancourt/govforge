@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import type {
     DecisionOut,
+    EventOut,
     HealthOut,
     ProjectOut,
     ReviewOut,
@@ -89,6 +90,14 @@ export class GovForgeClient {
     listDecisions(projectPath: string): Promise<DecisionOut[]> {
         const q = new URLSearchParams({ project_path: projectPath });
         return this.fetch<DecisionOut[]>(`/decisions?${q}`);
+    }
+
+    getDecision(displayId: string): Promise<DecisionOut> {
+        return this.fetch<DecisionOut>(`/decisions/${displayId}`);
+    }
+
+    getDecisionTimeline(displayId: string): Promise<EventOut[]> {
+        return this.fetch<EventOut[]>(`/decisions/${displayId}/timeline`);
     }
 
     listReviews(projectPath: string, openOnly = false): Promise<ReviewOut[]> {

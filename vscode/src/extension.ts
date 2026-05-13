@@ -6,6 +6,7 @@ import { registerBackendCommands } from "./commands/backend";
 import { registerProjectCommands } from "./commands/project";
 import { ProjectSelection } from "./project-selection";
 import { StatusBar } from "./status-bar";
+import { DecisionDetailPanels } from "./views/decision-webview";
 import { DecisionsTreeProvider } from "./views/decisions-tree";
 import { ReviewsTreeProvider } from "./views/reviews-tree";
 import { TasksTreeProvider } from "./views/tasks-tree";
@@ -21,6 +22,7 @@ export async function activate(
     const reviewsTree = new ReviewsTreeProvider(client, selection);
     const statusBar = new StatusBar(client, selection);
     const backendStatusBar = new BackendStatusBar();
+    const decisionPanels = new DecisionDetailPanels(client, selection);
 
     context.subscriptions.push(
         vscode.window.registerTreeDataProvider("govforge.tasks", tasksTree),
@@ -28,6 +30,13 @@ export async function activate(
         vscode.window.registerTreeDataProvider("govforge.reviews", reviewsTree),
         statusBar,
         backendStatusBar,
+        decisionPanels,
+        vscode.commands.registerCommand(
+            "govforge.openDecision",
+            async (displayId: string) => {
+                await decisionPanels.open(displayId);
+            },
+        ),
     );
 
     const refreshAll = async () => {

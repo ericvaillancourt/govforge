@@ -110,6 +110,10 @@
       {
         "command": "govforge.registerProject",
         "title": "GovForge: Register Workspace as Project"
+      },
+      {
+        "command": "govforge.openDecision",
+        "title": "GovForge: Open Decision Detail"
       }
     ],
     "menus": {
@@ -123,6 +127,12 @@
           "command": "govforge.refresh",
           "when": "view == govforge.tasks || view == govforge.decisions || view == govforge.reviews",
           "group": "navigation@2"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "govforge.openDecision",
+          "when": "false"
         }
       ]
     },
@@ -151,5 +161,8 @@
     "esbuild": "^0.24.0",
     "openapi-typescript": "^7.0.0",
     "typescript": "^5.6.0"
+  },
+  "dependencies": {
+    "marked": "^14.1.4"
   }
 }
