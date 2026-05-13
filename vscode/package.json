@@ -114,10 +114,35 @@
       {
         "command": "govforge.openDecision",
         "title": "GovForge: Open Decision Detail"
+      },
+      {
+        "command": "govforge.createTask",
+        "title": "GovForge: Create Task",
+        "icon": "$(add)"
+      },
+      {
+        "command": "govforge.recordDecision",
+        "title": "GovForge: Record Decision",
+        "icon": "$(note)"
+      },
+      {
+        "command": "govforge.attachGitDiff",
+        "title": "GovForge: Attach Git Diff",
+        "icon": "$(git-commit)"
+      },
+      {
+        "command": "govforge.runPolicyChecks",
+        "title": "GovForge: Run Policy Checks",
+        "icon": "$(checklist)"
       }
     ],
     "menus": {
       "view/title": [
+        {
+          "command": "govforge.createTask",
+          "when": "view == govforge.tasks",
+          "group": "navigation@0"
+        },
         {
           "command": "govforge.switchProject",
           "when": "view == govforge.tasks || view == govforge.decisions || view == govforge.reviews",
@@ -127,6 +152,23 @@
           "command": "govforge.refresh",
           "when": "view == govforge.tasks || view == govforge.decisions || view == govforge.reviews",
           "group": "navigation@2"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "govforge.recordDecision",
+          "when": "view == govforge.tasks && viewItem == govforge.task",
+          "group": "1_actions@1"
+        },
+        {
+          "command": "govforge.attachGitDiff",
+          "when": "view == govforge.decisions && viewItem == govforge.decision",
+          "group": "1_actions@1"
+        },
+        {
+          "command": "govforge.runPolicyChecks",
+          "when": "view == govforge.decisions && viewItem == govforge.decision",
+          "group": "1_actions@2"
         }
       ],
       "commandPalette": [
@@ -143,6 +185,11 @@
           "type": "string",
           "default": "http://127.0.0.1:8787",
           "description": "Base URL of the GovForge HTTP API. Use http://127.0.0.1:8787 for a local backend started with `gf api serve`, or https://api.govforge.dev for the hosted backend."
+        },
+        "govforge.agent": {
+          "type": "string",
+          "default": "",
+          "description": "Agent name credited on author actions (create task, record decision, attach git, run policy). Leave empty to use the OS user. Set to 'claude' / 'codex' / etc. to drive these from an automation."
         }
       }
     }

@@ -4,8 +4,8 @@ import type { DecisionOut } from "../api/types";
 import type { ProjectSelection } from "../project-selection";
 import { resolveActiveProject } from "../workspace";
 
-class DecisionItem extends vscode.TreeItem {
-    constructor(decision: DecisionOut) {
+export class DecisionItem extends vscode.TreeItem {
+    constructor(public readonly decision: DecisionOut) {
         super(
             `${decision.display_id} ${decision.title}`,
             vscode.TreeItemCollapsibleState.None,

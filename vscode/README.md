@@ -52,11 +52,10 @@ script already does it; this is faster when you just want to verify types.
 
 ## Roadmap
 
-- **v0.1.0 (current)** — read sidebar + auth + status bar + backend chooser + project picker + decision detail webview
-- **v0.2.0** — author actions (create task, record decision, attach git, run policy)
-- **v0.3.0** — review and approval actions (submit review, approve, reject, record disagreement)
-- **v0.4.0** — inline gutter annotations from review findings (ESLint-style)
-- **v0.5.0** — Marketplace + Open VSX publish
+- **v0.1.0 (current)** — read sidebar + auth + status bar + backend chooser + project picker + decision detail webview + author actions (create task, record decision, attach git, run policy)
+- **v0.2.0** — review and approval actions (submit review, approve, reject, record disagreement)
+- **v0.3.0** — inline gutter annotations from review findings (ESLint-style)
+- **v0.4.0** — Marketplace + Open VSX publish
 
 ## License
 

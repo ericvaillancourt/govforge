@@ -4,8 +4,8 @@ import type { TaskOut } from "../api/types";
 import type { ProjectSelection } from "../project-selection";
 import { resolveActiveProject } from "../workspace";
 
-class TaskItem extends vscode.TreeItem {
-    constructor(task: TaskOut) {
+export class TaskItem extends vscode.TreeItem {
+    constructor(public readonly task: TaskOut) {
         super(`${task.display_id} ${task.title}`, vscode.TreeItemCollapsibleState.None);
         this.description = `${task.status} · ${task.risk_level}`;
         this.tooltip = task.description ?? task.title;

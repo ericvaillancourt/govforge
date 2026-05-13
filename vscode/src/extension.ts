@@ -3,7 +3,9 @@ import { GovForgeClient } from "./api/client";
 import { BackendStatusBar } from "./backend-status-bar";
 import { initializeSignedInContext, registerAuthCommands } from "./commands/auth";
 import { registerBackendCommands } from "./commands/backend";
+import { registerDecisionCommands } from "./commands/decisions";
 import { registerProjectCommands } from "./commands/project";
+import { registerTaskCommands } from "./commands/tasks";
 import { ProjectSelection } from "./project-selection";
 import { StatusBar } from "./status-bar";
 import { DecisionDetailPanels } from "./views/decision-webview";
@@ -52,6 +54,8 @@ export async function activate(
     });
     registerBackendCommands(context);
     registerProjectCommands(context, client, selection);
+    registerTaskCommands(context, client, selection, refreshAll);
+    registerDecisionCommands(context, client, selection, refreshAll);
 
     // Switching project re-fetches everything for the new project.
     context.subscriptions.push(

@@ -69,3 +69,36 @@ and add action buttons that post-back to the extension host.
 
 Bundle size: 97 KB (was 22 KB) — marked adds ~75 KB. Total `.vsix`
 49 KB gzipped.
+
+### Added — Author actions (Phase 3) (2026-05-12)
+
+Four new commands. Each works two ways — from the command palette
+(prompts to pick the target entity) or from a right-click on the
+relevant tree item (target inferred).
+
+- **GovForge: Create Task** — palette + `$(add)` icon button on the
+  Tasks view title bar. Prompts for title, risk_level (low / medium
+  / high / critical, medium pre-picked), optional description. Posts
+  to `POST /tasks` on the active project.
+- **GovForge: Record Decision** — right-click any Task in the tree
+  (or palette → pick task). Prompts for title, optional summary,
+  optional rationale, risk_level, "human approval required" (yes/no).
+  Posts to `POST /decisions` linking the decision to that task.
+- **GovForge: Attach Git Diff** — right-click any Decision in the
+  tree (or palette → pick decision). Prompts for repo_path (defaults
+  to the active project's `root_path`) and commit_hash (defaults to
+  `HEAD`). Posts to `POST /decisions/{id}/attach-git`; the backend's
+  Git extractor reads the repo on the server side.
+- **GovForge: Run Policy Checks** — right-click any Decision (or
+  palette → pick). Posts to `POST /policies/check` for the decision
+  and surfaces the verdict in a notification: info toast when all
+  policies pass, warning toast with the blocked count when one
+  flips the decision to REVIEW_REQUIRED.
+
+New setting `govforge.agent` (default: OS username) — name credited
+on every author action. Set to `claude`, `codex`, etc. to drive the
+plugin from an automation script.
+
+Tree items now expose the underlying `TaskOut` / `DecisionOut` via
+public readonly fields so command handlers can read them on
+right-click without an extra fetch. Bundle: 97 KB → 107 KB.

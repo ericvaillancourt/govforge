@@ -87,6 +87,13 @@ export class GovForgeClient {
         return this.fetch<TaskOut[]>(`/tasks?${q}`);
     }
 
+    createTask(input: CreateTaskInput): Promise<TaskOut> {
+        return this.fetch<TaskOut>("/tasks", {
+            method: "POST",
+            body: JSON.stringify(input),
+        });
+    }
+
     listDecisions(projectPath: string): Promise<DecisionOut[]> {
         const q = new URLSearchParams({ project_path: projectPath });
         return this.fetch<DecisionOut[]>(`/decisions?${q}`);
@@ -100,9 +107,67 @@ export class GovForgeClient {
         return this.fetch<EventOut[]>(`/decisions/${displayId}/timeline`);
     }
 
+    createDecision(input: CreateDecisionInput): Promise<DecisionOut> {
+        return this.fetch<DecisionOut>("/decisions", {
+            method: "POST",
+            body: JSON.stringify(input),
+        });
+    }
+
+    attachGitDiff(
+        decisionDisplayId: string,
+        input: AttachGitInput,
+    ): Promise<unknown> {
+        return this.fetch<unknown>(`/decisions/${decisionDisplayId}/attach-git`, {
+            method: "POST",
+            body: JSON.stringify(input),
+        });
+    }
+
+    runPolicyCheck(input: PolicyCheckInput): Promise<unknown> {
+        return this.fetch<unknown>("/policies/check", {
+            method: "POST",
+            body: JSON.stringify(input),
+        });
+    }
+
     listReviews(projectPath: string, openOnly = false): Promise<ReviewOut[]> {
         const q = new URLSearchParams({ project_path: projectPath });
         if (openOnly) q.set("open_only", "true");
         return this.fetch<ReviewOut[]>(`/reviews?${q}`);
     }
+}
+
+// ---------------------------------------------------------------------------
+// Write-side input types — mirror backend Pydantic models.
+// ---------------------------------------------------------------------------
+
+export interface CreateTaskInput {
+    project_path: string;
+    title: string;
+    description?: string;
+    risk_level?: "low" | "medium" | "high" | "critical";
+    actor_agent?: string;
+}
+
+export interface CreateDecisionInput {
+    task_id: string;
+    author_agent: string;
+    title: string;
+    summary?: string;
+    rationale?: string;
+    risk_level?: "low" | "medium" | "high" | "critical";
+    human_approval_required?: boolean;
+}
+
+export interface AttachGitInput {
+    repo_path: string;
+    commit_hash?: string;
+    actor_agent?: string;
+}
+
+export interface PolicyCheckInput {
+    decision_id: string;
+    config_path?: string;
+    actor_agent?: string;
 }
