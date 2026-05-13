@@ -8,7 +8,8 @@ import type {
     TaskOut,
 } from "./types";
 
-const TOKEN_SECRET_KEY = "govforge.apiToken";
+// Legacy key (pre-per-backend-storage). Read once for migration, then deleted.
+const LEGACY_TOKEN_KEY = "govforge.apiToken";
 
 export class ApiError extends Error {
     constructor(
@@ -22,9 +23,14 @@ export class ApiError extends Error {
 }
 
 /**
- * Thin HTTP client over the GovForge backend. Reads the bearer token from
- * VS Code SecretStorage on every call so a sign-out / sign-in flow takes
- * effect immediately without restarting the extension.
+ * Thin HTTP client over the GovForge backend.
+ *
+ * Tokens are stored **per backend URL** in VS Code SecretStorage, so
+ * switching `govforge.apiUrl` between local and hosted picks up the
+ * right token automatically instead of forcing a re-paste. Each token
+ * is keyed `govforge.apiToken:${normalized-base-url}`. On first read
+ * we migrate any pre-existing global token (`govforge.apiToken`) over
+ * to the current URL's key, then delete the legacy entry.
  */
 export class GovForgeClient {
     constructor(private readonly secrets: vscode.SecretStorage) {}
@@ -36,16 +42,38 @@ export class GovForgeClient {
             .replace(/\/$/, "");
     }
 
+    private currentKey(): string {
+        return `govforge.apiToken:${this.baseUrl()}`;
+    }
+
     async getToken(): Promise<string | undefined> {
-        return this.secrets.get(TOKEN_SECRET_KEY);
+        const key = this.currentKey();
+        let token = await this.secrets.get(key);
+        if (!token) {
+            // One-time migration from the pre-Phase-6 global key.
+            const legacy = await this.secrets.get(LEGACY_TOKEN_KEY);
+            if (legacy) {
+                await this.secrets.store(key, legacy);
+                await this.secrets.delete(LEGACY_TOKEN_KEY);
+                token = legacy;
+            }
+        }
+        return token;
     }
 
     async setToken(token: string): Promise<void> {
-        await this.secrets.store(TOKEN_SECRET_KEY, token);
+        await this.secrets.store(this.currentKey(), token);
     }
 
     async clearToken(): Promise<void> {
-        await this.secrets.delete(TOKEN_SECRET_KEY);
+        await this.secrets.delete(this.currentKey());
+    }
+
+    /** True iff a token is stored for the current backend. Cheap-ish — used
+     *  by activation + backend-switch flows to decide whether to prompt
+     *  for sign-in. */
+    async hasToken(): Promise<boolean> {
+        return Boolean(await this.getToken());
     }
 
     private async fetch<T>(path: string, init: RequestInit = {}): Promise<T> {

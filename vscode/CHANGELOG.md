@@ -175,3 +175,33 @@ editing the code. Closes the loop from review back to the editor
 without a context switch.
 
 Bundle: 121 KB → 124 KB. .vsix: 67 KB → 70 KB gzipped.
+
+### Changed — Per-backend token storage + smarter backend switch (2026-05-12)
+
+Tokens are now stored **per backend URL** in SecretStorage
+(`govforge.apiToken:${baseUrl}`) instead of a single global key. The
+practical wins:
+
+- Switching `govforge.apiUrl` between local and hosted reuses the
+  right token automatically. No more retyping after every flip.
+- A 401 against one backend doesn't poison the credential for the
+  other.
+- `GovForge: Sign Out` only signs out from the **current** backend;
+  the other one's token stays intact.
+
+Backend-switch UX also smarter:
+
+- `GovForge: Switch Backend` checks whether the new backend already
+  has a stored token. If yes → toast "Existing token reused". If no
+  → toast offers "Sign in now" / "Later" and runs the sign-in flow
+  on confirmation.
+- The `govforge.signedIn` context key now resyncs on every apiUrl
+  change so the welcome view (with the Sign In button) is shown
+  immediately when you land on a backend you've never signed into.
+
+Migration: any pre-Phase-6 token under the old global
+`govforge.apiToken` key is moved into the per-URL slot the first
+time it's read, then the legacy key is deleted. Existing users are
+not asked to sign in again.
+
+Bundle: 124 KB → 125 KB. .vsix: 70 KB → 72 KB gzipped.

@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { GovForgeClient } from "../api/client";
 
 export const BACKEND_PRESETS = {
     local: "http://127.0.0.1:8787",
@@ -26,6 +27,7 @@ export function currentBackendUrl(): string {
 
 export function registerBackendCommands(
     context: vscode.ExtensionContext,
+    client: GovForgeClient,
 ): void {
     context.subscriptions.push(
         vscode.commands.registerCommand("govforge.switchBackend", async () => {
@@ -106,13 +108,32 @@ export function registerBackendCommands(
                 .getConfiguration("govforge")
                 .update("apiUrl", url, target);
 
+            // The setting change fires onDidChangeConfiguration in
+            // extension.ts → refreshAll(). We additionally probe whether
+            // the NEW backend already has a stored token. If it does,
+            // tell the user — they're already signed in there. If not,
+            // offer to sign in right now (this is the whole point of the
+            // per-backend-token rewiring: switch flows shouldn't blank
+            // out the cockpit until the user remembers to paste again).
             const scopeLabel =
                 target === vscode.ConfigurationTarget.Workspace
                     ? "this workspace"
                     : "globally";
-            vscode.window.showInformationMessage(
-                `GovForge backend set to ${url} (${scopeLabel}). Sign in if the new backend needs a different token.`,
-            );
+            const hasToken = await client.hasToken();
+            if (hasToken) {
+                vscode.window.showInformationMessage(
+                    `GovForge backend → ${url} (${scopeLabel}). Existing token reused.`,
+                );
+            } else {
+                const action = await vscode.window.showInformationMessage(
+                    `GovForge backend → ${url} (${scopeLabel}). No token saved for this backend yet.`,
+                    "Sign in now",
+                    "Later",
+                );
+                if (action === "Sign in now") {
+                    await vscode.commands.executeCommand("govforge.signIn");
+                }
+            }
         }),
     );
 }

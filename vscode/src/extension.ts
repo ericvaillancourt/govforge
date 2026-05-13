@@ -58,7 +58,7 @@ export async function activate(
     registerAuthCommands(context, client, async () => {
         await refreshAll();
     });
-    registerBackendCommands(context);
+    registerBackendCommands(context, client);
     registerProjectCommands(context, client, selection);
     registerTaskCommands(context, client, selection, refreshAll);
     registerDecisionCommands(context, client, selection, refreshAll);
@@ -82,9 +82,13 @@ export async function activate(
                 "For now, run `gf init` in your repo or use the cockpit at https://govforge.dev/.",
             );
         }),
-        vscode.workspace.onDidChangeConfiguration((e) => {
+        vscode.workspace.onDidChangeConfiguration(async (e) => {
             if (e.affectsConfiguration("govforge.apiUrl")) {
-                void refreshAll();
+                // The current backend changed → re-resolve signedIn (the
+                // token store is keyed per-backend, so the new URL may or
+                // may not have one).
+                await initializeSignedInContext(client);
+                await refreshAll();
             }
         }),
         vscode.workspace.onDidChangeWorkspaceFolders(() => {
