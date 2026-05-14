@@ -28,7 +28,12 @@ export class FormPanelHost implements vscode.Disposable {
         private readonly extensionUri: vscode.Uri,
         private readonly client: GovForgeClient,
         private readonly onSuccess: () => void | Promise<void>,
+        private readonly output?: vscode.OutputChannel,
     ) {}
+
+    private log(line: string): void {
+        this.output?.appendLine(`[form-panel] ${line}`);
+    }
 
     dispose(): void {
         for (const p of this.panels) p.dispose();
@@ -63,7 +68,20 @@ export class FormPanelHost implements vscode.Disposable {
 
         panel.webview.html = this.renderHtml(panel.webview, options);
 
+        this.log(`opening form=${options.form}`);
+
         panel.webview.onDidReceiveMessage(async (msg: ToExtension) => {
+            if (msg.type === "boot") {
+                this.log(`booted ok form=${msg.form}`);
+                return;
+            }
+            if (msg.type === "bootError") {
+                this.log(`BOOT ERROR: ${msg.message}`);
+                vscode.window.showErrorMessage(
+                    `GovForge form failed to boot: ${msg.message}`,
+                );
+                return;
+            }
             if (msg.type === "cancel") {
                 panel.dispose();
                 return;
@@ -197,7 +215,7 @@ export class FormPanelHost implements vscode.Disposable {
     <title>GovForge form</title>
 </head>
 <body>
-    <div id="root"></div>
+    <div id="root"><p style="opacity:0.7;padding:1rem">Loading form&hellip; (if this never disappears, the webview script failed to load — open Help &rsaquo; Toggle Developer Tools)</p></div>
     <script nonce="${nonce}">window.__GF_FORM__ = ${optionsJson};</script>
     <script nonce="${nonce}" src="${scriptUri}"></script>
 </body>

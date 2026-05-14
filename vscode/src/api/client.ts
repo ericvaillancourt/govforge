@@ -11,6 +11,27 @@ import type {
 // Legacy key (pre-per-backend-storage). Read once for migration, then deleted.
 const LEGACY_TOKEN_KEY = "govforge.apiToken";
 
+/**
+ * Disk-backed fallback used only when SecretStorage drops writes (typically
+ * Linux without a working keyring daemon). It targets the **same chmod 0600
+ * file the `gf` CLI uses** (`~/.config/govforge/auth.toml`), so we inherit
+ * its security model instead of inventing one: only the user can read it,
+ * it's outside the workspace, it's not synced. This is the same model gh,
+ * aws, gcloud, kubectl, and terraform use.
+ *
+ * Trade-off: the file holds a single token (no per-backend keying), so if
+ * the keyring is broken the user picks one backend at a time — same as the
+ * CLI. Keyring users keep per-backend storage.
+ */
+export interface TokenFallback {
+    /** Return the token currently in the on-disk auth file, if any. */
+    read(): Promise<string | undefined>;
+    /** Write `value` (or delete the file if value is undefined). */
+    write(value: string | undefined): Promise<void>;
+    /** Surface a one-time warning to the user. */
+    warn(msg: string): void;
+}
+
 export class ApiError extends Error {
     constructor(
         public readonly status: number,
@@ -33,7 +54,18 @@ export class ApiError extends Error {
  * to the current URL's key, then delete the legacy entry.
  */
 export class GovForgeClient {
+    private fallback?: TokenFallback;
+    private warnedFallback = false;
+
     constructor(private readonly secrets: vscode.SecretStorage) {}
+
+    /** Wire an unencrypted fallback for setups where SecretStorage drops
+     *  writes (typically Linux without a working keyring). The client
+     *  prefers SecretStorage but falls through to this on read miss and
+     *  writes here when the SecretStorage round-trip fails. */
+    setFallback(fb: TokenFallback): void {
+        this.fallback = fb;
+    }
 
     private baseUrl(): string {
         const cfg = vscode.workspace.getConfiguration("govforge");
@@ -47,6 +79,10 @@ export class GovForgeClient {
     }
 
     async getToken(): Promise<string | undefined> {
+        // Highest priority: env var. Matches the CLI's resolution order.
+        const envToken = (process.env.GOVFORGE_API_TOKEN ?? "").trim();
+        if (envToken) return envToken;
+
         const key = this.currentKey();
         let token = await this.secrets.get(key);
         if (!token) {
@@ -58,15 +94,42 @@ export class GovForgeClient {
                 token = legacy;
             }
         }
+        // Keyring missed → fall through to the CLI's auth.toml.
+        if (!token && this.fallback) {
+            token = await this.fallback.read();
+        }
         return token;
     }
 
     async setToken(token: string): Promise<void> {
-        await this.secrets.store(this.currentKey(), token);
+        const key = this.currentKey();
+        await this.secrets.store(key, token);
+        // Probe: if SecretStorage silently dropped the write, persist
+        // into the chmod 0600 CLI auth file instead. Same security model
+        // as the `gf` CLI.
+        const echo = await this.secrets.get(key);
+        if (echo !== token && this.fallback) {
+            await this.fallback.write(token);
+            if (!this.warnedFallback) {
+                this.warnedFallback = true;
+                this.fallback.warn(
+                    "GovForge: OS keyring unavailable — token saved to ~/.config/govforge/auth.toml (chmod 0600, shared with `gf` CLI). Install/unlock gnome-keyring for encrypted storage.",
+                );
+            }
+        } else if (echo === token && this.fallback) {
+            // Keyring worked; keep auth.toml in sync so the CLI sees the
+            // same token. This means signing in via VS Code also signs in
+            // the CLI — matches user expectation.
+            await this.fallback.write(token);
+        }
     }
 
     async clearToken(): Promise<void> {
-        await this.secrets.delete(this.currentKey());
+        const key = this.currentKey();
+        await this.secrets.delete(key);
+        if (this.fallback) {
+            await this.fallback.write(undefined);
+        }
     }
 
     /** True iff a token is stored for the current backend. Cheap-ish — used
@@ -199,6 +262,51 @@ export class GovForgeClient {
             body: JSON.stringify(input),
         });
     }
+
+    /** Introspect the current token. Returns the principal + scopes. Older
+     *  backends without /me return 404; callers should treat that as "scopes
+     *  unknown → show all commands". */
+    me(): Promise<MeOut> {
+        return this.fetch<MeOut>("/me");
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Read-side output types
+// ---------------------------------------------------------------------------
+
+export const TOKEN_SCOPES = [
+    "projects:read",
+    "projects:write",
+    "tasks:read",
+    "tasks:write",
+    "decisions:read",
+    "decisions:write",
+    "reviews:read",
+    "reviews:write",
+    "policies:read",
+    "policies:write",
+    "approvals:read",
+    "approvals:write",
+    "events:read",
+    "tokens:read",
+    "tokens:write",
+    "admin",
+] as const;
+
+export type TokenScope = (typeof TOKEN_SCOPES)[number];
+
+export interface MeOut {
+    user: {
+        id: string;
+        email: string;
+        display_name: string | null;
+    };
+    token: {
+        id: string;
+        label: string;
+        scopes: TokenScope[];
+    } | null;
 }
 
 // ---------------------------------------------------------------------------

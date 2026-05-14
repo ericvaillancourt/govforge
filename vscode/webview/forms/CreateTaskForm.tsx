@@ -7,6 +7,8 @@ import { Select } from "../components/Select";
 
 type Risk = "low" | "medium" | "high" | "critical";
 
+const FALLBACK_RISK: readonly Risk[] = ["low", "medium", "high", "critical"];
+
 interface Props {
     options: CreateTaskOptions;
     state:
@@ -18,9 +20,13 @@ interface Props {
 }
 
 export function CreateTaskForm({ options, state, onSubmittingChange }: Props): JSX.Element {
+    const riskLevels: readonly Risk[] =
+        Array.isArray(options.riskLevels) && options.riskLevels.length > 0
+            ? options.riskLevels
+            : FALLBACK_RISK;
     const [title, setTitle] = useState("");
     const [risk, setRisk] = useState<Risk>(
-        (options.riskLevels.includes("medium") ? "medium" : options.riskLevels[0]) as Risk,
+        riskLevels.includes("medium") ? "medium" : riskLevels[0],
     );
     const [description, setDescription] = useState("");
     const [titleError, setTitleError] = useState("");
@@ -76,7 +82,7 @@ export function CreateTaskForm({ options, state, onSubmittingChange }: Props): J
             <Field label="Risk level">
                 <Select
                     value={risk}
-                    options={options.riskLevels}
+                    options={riskLevels}
                     onChange={setRisk}
                     disabled={disabled}
                 />

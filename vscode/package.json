@@ -2,7 +2,7 @@
   "name": "govforge",
   "displayName": "GovForge",
   "description": "Local-first governance for AI coding agents — tasks, decisions, reviews, approvals in your sidebar.",
-  "version": "0.1.0",
+  "version": "0.3.1",
   "publisher": "ericvaillancourt",
   "license": "Apache-2.0",
   "repository": {
@@ -67,8 +67,13 @@
       },
       {
         "view": "govforge.tasks",
+        "contents": "Your token has only read scopes — write actions are hidden. Create a new token with `*:write` scopes at https://govforge.dev/account/ and sign in again.\n[Sign in with another token](command:govforge.signIn)",
+        "when": "govforge.signedIn && !govforge.hasAnyWriteScope"
+      },
+      {
+        "view": "govforge.tasks",
         "contents": "No project selected. Pick one to populate the trees.\n[Switch project](command:govforge.switchProject)\n[Refresh](command:govforge.refresh)",
-        "when": "govforge.signedIn"
+        "when": "govforge.signedIn && govforge.hasAnyWriteScope"
       },
       {
         "view": "govforge.decisions",
@@ -159,13 +164,18 @@
         "command": "govforge.recordDisagreement",
         "title": "GovForge: Record Disagreement",
         "icon": "$(warning)"
+      },
+      {
+        "command": "govforge.switchFocus",
+        "title": "GovForge: Switch Focus (All / Author / Reviewer / Approver)",
+        "icon": "$(person)"
       }
     ],
     "menus": {
       "view/title": [
         {
           "command": "govforge.createTask",
-          "when": "view == govforge.tasks",
+          "when": "view == govforge.tasks && govforge.canCreateTask",
           "group": "navigation@0"
         },
         {
@@ -182,42 +192,42 @@
       "view/item/context": [
         {
           "command": "govforge.recordDecision",
-          "when": "view == govforge.tasks && viewItem == govforge.task",
+          "when": "view == govforge.tasks && viewItem == govforge.task && govforge.canRecordDecision",
           "group": "1_actions@1"
         },
         {
           "command": "govforge.attachGitDiff",
-          "when": "view == govforge.decisions && viewItem == govforge.decision",
+          "when": "view == govforge.decisions && viewItem == govforge.decision && govforge.canAttachGitDiff",
           "group": "1_actions@1"
         },
         {
           "command": "govforge.runPolicyChecks",
-          "when": "view == govforge.decisions && viewItem == govforge.decision",
+          "when": "view == govforge.decisions && viewItem == govforge.decision && govforge.canRunPolicyChecks",
           "group": "1_actions@2"
         },
         {
           "command": "govforge.requestReview",
-          "when": "view == govforge.decisions && viewItem == govforge.decision",
+          "when": "view == govforge.decisions && viewItem == govforge.decision && govforge.canRequestReview",
           "group": "2_review@1"
         },
         {
           "command": "govforge.recordDisagreement",
-          "when": "view == govforge.decisions && viewItem == govforge.decision",
+          "when": "view == govforge.decisions && viewItem == govforge.decision && govforge.canRecordDisagreement",
           "group": "2_review@2"
         },
         {
           "command": "govforge.approve",
-          "when": "view == govforge.decisions && viewItem == govforge.decision",
+          "when": "view == govforge.decisions && viewItem == govforge.decision && govforge.canApprove",
           "group": "3_approve@1"
         },
         {
           "command": "govforge.reject",
-          "when": "view == govforge.decisions && viewItem == govforge.decision",
+          "when": "view == govforge.decisions && viewItem == govforge.decision && govforge.canReject",
           "group": "3_approve@2"
         },
         {
           "command": "govforge.submitReview",
-          "when": "view == govforge.reviews && viewItem == govforge.review",
+          "when": "view == govforge.reviews && viewItem == govforge.review && govforge.canSubmitReview",
           "group": "1_actions@1"
         }
       ],
@@ -225,6 +235,46 @@
         {
           "command": "govforge.openDecision",
           "when": "false"
+        },
+        {
+          "command": "govforge.createTask",
+          "when": "govforge.signedIn && govforge.canCreateTask"
+        },
+        {
+          "command": "govforge.recordDecision",
+          "when": "govforge.signedIn && govforge.canRecordDecision"
+        },
+        {
+          "command": "govforge.attachGitDiff",
+          "when": "govforge.signedIn && govforge.canAttachGitDiff"
+        },
+        {
+          "command": "govforge.runPolicyChecks",
+          "when": "govforge.signedIn && govforge.canRunPolicyChecks"
+        },
+        {
+          "command": "govforge.requestReview",
+          "when": "govforge.signedIn && govforge.canRequestReview"
+        },
+        {
+          "command": "govforge.submitReview",
+          "when": "govforge.signedIn && govforge.canSubmitReview"
+        },
+        {
+          "command": "govforge.recordDisagreement",
+          "when": "govforge.signedIn && govforge.canRecordDisagreement"
+        },
+        {
+          "command": "govforge.approve",
+          "when": "govforge.signedIn && govforge.canApprove"
+        },
+        {
+          "command": "govforge.reject",
+          "when": "govforge.signedIn && govforge.canReject"
+        },
+        {
+          "command": "govforge.switchFocus",
+          "when": "govforge.signedIn"
         }
       ]
     },
@@ -247,7 +297,7 @@
   "scripts": {
     "compile": "tsc -p ./ && tsc -p ./tsconfig.webview.json && npm run bundle:extension && npm run bundle:webview",
     "bundle:extension": "esbuild src/extension.ts --bundle --platform=node --target=node20 --external:vscode --outfile=out/extension.js",
-    "bundle:webview": "esbuild webview/index.tsx --bundle --platform=browser --target=es2022 --format=iife --minify --define:process.env.NODE_ENV='\"production\"' --outfile=out/webview.js",
+    "bundle:webview": "esbuild webview/index.tsx --bundle --platform=browser --target=es2022 --format=iife --jsx=automatic --minify --define:process.env.NODE_ENV='\"production\"' --outfile=out/webview.js",
     "watch": "esbuild src/extension.ts --bundle --platform=node --target=node20 --external:vscode --outfile=out/extension.js --watch=forever",
     "lint": "tsc --noEmit && tsc -p ./tsconfig.webview.json --noEmit",
     "package": "vsce package",

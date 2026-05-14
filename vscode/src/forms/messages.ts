@@ -120,6 +120,8 @@ export type ToExtension =
     | { type: "submit"; form: "recordDecision"; payload: RecordDecisionPayload }
     | { type: "submit"; form: "requestReview"; payload: RequestReviewPayload }
     | { type: "submit"; form: "recordDisagreement"; payload: RecordDisagreementPayload }
+    | { type: "boot"; ok: true; form: FormName }
+    | { type: "bootError"; message: string }
     | { type: "cancel" };
 
 export type ToWebview =

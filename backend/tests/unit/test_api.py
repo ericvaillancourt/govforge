@@ -659,6 +659,39 @@ class TestAuth:
             == 401
         )
 
+    def test_me_returns_current_token_scopes(self, client: TestClient) -> None:
+        # The fixture token has admin scope.
+        r = client.get("/me")
+        assert r.status_code == 200
+        body = r.json()
+        assert body["user"]["email"] == "test-admin@local"
+        assert body["token"] is not None
+        assert body["token"]["label"] == "pytest-admin"
+        assert body["token"]["scopes"] == ["admin"]
+
+    def test_me_reflects_the_calling_token_not_a_different_one(
+        self, client: TestClient
+    ) -> None:
+        # Create a narrow token, call /me with IT — must report ITS scopes only.
+        created = client.post(
+            "/tokens",
+            json={
+                "label": "narrow-for-me",
+                "agent_type": "claude",
+                "scopes": ["reviews:write", "decisions:read"],
+            },
+        ).json()
+        secret = created["secret"]
+        r = client.get("/me", headers={"Authorization": f"Bearer {secret}"})
+        assert r.status_code == 200
+        body = r.json()
+        assert body["token"]["label"] == "narrow-for-me"
+        # Order matches insertion order in scopes_csv.
+        assert sorted(body["token"]["scopes"]) == ["decisions:read", "reviews:write"]
+
+    def test_me_requires_auth(self, unauth_client: TestClient) -> None:
+        assert unauth_client.get("/me").status_code == 401
+
 
 # ---------------------------------------------------------------------------
 # OAuth + sessions (Phase 3.0 Stage B)

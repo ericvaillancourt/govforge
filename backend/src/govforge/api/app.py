@@ -22,6 +22,7 @@ from govforge.api.routers import (
     disagreements,
     events,
     health,
+    me,
     policies,
     projects,
     reviews,
@@ -62,6 +63,7 @@ def create_app(session_factory: sessionmaker[Session]) -> FastAPI:
 
     app.include_router(health.router)
     app.include_router(auth.router)
+    app.include_router(me.router)
     app.include_router(projects.router)
     app.include_router(tasks.router)
     app.include_router(decisions.router)

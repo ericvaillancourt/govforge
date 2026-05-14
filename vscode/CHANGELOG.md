@@ -4,6 +4,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added — v0.3.0 role-aware UI (2026-05-12)
+
+The plugin now mirrors the **scopes** stamped on your API token: write
+commands you can't actually run are hidden from the command palette and
+the right-click context menus. A persistent **Focus mode** (left status
+bar `$(person) Focus: All | Author | Reviewer | Approver`) further
+narrows the visible commands when you want to focus on one workflow at
+a time — without reducing your token's actual capabilities. Final
+visibility = `scopeAllows ∩ focusIncludes`.
+
+Source of truth comes from a new backend endpoint `GET /me` that returns
+the calling token's scopes (or `null` for cookie-authenticated callers).
+Backends that predate this endpoint (404) trigger a non-breaking
+fallback — every command stays visible as before, just like v0.2.
+
+A new welcome view replaces the empty Tasks tree when your token has
+only read scopes: it prompts you to mint a `*:write` token at
+https://govforge.dev/account/ and sign in again.
+
 ### Added — v0.1.0 scaffold (2026-05-12)
 
 Phase 1 of the VS Code cockpit plan: read-only sidebar, auth, status bar.
