@@ -1,5 +1,9 @@
 # Workflow Example — Claude → Codex → Human Approval
 
+> Want the **agent-driven** version of the same workflow, where Claude
+> Code and Codex call MCP tools directly? See
+> [`workflow-example-agents.md`](workflow-example-agents.md).
+
 A complete walkthrough of the canonical Phase 1 workflow, using real
 commands that work today. Each step shows the command, what happens
 under the hood, and the expected output.
