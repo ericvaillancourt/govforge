@@ -44,39 +44,83 @@ network egress: the entire stack runs on the developer's machine.
 
 ## Quickstart
 
+Common setup, then pick the entry point that fits how you work — typing
+in a terminal (**CLI**) or chatting with your AI assistant (**Agent**).
+
 ```bash
-# 1. Install (binary releases coming Phase 2 — for now build from source):
+# Install once
 git clone https://github.com/ericvaillancourt/govforge
 cd govforge/cli && go build -o ~/bin/gf ./cmd/gf
 cd ../backend && pip install -e .
 
-# 2. Initialize a project:
+# In any repo you want governed
 cd ~/your/repo
-gf init
+gf init                              # creates .govforge/
+gf api serve --port 8787 &           # local API
+(cd <govforge-clone>/ui && npm ci && npm run dev)   # http://localhost:8788
+```
 
-# 3. Start the local API + cockpit:
-gf api serve &
-(cd <govforge-clone>/ui && npm ci && npm run dev)   # http://localhost:8788 — in a separate terminal
+> Self-hosted only: bootstrap your first admin token via
+> [`infra/RUNBOOK.md`](infra/RUNBOOK.md) §8. The hosted API at
+> `api.govforge.dev` requires `Authorization: Bearer <token>` on every
+> write; local `gf` against your own backend goes through the same
+> code path but the bootstrap is automatic in `gf init`.
 
-# 4. (Self-hosted only) Bootstrap your first admin token — see infra/RUNBOOK.md §8.
-#    The hosted API at api.govforge.dev requires Authorization: Bearer <token>
-#    on every write; local `gf` against your own backend goes through the same
-#    code path but the bootstrap is automatic in `gf init`.
+### CLI
 
-# 5. Walk a decision through the pipeline:
+Walk a decision through the pipeline by typing commands:
+
+```bash
 gf task create --title "Refactor auth" --risk high --actor claude
-gf decision create --task TASK-001 --author claude --title "Migrate to signed cookies" --risk high
+gf decision create --task TASK-001 --author claude \
+  --title "Migrate to signed cookies" --risk high
 gf git attach --decision DEC-001 --commit HEAD
 gf policy check --decision DEC-001
 gf review request --decision DEC-001 --reviewer codex
+gf review submit DEC-001 --reviewer codex --status approved   # or via cockpit / MCP
 gf approve DEC-001 --comment "OK after rotation patch"
-
-# 6. Audit:
 gf decision timeline DEC-001
 ```
 
 The full Claude → Codex → human-approval walkthrough lives in
 [`docs/workflow-example.md`](docs/workflow-example.md).
+
+### Agent
+
+Don't want to learn the CLI? Drive the same flow by chatting with the
+agents you already use. Mint a scoped token per agent:
+
+```bash
+gf token create --label claude-author  --agent claude \
+  --scopes tasks:write,decisions:write,reviews:write,decisions:read,reviews:read
+gf token create --label codex-reviewer --agent codex \
+  --scopes reviews:write,reviews:read,decisions:read
+```
+
+Paste each `gfp_…` into the matching agent's MCP config — exact
+snippets per client (Claude Code, Codex, Cursor, Cline) in
+[`docs/mcp-integration.md`](docs/mcp-integration.md). Then chat:
+
+> **You** (in Claude Code): *"Refactor session auth to signed cookies.
+> Flag it as high-risk in GovForge before you start."*
+>
+> **Claude**: *opens `TASK-001`, edits the code, records `DEC-001`,
+> attaches the diff, runs the policy checks, and requests a review
+> from Codex — all in the background.*
+>
+> **You** (switching to Codex): *"Review `DEC-001` in GovForge. Focus
+> on session security."*
+>
+> **Codex**: *reads the diff and submits a structured review with
+> findings.*
+
+When the decision is ready, approve it at
+<http://localhost:8788/decisions/DEC-001>. The agent tokens never
+carry `approvals:write` — by design, the final signature stays a
+human action.
+
+Full vibe-coder walkthrough:
+[`docs/workflow-example-agents.md`](docs/workflow-example-agents.md).
 
 ## Install
 

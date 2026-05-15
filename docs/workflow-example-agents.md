@@ -1,494 +1,285 @@
-# Workflow Example — Agent-driven (Claude Code + Codex via MCP)
+# Workflow example — vibe-coder edition
 
-The mirror of [`workflow-example.md`](workflow-example.md), but with the
-governance flow **driven by AI agents through MCP** instead of a human
-typing CLI commands. Same 13 steps, same end-state — different driver.
+*Zero CLI commands after setup. You just chat with your AI coding agent
+the way you already do; GovForge records the decision, runs the policy
+checks, and keeps the audit trail in the background.*
 
-Each step lists the **CLI** equivalent (what a human would type) next to
-the **MCP** call the agent actually makes against
-`govforge.mcp.server`. The three steps that cannot be agent-driven —
-project init, backend serve, and final human approval — are kept and
-marked as `👤 Human-driven` so the agents-vs-humans split in the chain
-of governance is visible at a glance.
+This is the same end-to-end governance flow as
+[`workflow-example.md`](workflow-example.md), but told from the
+perspective of a developer who lives in their AI assistant and would
+rather not learn a new CLI. The whole story is a conversation. The only
+shell you'll see is the one-time setup at the top.
 
-Scenario:
-**Claude Code proposes a session-auth refactor; Codex reviews and flags
-a session-fixation risk; the human approves after reviewing.**
-
-Looking for the human-driven version? See
-[`workflow-example.md`](workflow-example.md).
+The scenario:
+**You ask Claude Code to refactor your session auth. Codex reviews it,
+catches a security issue. Claude patches it. You click "Approve" once.
+Done.**
 
 ---
 
-## Cast and token scopes
+## Setup (you do this once)
 
-Each agent connects to the same MCP server with its own scoped Bearer
-token. Scopes are checked **per tool call** and the MCP server filters
-its `tools/list` to only expose tools the token can use, so an agent
-that hasn't been granted a scope literally can't see the tool. See
-[`mcp-integration.md`](mcp-integration.md) for the wiring details.
+> 👤 **One-time** — copy/paste, ~2 minutes. After this you never need
+> to touch a shell to use GovForge.
 
-| Actor          | Token scopes                                                   | Visible MCP tools                                                                                                  |
-|----------------|----------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------|
-| **Claude Code** (author)   | `tasks:write`, `decisions:write`, `reviews:write`, `decisions:read`, `reviews:read` | `create_task`, `record_decision`, `attach_git_diff`, `run_policy_checks`, `request_review`, `get_decision_context` |
-| **Codex** (reviewer)       | `reviews:write`, `reviews:read`, `decisions:read`                                | `submit_review`, `record_disagreement`, `list_open_reviews`, `get_decision_context`                                |
-| **Human** (approver)       | cookie session in the cockpit, or `approvals:write` Bearer token                 | `approve_decision` *(plus everything via the cockpit and `gf` CLI)*                                                |
-
-`approvals:write` is deliberately withheld from agent tokens — the
-final signature stays a human action.
-
----
-
-## Prerequisites
-
-> 👤 **Human-driven setup** — run once per project, then never again.
+Install the CLI + backend, initialize your repo, and mint one token per
+agent:
 
 ```bash
-# Build the CLI + install the backend (same as the CLI workflow)
-cd /path/to/govforge/cli && go build -o ~/bin/gf ./cmd/gf
-cd /path/to/govforge/backend && python -m venv .venv && source .venv/bin/activate && pip install -e .
-```
+# 1. Install once
+brew install ericvaillancourt/tap/govforge          # or `pipx install govforge`
 
----
+# 2. In any repo you want governed
+cd ~/code/my-app
+gf init                                              # creates .govforge/
+gf api serve --port 8787 &                           # starts the local API
 
-## Step 0 — Initialize the project
-
-> 👤 **Human-driven step** — no MCP equivalent. Agents work on a
-> project that already exists; they don't bootstrap one.
-
-```bash
-cd ~/code/myrepo
-gf init
-```
-
-`gf init` is autonomous: it embeds the schema via `go:embed` and applies
-it through the pure-Go `modernc.org/sqlite` driver. No backend needed.
-
----
-
-## Step 1 — Start the backend and mint agent tokens
-
-> 👤 **Human-driven step** — agents need a running HTTP API and their
-> own scoped tokens before they can do anything. This is the one-time
-> setup that turns a fresh project into one agents can drive.
-
-```bash
-gf api serve --port 8787 &
-
-# One Bearer token per agent, scoped to its role.
-gf token create --label claude-author --agent claude \
+# 3. One token per agent (you'll paste each into the agent's MCP config)
+gf token create --label claude-author   --agent claude \
   --scopes tasks:write,decisions:write,reviews:write,decisions:read,reviews:read
-
-gf token create --label codex-reviewer --agent codex \
+gf token create --label codex-reviewer  --agent codex \
   --scopes reviews:write,reviews:read,decisions:read
-
-# Wire each token into the agent's MCP config. See mcp-integration.md for
-# the exact JSON snippets per agent (Claude Code, Codex, Cursor, Cline).
 ```
 
-From here on, **every step below is what the agent emits**, not what a
-human types. The CLI column is shown only as a reference for what the
-agent's call is equivalent to.
+Each `gf token create` prints a `gfp_…` secret **once**. Drop each one
+into the MCP config of the matching agent — exact JSON snippets per
+client (Claude Code, Codex, Cursor, Cline) live in
+[`mcp-integration.md`](mcp-integration.md).
+
+That's it. Open your IDE. From here on, everything happens in chat.
 
 ---
 
-## Step 2 — Create a task
+## Step 1 — Tell Claude what you want
 
-Actor: **Claude Code**
+You're in Claude Code in your IDE. You type:
 
-**CLI** (human equivalent)
-```bash
-gf task create \
-  --title "Migrate auth session to signed cookies" \
-  --risk high \
-  --actor claude
-```
+> Hey, I want to migrate our session auth from server-side lookups to
+> signed cookies. It touches `auth.py` and `middleware/session.py`.
+> This is auth-adjacent — flag it as high-risk in GovForge before you
+> start.
 
-**MCP** (what Claude Code calls)
-```
-tool:    create_task
-args:    { project_path:  "/home/me/code/myrepo",
-           title:         "Migrate auth session to signed cookies",
-           risk_level:    "high",
-           actor_agent:   "claude" }
-returns: { task_id: "TASK-001", status: "open" }
-```
+Claude:
 
----
+*Opens a task in GovForge.*
 
-## Step 3 — Claude implements the change
+> Got it. I've registered this as **TASK-001** (risk: high) in
+> GovForge so the change is on the record. I'll write the code, then
+> record the decision and run the policy checks when I'm done. Anything
+> specific you want me to watch out for?
 
-Actor: **Claude Code** (no MCP call — this is Claude editing files with
-its built-in code-edit capability, same as any IDE-assisted change)
+You:
 
-```bash
-$EDITOR auth.py middleware/session.py tests/test_auth.py
-git add -A
-git commit -m "refactor(auth): migrate to signed session cookies"
-```
+> Make sure cookies are signed (HMAC) and that we keep the existing
+> CSRF protection. Add tests.
 
-The MCP server stays entirely out of the editor loop. Its only Git
-contact is **read-only** at step 5.
+Claude:
+
+> On it.
 
 ---
 
-## Step 4 — Record the decision
+## Step 2 — Claude writes the code and records the decision
 
-Actor: **Claude Code**
+You wait. Claude edits the files, runs your test suite, and commits.
+Then, without you having to ask, it wraps the change up in GovForge:
 
-**CLI** (human equivalent)
-```bash
-gf decision create \
-  --task TASK-001 \
-  --author claude \
-  --title "Migrate session auth to signed cookies" \
-  --summary "Replace server-side session lookup with signed cookie validation" \
-  --rationale "Reduce DB roundtrips and simplify middleware" \
-  --risk high
-```
+Claude:
 
-**MCP** (what Claude Code calls)
-```
-tool:    record_decision
-args:    { task_id:        "TASK-001",
-           author_agent:   "claude",
-           title:          "Migrate session auth to signed cookies",
-           summary:        "Replace server-side session lookup with signed cookie validation",
-           rationale:      "Reduce DB roundtrips and simplify middleware",
-           risk_level:     "high" }
-returns: { decision_id: "DEC-001", status: "draft" }
-```
+> Here's what I did:
+>
+> - Replaced `SessionMiddleware` with `SignedCookieMiddleware` in
+>   `middleware/session.py`.
+> - Removed the server-side session lookup in `auth.py`.
+> - Updated `tests/test_auth.py` with 4 new cases (sign, verify,
+>   tamper-detect, expiry).
+> - Committed as `refactor(auth): migrate to signed session cookies`.
+>
+> *Records the decision in GovForge and attaches the diff.*
+>
+> The decision is now **DEC-001** in GovForge with the diff attached
+> (84 insertions, 31 deletions across 3 files). I'm going to run the
+> policy checks next — give me a second.
+
+You don't have to type anything. Claude continues.
 
 ---
 
-## Step 5 — Attach the Git diff
+## Step 3 — Claude runs the policy checks
 
-Actor: **Claude Code**
+Claude:
 
-**CLI** (human equivalent)
-```bash
-gf git attach --decision DEC-001 --commit HEAD --actor claude
-```
+*Runs the GovForge policy checks against DEC-001.*
 
-**MCP** (what Claude Code calls)
-```
-tool:    attach_git_diff
-args:    { decision_id:  "DEC-001",
-           repo_path:    "/home/me/code/myrepo",
-           commit_hash:  "HEAD",
-           actor_agent:  "claude" }
-returns: { decision_id:   "DEC-001",
-           files_changed: ["auth.py", "middleware/session.py", "tests/test_auth.py"],
-           insertions:    84,
-           deletions:     31,
-           diff_hash:     "sha256:7f9b3..." }
-```
+> Policy results are in:
+>
+> - `auth_change_requires_review` → **blocked** (1 auth-adjacent file
+>   modified — review required)
+> - `secret_pattern_detection` → passed
+> - `test_required_for_high_risk` → passed (1 test file modified)
+> - `migration_requires_review` → passed
+> - `large_diff_requires_human_approval` → passed
+>
+> The decision moved to **`review_required`**. That auth-adjacent
+> policy is exactly the guardrail you wanted — it's stopping the
+> change from being approved without a second pair of eyes. Want me
+> to request a review from Codex?
 
-The Git extractor walks `commit.diff(parent)` (or `commit.tree.traverse()`
-for the initial commit) and stores `commit_hash`, `branch_name`,
-`files_changed`, `insertions`, `deletions`, and `sha256:<hex>` of the
-unified diff. Read-only — no Git mutation. Paths outside the repo root
-are refused (`PathOutsideRepoError`).
+You:
 
----
+> Yes, ask Codex to focus on session security and the test coverage.
 
-## Step 6 — Run policy checks
+Claude:
 
-Actor: **Claude Code**
+*Requests a review from Codex with the focus tags `security, tests`.*
 
-**CLI** (human equivalent)
-```bash
-gf policy check --decision DEC-001
-```
-
-**MCP** (what Claude Code calls)
-```
-tool:    run_policy_checks
-args:    { decision_id: "DEC-001",
-           actor_agent: "claude" }
-returns: { decision_status: "review_required",
-           results: [
-             { policy: "auth_change_requires_review",   status: "blocked",
-               message: "1 auth-adjacent file(s) modified — review required." },
-             { policy: "secret_pattern_detection",      status: "passed",
-               message: "No secret patterns detected." },
-             { policy: "test_required_for_high_risk",   status: "passed",
-               message: "1 test file(s) modified." },
-             { policy: "migration_requires_review",     status: "passed",
-               message: "No migration files touched." },
-             { policy: "large_diff_requires_human_approval", status: "passed",
-               message: "Diff size 115 within threshold (500)." }
-           ] }
-```
-
-Because at least one policy returned `blocked`, `PolicyService` bumped
-the decision status to `review_required`. Claude Code sees this in the
-returned `decision_status` and decides the next move — typically to
-request a review.
+> Done. DEC-001 is on Codex's queue.
 
 ---
 
-## Step 7 — Request a review from Codex
+## Step 4 — Switch to Codex, ask it to review
 
-Actor: **Claude Code**
+Open Codex (or your second Claude chat, or whichever agent has the
+reviewer token wired in). You type:
 
-**CLI** (human equivalent)
-```bash
-gf review request \
-  --decision DEC-001 \
-  --reviewer codex \
-  --focus security,tests
-```
+> Take a look at DEC-001 in GovForge. Focus on session security and
+> test coverage.
 
-**MCP** (what Claude Code calls)
-```
-tool:    request_review
-args:    { decision_id:    "DEC-001",
-           reviewer_agent: "codex",
-           focus:          ["security", "tests"],
-           actor_agent:    "claude" }
-returns: { decision_id: "DEC-001", status: "review_required" }
-```
+Codex:
 
-The `focus` list is metadata for the reviewer — it doesn't gate
-anything in the engine, but it appears in the timeline and tells Codex
-what Claude expects scrutinized.
+*Reads the diff, the rationale, and the policy results from GovForge.*
 
----
+> I've read DEC-001 — the JWT cookie migration. The diff covers
+> `auth.py`, `middleware/session.py`, and `tests/test_auth.py`. The
+> tests look sensible. One thing concerns me though.
 
-## Step 8 — Codex submits a review
+You:
 
-Actor: **Codex**
+> What?
 
-Codex is now the active agent. It calls `list_open_reviews` to find work,
-then `get_decision_context` to load the diff and rationale, then
-`submit_review` with structured findings.
+Codex:
 
-**CLI** (human equivalent, via the v0.1.1 `gf review submit` shortcut)
-```bash
-gf review submit DEC-001 \
-  --reviewer codex \
-  --status changes_requested \
-  --summary "Session fixation risk" \
-  --finding "severity=high;category=security;file_path=middleware/session.py;message=Session token is not rotated after login;recommendation=Rotate session token after successful login"
-```
-
-**MCP** (what Codex calls)
-```
-tool:    submit_review
-args:    { decision_id:    "DEC-001",
-           reviewer_agent: "codex",
-           status:         "changes_requested",
-           summary:        "Session fixation risk",
-           findings: [
-             { severity:       "high",
-               category:       "security",
-               file_path:      "middleware/session.py",
-               message:        "Session token is not rotated after login",
-               recommendation: "Rotate session token after successful login" }
-           ] }
-returns: { review_id:        "REV-001",
-           decision_id:      "DEC-001",
-           decision_status:  "changes_requested" }
-```
-
-The decision moves to `changes_requested`. Review status → decision
-status mapping: `changes_requested` → `changes_requested`,
-`rejected` → `rejected`, `approved`/`commented` → unchanged (the human
-gate at step 11 still applies).
+> **Session fixation risk** in `middleware/session.py`: the session
+> token isn't rotated when a user logs in successfully. An attacker
+> who plants a pre-login cookie could replay it after the victim
+> authenticates.
+>
+> I'm submitting that as a high-severity finding and marking the
+> decision as `changes_requested` so Claude can patch.
+>
+> *Submits the review to GovForge with the finding.*
+>
+> Done. The author can see my finding in the cockpit and act on it.
 
 ---
 
-## Step 9 — Record a structured disagreement (optional)
+## Step 5 — Back to Claude, ask for the fix
 
-Actor: **Codex** *(or Claude, depending on who pushes back)*
+Switch back to Claude Code:
 
-When the author and reviewer disagree on a finding, the disagreement is
-captured as a first-class entity rather than buried in chat history.
+> Codex flagged a session-fixation risk in `middleware/session.py` on
+> DEC-001 — apparently we're not rotating the session token after
+> login. Can you read the finding and fix it?
 
-**CLI** (human equivalent, via the v0.1.1 `gf disagreement record` command)
-```bash
-gf disagreement record DEC-001 \
-  --topic "Token rotation timing" \
-  --reviewer-position "Rotate before any DB write" \
-  --author-position "Rotate after auth succeeds" \
-  --risk-summary "Race window between auth and rotation" \
-  --requires-human-decision
-```
+Claude:
 
-**MCP** (what the agent calls)
-```
-tool:    record_disagreement
-args:    { decision_id:             "DEC-001",
-           topic:                   "Token rotation timing",
-           reviewer_position:       "Rotate before any DB write",
-           author_position:         "Rotate after auth succeeds",
-           risk_summary:            "Race window between auth and rotation",
-           requires_human_decision: true,
-           actor_agent:             "codex" }
-returns: { disagreement_id:         "<uuid>",
-           decision_id:             "DEC-001",
-           requires_human_decision: true }
-```
+*Pulls the decision context from GovForge, including Codex's finding.*
 
-`requires_human_decision: true` adds the decision to the cockpit's
-"pending approvals" list — `list_pending_approvals` will surface it,
-and the human knows there's a contested call to read before signing.
+> Saw it. Codex is right — we issue the cookie on
+> `SessionMiddleware.attach()` but never call `rotate()` after
+> `login_user()` succeeds. I'll add the rotation call and a regression
+> test that fails without it.
+
+You:
+
+> Go.
+
+(You wait. Claude edits, runs tests, commits.)
+
+Claude:
+
+> Patched. New commit:
+> `fix(auth): rotate session token after login`. I've re-attached the
+> diff to DEC-001 and re-run the policy checks — they all pass now,
+> and Codex's specific finding has been addressed in the new commit.
+> The decision is ready for your final approval.
 
 ---
 
-## Step 10 — Patch the code
+## Step 6 — Approve in the cockpit
 
-Actor: **Claude Code**
+This is the only step that doesn't happen in chat. By design — GovForge
+**deliberately** withholds approval rights from any agent token, so the
+final signature is always a human.
 
-Claude applies the fix, re-attaches the new commit, and re-runs the
-policy checks.
+Open the GovForge cockpit at <http://localhost:8788/decisions/DEC-001>
+in your browser. You'll see, on one page:
 
-```bash
-$EDITOR middleware/session.py   # rotate session token after login
-git add -A
-git commit -m "fix(auth): rotate session token after login"
-```
+- the full diff (both commits — initial + patch),
+- the policy results breakdown,
+- Codex's finding and the recommendation,
+- Claude's patch commit annotated to the finding,
+- a green **Approve** button at the top.
 
-Then two MCP calls in sequence:
-
-```
-tool:    attach_git_diff
-args:    { decision_id: "DEC-001",
-           repo_path:   "/home/me/code/myrepo",
-           commit_hash: "HEAD",
-           actor_agent: "claude" }
-returns: { decision_id:   "DEC-001",
-           files_changed: ["middleware/session.py"],
-           insertions:    8,
-           deletions:     2,
-           diff_hash:     "sha256:3a1c..." }
-
-tool:    run_policy_checks
-args:    { decision_id: "DEC-001",
-           actor_agent: "claude" }
-returns: { decision_status: "review_required",
-           results: [ ... ] }
-```
-
-Both attachments stay on the same decision; the timeline shows
-`decision.git_attached` twice with different `diff_hash` values.
+Click it. Add a one-line comment if you want
+(*"Approved after Codex review + token rotation patch"*). The decision
+moves to `approved`. The audit trail is now closed and immutable.
 
 ---
 
-## Step 11 — Human approval
+## What just happened (the part you didn't have to think about)
 
-> 👤 **Human-driven step** — the only step the agents can't do. Tokens
-> issued to Claude Code and Codex don't carry `approvals:write` (Stage C
-> rule: the system enforces role, not the prompt).
+Behind every prompt above, the agent was talking to a local API and
+recording everything for you:
 
-The human reads the cockpit page for DEC-001 — diff panel, policy
-results, the Codex finding, the disagreement, and Claude's patch — then
-signs:
+- **TASK-001** opened by Claude (one event in the timeline).
+- **DEC-001** created, with title, rationale, and risk level.
+- The Git diff hash + file list, attached read-only — GovForge never
+  modifies your repo.
+- 5 policies evaluated, each result persisted.
+- Codex's review (REV-001) with the structured finding (severity, file,
+  recommendation).
+- The patch commit, re-attached and re-checked.
+- Your final approval, signed.
 
-```bash
-gf approve DEC-001 --comment "Approved after token rotation patch and Codex review"
-```
-
-Or clicks **Approve** in the cockpit at
-`http://localhost:8788/decisions/DEC-001`. Either path goes through
-`POST /decisions/{id}/approve` and requires `approvals:write` (or the
-cookie session).
-
----
-
-## Step 12 — Final timeline
-
-Any agent (or the human) can fetch the full bundle via MCP:
-
-**CLI** (human equivalent)
-```bash
-gf decision timeline DEC-001
-```
-
-**MCP** (what any agent calls — read-only, just needs `decisions:read`)
-```
-tool:    get_decision_context
-args:    { decision_id: "DEC-001" }
-returns: { decision:       { ... },
-           latest_git:     { commit_hash: "...", files_changed: [...] },
-           reviews:        [ { id: "REV-001", findings: [...] } ],
-           policy_results: [ ... ],
-           disagreements:  [ { topic: "Token rotation timing", ... } ],
-           approvals:      [ { approver: "alice@team", status: "approved" } ],
-           events: [
-             { at: "2026-05-10 14:02:11", kind: "decision.created" },
-             { at: "2026-05-10 14:03:45", kind: "decision.git_attached" },
-             { at: "2026-05-10 14:03:46", kind: "decision.policy_evaluated" },
-             { at: "2026-05-10 14:03:46", kind: "decision.status_changed" },
-             { at: "2026-05-10 14:05:12", kind: "review.requested" },
-             { at: "2026-05-10 14:08:33", kind: "review.submitted" },
-             { at: "2026-05-10 14:08:33", kind: "decision.status_changed" },
-             { at: "2026-05-10 14:09:01", kind: "disagreement.recorded" },
-             { at: "2026-05-10 14:14:02", kind: "decision.git_attached" },
-             { at: "2026-05-10 14:14:02", kind: "decision.policy_evaluated" },
-             { at: "2026-05-10 14:18:55", kind: "decision.approved" }
-           ] }
-```
-
-The same view is available in the cockpit at
-`http://localhost:8788/decisions/DEC-001` — Git change panel, policy
-breakdown, review findings, the disagreement card, and the
-approve/reject controls all on one page.
+You can replay any of it in the cockpit. The decision detail page is
+also the audit trail for that change — there's no separate "logs" view
+to dig through.
 
 ---
 
-## Step 13 — Audit / replay
+## You won't run into the agent doing the wrong thing
 
-The full audit log is queryable. Agents typically don't need this — they
-operate on the live decision via `get_decision_context` — but it's the
-same data, addressable directly:
+Two guardrails work in the background:
 
-```bash
-# Every event for the decision
-curl -sS "http://127.0.0.1:8787/events?entity_type=decision&entity_id=DEC-001" \
-  -H "Authorization: Bearer $GOVFORGE_API_TOKEN" | jq
+1. **Tokens are scoped per role.** Claude's token can author tasks and
+   decisions; Codex's token can review. Neither can approve. If an
+   agent tried to call `approve_decision` (it can't — the tool isn't
+   even visible in its `tools/list`), the server would refuse the call
+   with a 403. The role is enforced by the system, not by your prompt
+   wording.
+2. **The agent doesn't have a shell.** GovForge gives agents exactly
+   11 tools and zero of them are shell-execution. They can read your
+   repo, but they can't `git push`, `git reset`, run subprocesses, or
+   reach the network. Pinned by source-grep tests in
+   [`backend/tests/unit/test_security.py`](../backend/tests/unit/test_security.py)
+   and documented in [`threat-model.md`](threat-model.md).
 
-# Every event for the project
-curl -sS "http://127.0.0.1:8787/events?project_path=$(pwd)" \
-  -H "Authorization: Bearer $GOVFORGE_API_TOKEN" | jq
-```
-
-The `payload_json` on each event is structured. You can replay the
-decision lifecycle from the events table alone, without needing the rest
-of the schema.
-
----
-
-## What didn't happen
-
-Same security envelope as the CLI workflow:
-
-- No agent had the ability to execute a shell, push code, reset Git, or
-  rebase. The MCP server exposes 11 tools and **zero** of them are
-  shell-execution.
-- Tokens were checked per-call. An agent calling a tool outside its
-  scopes gets a 403 (and the tool isn't even visible in
-  `tools/list` thanks to the scope filter).
-- No outbound network calls. Everything is local; the MCP server talks
-  to the local HTTP API at `127.0.0.1:8787`, the HTTP API talks to the
-  local SQLite.
-- No file writes outside `.govforge/govforge.db`.
-- The final signature stayed a human action. Agents proposed,
-  reviewed, disagreed, patched — but the `decision.approved` event
-  required a token only the human held.
-
-These properties are pinned by source-grep tests in
-[`backend/tests/unit/test_security.py`](../backend/tests/unit/test_security.py)
-and documented in [`threat-model.md`](threat-model.md).
+You can chat freely and not worry that a misread prompt could ship code
+to production.
 
 ---
 
-## See also
+## Curious what's actually happening?
 
-- [`workflow-example.md`](workflow-example.md) — the same 13 steps, but
-  human-driven via the `gf` CLI.
-- [`mcp-integration.md`](mcp-integration.md) — exact MCP wiring snippets
-  for Claude Code, Codex, Cursor, Cline.
-- [`mcp-reference.md`](mcp-reference.md) — input/output schemas for all
-  11 tools, plus resources and prompts.
+If you want to see the calls behind each chat exchange:
+
+- [`workflow-example.md`](workflow-example.md) — the same workflow,
+  but driven by `gf …` CLI commands. Useful if you ever want to script
+  a step.
+- [`mcp-reference.md`](mcp-reference.md) — the 11 MCP tools each agent
+  uses, with input/output schemas.
+- [`mcp-integration.md`](mcp-integration.md) — exact MCP config
+  snippets for Claude Code, Codex, Cursor, Cline.
+
+**You don't need to know any of that to use it.** That's the point.
