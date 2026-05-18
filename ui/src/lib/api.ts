@@ -6,6 +6,7 @@
  * (`not found`) from other failures.
  */
 
+import type { MeOut } from "./scopes";
 import { getToken } from "./token";
 
 export const API_BASE =
@@ -207,6 +208,8 @@ export interface Health {
 
 export const api = {
   health: () => request<Health>("/health"),
+
+  me: () => request<MeOut>("/me"),
 
   projects: {
     list: () => request<Project[]>("/projects"),
