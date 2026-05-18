@@ -3,6 +3,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
+import { useMe } from "@/lib/me";
 import { clearToken, getToken, setToken } from "@/lib/token";
 
 /**
@@ -115,24 +116,64 @@ export function TokenGate() {
     );
   }
 
-  // Show only the prefix so the operator can confirm which token is active.
+  return <SignedInChip token={token} onSignOut={signOut} />;
+}
+
+function SignedInChip({
+  token,
+  onSignOut,
+}: {
+  token: string;
+  onSignOut: () => void;
+}) {
+  const { me, scopes, isAdmin } = useMe();
+
   const prefix = token.slice(0, 12);
+  const identity =
+    me?.user?.display_name?.trim() ||
+    me?.user?.email ||
+    `${prefix}…`;
+  // Compact scope summary. Admin tokens get a single "admin" chip;
+  // narrower tokens show their write scopes (read-only ones are
+  // implied by the writes). If `/me` is on an older backend (scopes
+  // undefined) the chip just shows the identity.
+  const summary = scopeSummary(scopes, isAdmin);
 
   return (
     <div className="flex items-center gap-2 text-xs">
       <span
-        title={`Active token: ${prefix}…`}
+        title={`Active token: ${prefix}…${summary ? ` · ${summary}` : ""}`}
         className="text-[hsl(var(--muted-foreground))]"
       >
-        <code className="font-mono">{prefix}…</code>
+        <span>{identity}</span>
+        {summary ? (
+          <>
+            {" · "}
+            <code className="font-mono">{summary}</code>
+          </>
+        ) : null}
       </span>
       <button
         type="button"
-        onClick={signOut}
+        onClick={onSignOut}
         className="rounded-md border border-[hsl(var(--border))] px-2 py-1 hover:bg-[hsl(var(--muted))]"
       >
         Sign out
       </button>
     </div>
   );
+}
+
+function scopeSummary(
+  scopes: ReturnType<typeof useMe>["scopes"],
+  isAdmin: boolean,
+): string | null {
+  if (scopes === undefined) return null; // unknown — older backend
+  if (scopes === null) return null; // signed out (chip won't render anyway)
+  if (isAdmin) return "admin";
+  const writes = scopes.filter((s) => s.endsWith(":write"));
+  if (writes.length === 0) return "read-only";
+  // Compress "decisions:write,reviews:write" → "decisions+reviews write"
+  const stems = writes.map((s) => s.replace(":write", ""));
+  return `${stems.join(", ")} write`;
 }

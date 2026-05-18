@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { api, APIError } from "@/lib/api";
 import { cn } from "@/lib/cn";
+import { useMe } from "@/lib/me";
 
 /**
  * Human approval gate. Shows two buttons (Approve / Reject) plus an
@@ -21,6 +22,7 @@ export function ApprovalActions({
   const qc = useQueryClient();
   const [comment, setComment] = useState("");
   const [approver, setApprover] = useState("eric");
+  const { hasScope } = useMe();
 
   const approve = useMutation({
     mutationFn: () =>
@@ -47,6 +49,13 @@ export function ApprovalActions({
 
   const finalised = status === "approved" || status === "rejected";
   const error = (approve.error ?? reject.error) as APIError | Error | null;
+
+  // Hide the section entirely when the active token can't approve.
+  // Matches the VS Code v0.3 "no banner, just no button" UX — the
+  // TokenGate chip already tells the user which scopes they have.
+  // Scopes unknown (404 from /me on an older backend) → fall through
+  // to the visible state so we don't regress UX on stale backends.
+  if (!hasScope("approvals:write")) return null;
 
   return (
     <section className="surface space-y-3 p-4">
