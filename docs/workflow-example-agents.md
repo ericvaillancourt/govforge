@@ -227,6 +227,145 @@ moves to `approved`. The audit trail is now closed and immutable.
 
 ---
 
+## Scenario 2 — Asking Claude to run a retro-review on legacy code
+
+The flow above governs **new** changes. The same setup also governs
+**existing** code on `main` — code that shipped weeks or months ago
+that nobody is actively touching. People call this a *retrospective
+review*, *audit review*, or *brownfield review*; see
+[`github-workflow.md`](github-workflow.md#retrospective-reviews--auditing-code-already-on-main)
+for why it's a recognized practice and why GitHub alone struggles with
+it.
+
+You don't learn a new flow for this. You ask Claude the same way you
+asked it to write code — except instead of *making* a change, it's
+*auditing* one.
+
+**Scenario:** Six months after the session-cookie migration shipped,
+you're running a quarterly security audit and want a clean retro-review
+on `auth.py` and `middleware/session.py`. Same Claude, same Codex, same
+cockpit. No merge involved.
+
+### Step A1 — Tell Claude what you want audited
+
+In Claude Code:
+
+> Hey, six months ago we shipped the signed-cookie session migration.
+> We're doing our Q2 2026 security audit and I want a clean retro-review
+> on `auth.py` and `middleware/session.py`. Open a retro-review task in
+> GovForge, attach commit `7d8b3f4` (the original migration), run the
+> policies, then ask Codex to take a fresh look at session fixation.
+
+Claude:
+
+*Opens a task in GovForge — risk: high, no upcoming code, audit-flavored.*
+
+> Got it. I've opened **TASK-042** in GovForge: "Audit: session auth
+> module (Q2 2026 security review)" at high risk. I'll record the
+> decision, attach the historical commit, run the policies, then queue
+> Codex.
+
+You don't reply. Claude continues.
+
+---
+
+### Step A2 — Claude attaches the historical commit
+
+You wait a moment. Claude:
+
+> Done:
+>
+> - **DEC-042** recorded against TASK-042 with the audit rationale.
+> - Attached commit `7d8b3f4` to the decision read-only — 84 insertions,
+>   31 deletions across `auth.py`, `middleware/session.py`,
+>   `tests/test_auth.py`.
+> - Ran the policy checks. Same result as when this shipped originally
+>   — `auth_change_requires_review` is **blocked**, which is the gate
+>   you want for an audit. Everything else passes.
+> - Decision is sitting at **`review_required`**.
+>
+> Asking Codex now.
+
+Two things to notice: (1) Claude didn't have to write any new code, and
+(2) `gf git attach` accepted a historical SHA — it doesn't have to be
+`HEAD`. The same MCP tool (`attach_git_diff`) takes a `commit_hash`
+parameter; defaulting to `HEAD` was just a convention of the forward
+flow.
+
+---
+
+### Step A3 — Switch to Codex, ask for the cold review
+
+In Codex:
+
+> Take a look at DEC-042 in GovForge. It's a retro-review on the
+> session-cookie migration from six months ago. Focus specifically on
+> session-fixation patterns and confirm whether the rotation we added in
+> the follow-up is actually present and tested.
+
+Codex:
+
+*Pulls the decision context — diff, file list, policy results — from GovForge.*
+
+> I've got it. Reading `auth.py`, `middleware/session.py`, and
+> `tests/test_auth.py` from the diff attached to DEC-042.
+
+(A few seconds pass.)
+
+> Verified:
+>
+> 1. `SignedCookieMiddleware.attach()` issues the signed cookie on
+>    request.
+> 2. `login_user()` in `auth.py` calls `session.rotate()` after a
+>    successful authentication — the rotation we added in the DEC-001
+>    follow-up is present.
+> 3. `tests/test_auth.py` has a regression test that would fail if the
+>    rotation were removed.
+>
+> No session-fixation risk surfaces in the current state. I'm marking
+> the review as **approved** with an informational finding pinning the
+> regression test as critical.
+>
+> *Submits the review to GovForge.*
+
+The decision is now ready for your sign-off.
+
+---
+
+### Step A4 — Approve in the cockpit
+
+Open the cockpit at <http://localhost:8788/decisions/DEC-042>. The page
+looks identical to the forward case:
+
+- the full diff of the historical commit,
+- the policy results breakdown,
+- Codex's audit finding + recommendation,
+- a green **Approve** button at the top.
+
+Click it. Comment: *"Closed Q2 2026 audit cycle"*. The decision moves
+to `approved`. The audit is now part of the immutable event log,
+queryable via `/events` exactly like every forward decision.
+
+---
+
+### What this gives you that GitHub alone can't
+
+- **Review decoupled from merge.** No `[REVIEW-ONLY]` PR tricks, no
+  comment-on-commit fragmentation. The audit is a first-class decision
+  with the same lifecycle as a forward change.
+- **Structured findings, not free-form threads.** Codex's audit
+  finding carries severity, category, file path, and recommendation —
+  queryable, summable across many audits.
+- **Bulk retro-reviews are tractable.** Want to audit every commit
+  that touched `auth/*` in the last year? Point Claude at the commit
+  list with one prompt; it opens 30 decisions, attaches 30 diffs,
+  queues 30 reviews. You triage the queue, not the code.
+- **Append-only event log = audit-grade provenance.** A retro-review
+  recorded today has the same legal weight as one done at merge time.
+  Auditors care about *recorded, timestamped, immutable* — not *when*.
+
+---
+
 ## What just happened (the part you didn't have to think about)
 
 Behind every prompt above, the agent was talking to a local API and

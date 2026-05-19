@@ -142,6 +142,60 @@ git branch -d feature/my-branch   # delete the local branch
 # GitHub shows a "Delete branch" button to remove the remote branch
 ```
 
+## Retrospective reviews — auditing code already on main
+
+A natural follow-up question: **can you review code that's already
+merged?** Yes, and it's a recognized practice with several names:
+*post-merge review*, *retrospective review*, *audit review*,
+*brownfield review*.
+
+### Why you might do this
+
+- **Onboarding** — a new dev wants to understand a legacy module by
+  reviewing it cold, as if it were a fresh PR.
+- **Compliance / audit** — code shipped via hotfix without normal
+  review needs a paper trail after the fact.
+- **Pre-refactor** — before touching a legacy module, anchor "what is
+  this doing, and is it OK as-is?"
+- **Periodic security audit** — auth, payments, secrets-handling: a
+  scheduled review every 6 months, even with no changes.
+- **Post-incident** — a bug caused an outage; revisit the merged code
+  that introduced it.
+- **AI-generated code retro** — an agent shipped fast; come back later
+  for a cold human read.
+- **Tech-debt triage** — identify problem areas without changing them.
+- **Knowledge transfer** — a bus-factor-1 module gets a second pair of
+  eyes.
+
+### What GitHub gives you natively
+
+| Approach | How it works | Trade-off |
+|---|---|---|
+| `[REVIEW-ONLY]` PR | Branch from a historical commit, open a PR with `[NO-MERGE]` in the title, close it without merging. | The diff against `main` is empty — you have to trick GitHub (e.g. revert + revert) or comment on commits directly. |
+| Commit-level comments | The `github.com/org/repo/commit/<sha>` page accepts inline comments even after merge. | Fragmented, no "reviewed" status, no approve/request-changes workflow. |
+| Dedicated issue | Open an issue titled `Audit: session auth` with permalinks (`…/blob/<sha>/file.py#L42-L88`). | No native review workflow — just a thread. |
+| GitHub Discussions | Richer than issues for long-form audits. | Same limitation — discussion, not review. |
+| Third-party (Reviewable, Graphite) | Multi-pass reviews independent of the PR. | Cost and tool lock-in. |
+
+### The structural limit
+
+GitHub's review machinery is **bound to the PR**, and the PR is **bound
+to the merge**. There's no native concept of a review that's decoupled
+from merging. Every workaround above pushes against that coupling.
+
+### Where GovForge changes the model
+
+GovForge treats `Decision` and `Review` as first-class entities,
+independent of merge. You can create a decision against any commit
+(historical or fresh), attach the diff read-only, run policies, request
+a review, capture findings, and approve — without touching the branch
+or merge state at all.
+
+For the full retro-review walkthrough:
+
+- CLI version: [`workflow-example.md` → Scenario 2](workflow-example.md#scenario-2--retrospective-review-of-a-commit-already-on-main)
+- Agent-driven version: [`workflow-example-agents.md` → Scenario 2](workflow-example-agents.md#scenario-2--asking-claude-to-run-a-retro-review-on-legacy-code)
+
 ## Variants depending on context
 
 **Solo on personal projects.** You can simplify — creating a branch is
